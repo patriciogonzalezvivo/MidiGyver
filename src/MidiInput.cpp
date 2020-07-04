@@ -29,9 +29,9 @@ MidiInput::MidiInput(const std::string& _filename, int _MidiPort) {
     portName = midiIn->getPortName(_MidiPort);
     stringReplace(&portName, '_');
 
-    threadData.load(_filename, portName);
+    broadcaster.load(_filename, portName);
 
-    midiIn->setCallback(onMidi, &threadData);
+    midiIn->setCallback(onMidi, &broadcaster);
 
     //respond to sysex and timing, ignore active sensing
     midiIn->ignoreTypes(false, false, true);
@@ -57,7 +57,6 @@ void MidiInput::onMidi(double _deltatime, std::vector<unsigned char>* _message, 
         exit(EXIT_FAILURE);
     }
 
-    Rosetta *data = static_cast<Rosetta*>(_userData);
-    data->convert(_message);
-
+    Broadcaster *b = static_cast<Broadcaster*>(_userData);
+    b->broadcast(_message);
 }

@@ -4,14 +4,14 @@
 
 #include "yaml-cpp/yaml.h"
 
-class Rosetta {
+class Broadcaster {
 public:
-    Rosetta();
-    virtual ~Rosetta();
+    Broadcaster();
+    virtual ~Broadcaster();
 
     bool load(const std::string& _filename, const std::string& _setupname);
 
-    float convert(std::vector<unsigned char>* _message);
+    bool broadcast(std::vector<unsigned char>* _message);
 
     std::string portName;
 

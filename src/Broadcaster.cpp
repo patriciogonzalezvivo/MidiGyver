@@ -1,4 +1,4 @@
-#include "Rosetta.h"
+#include "Broadcaster.h"
 
 #include <iostream>
 
@@ -22,15 +22,13 @@ const unsigned char STOP_SONG = 0xFC;
 const unsigned char ACTIVE_SENSING = 0xFE;
 const unsigned char SYSTEM_RESET = 0xFF;
 
-Rosetta::Rosetta() {
-
+Broadcaster::Broadcaster() {
 }
 
-Rosetta::~Rosetta() {
-
+Broadcaster::~Broadcaster() {
 }
 
-bool Rosetta::load(const std::string& _filename, const std::string& _setupname) {
+bool Broadcaster::load(const std::string& _filename, const std::string& _setupname) {
     portName = _setupname;
 
     YAML::Node node = YAML::LoadFile(_filename);
@@ -165,7 +163,7 @@ float map(float value, float inputMin, float inputMax, float outputMin, float ou
     return outVal;
 }
 
-float Rosetta::convert(std::vector<unsigned char>* _message) {
+bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
     std::string type;
     unsigned char channel;
     int bytes;
@@ -196,5 +194,5 @@ float Rosetta::convert(std::vector<unsigned char>* _message) {
 
     std::cout << "     value: " << value << std::endl;
 
-    return value;
+    return true;
 }

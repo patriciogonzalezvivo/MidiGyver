@@ -1,4 +1,7 @@
 nanoKONTROL2_20_0:
+    osc:
+        port: 8000
+        
     controller_change:
         -   name: slider_00
             range: [0, 1]

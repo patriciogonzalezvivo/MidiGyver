@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "Rosetta.h"
 #include "RtMidi.h"
+#include "Broadcaster.h"
 
 class MidiInput {
 public:
@@ -16,7 +16,7 @@ public:
     virtual ~MidiInput();
 
     static void onMidi(double, std::vector<unsigned char>*, void*);
-    Rosetta	threadData;
+    Broadcaster	broadcaster;
 
 private:
     RtMidiIn* midiIn;
