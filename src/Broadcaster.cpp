@@ -197,10 +197,6 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
 
     extractHeader(_message, type, bytes, channel);
 
-    // std::cout << " Port Name: " << deviceName << std::endl;
-    // std::cout << "   Channel: " << (int)channel << std::endl;
-    // std::cout << "      Type: " << type << std::endl;
-
     size_t id = _message->at(1);
     std::string name = "unknown";
     float value = (float)_message->at(2);
