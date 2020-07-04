@@ -7,18 +7,17 @@
 #include <string>
 #include <vector>
 
-#include "RtMidi.h"
 #include "Broadcaster.h"
 
-class MidiInput {
+class MidiDevice {
 public:
-    MidiInput(const std::string& _filename, int _MidiPort);
-    virtual ~MidiInput();
+    MidiDevice(const std::string& _filename, int _MidiPort);
+    virtual ~MidiDevice();
 
     static void onMidi(double, std::vector<unsigned char>*, void*);
     Broadcaster	broadcaster;
 
 private:
-    RtMidiIn* midiIn;
-    void stringReplace(std::string*, char);
+    RtMidiIn*   midiIn;
+    RtMidiOut*  midiOut;
 };

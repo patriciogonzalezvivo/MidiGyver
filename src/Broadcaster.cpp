@@ -1,6 +1,7 @@
 #include "Broadcaster.h"
 
 #include "lo/lo.h"
+#include "tools.h"
 
 #include <iostream>
 
@@ -27,11 +28,34 @@ const unsigned char SYSTEM_RESET = 0xFF;
 Broadcaster::Broadcaster() : 
     deviceName("default"),
     oscAddress("localhost"), oscPort("8000"), oscFolder("/"), osc(false),
-    csvPre(""), csv(false) 
+    csvPre(""), csv(false),
+    midiOut(nullptr)
 { }
 
 Broadcaster::~Broadcaster() 
 { }
+
+void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, float _value) {
+    lo_message m = lo_message_new();
+    lo_message_add_float(m, _value);
+
+    lo_address t = lo_address_new(_address.c_str(), _port.c_str());
+
+    lo_send_message(t, _path.c_str(), m);
+    lo_address_free(t);
+    lo_message_free(m);
+}
+
+void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, bool _value) {
+    lo_message m = lo_message_new();
+    lo_message_add_string(m, _value ? "on": "off");
+
+    lo_address t = lo_address_new(_address.c_str(), _port.c_str());
+
+    lo_send_message(t, _path.c_str(), m);
+    lo_address_free(t);
+    lo_message_free(m);
+}
 
 bool Broadcaster::load(const std::string& _filename, const std::string& _setupname) {
     deviceName = _setupname;
@@ -41,21 +65,22 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
     if (node[deviceName]) {
         data = node[deviceName];
 
+        // Load OUT setup
         if (data["out"]) {
+
+            // OSC
             if (data["out"]["osc"]) {
                 osc = true;
 
-                if (data["out"]["osc"]["address"])
+                if (data["out"]["osc"]["address"]) 
                     oscAddress = data["out"]["osc"]["address"].as<std::string>();
-
-                if (data["out"]["osc"]["port"])
+                if (data["out"]["osc"]["port"]) 
                     oscPort = data["out"]["osc"]["port"].as<std::string>();
-
                 if (data["out"]["osc"]["folder"])
                     oscFolder = data["out"]["osc"]["folder"].as<std::string>();
-                
             }
 
+            // CSV
             if (data["out"]["csv"]) {
                 csv = true;
 
@@ -63,6 +88,25 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
                     csvPre = data["out"]["csv"]["pre"].as<std::string>();
             }
         }
+
+        // Load default values
+        if ( data["events"] ) {
+            for ( size_t i = 0; i < data["events"].size(); i++ ) {
+                if ( data["events"][i]["name"] ) {
+                    std::string name = data["events"][i]["name"].as<std::string>();
+
+                    if ( data["events"][i]["value"] ) {
+                        values[i] = data["events"][i]["value"].as<float>();
+                        sendValue(oscAddress, oscPort, oscFolder + name, values[i]);
+                    }
+                    else if ( data["events"][i]["toggle"] ) {
+                        toggles[i] = data["events"][i]["toggle"].as<bool>();
+                        sendValue(oscAddress, oscPort, oscFolder + name, toggles[i]);
+                    }
+                }
+            }
+        }
+
         return true;
     }
 
@@ -70,7 +114,6 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
 }
 
 void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int& _bytes, unsigned char& _channel) {
-
     unsigned char status = 0;
     int j = 0;
 
@@ -185,11 +228,6 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
     }
 }
 
-float map(float value, float inputMin, float inputMax, float outputMin, float outputMax) {
-    float outVal = ((value - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin);
-    return outVal;
-}
-
 bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
     std::string type;
     unsigned char channel;
@@ -198,44 +236,55 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
     extractHeader(_message, type, bytes, channel);
 
     size_t id = _message->at(1);
-    std::string name = "unknown";
-    float value = (float)_message->at(2);
+    std::string name = "unknown" + toString(id);
 
-    if (data["events"].IsNull())
+    if ( data["events"].IsNull() )
         return false;
 
-    if (data["events"][type].IsNull())
-        return false;
+    if ( type == "controller_change" &&
+         id < data["events"].size() && 
+         bytes == 2 ) {
 
-    if (bytes == 2 && id < data["events"][type].size() ) {
-        if (data["events"][type][id]) {
-            if (data["events"][type][id]["name"])
-                name = data["events"][type][id]["name"].as<std::string>();
+        if ( data["events"][id] ) {
+            if ( data["events"][id]["name"] )
+                name = data["events"][id]["name"].as<std::string>();
 
-            if (data["events"][type][id]["range"])
-                value = map((float)_message->at(2), 0.0f, 127.0f, data["events"][type][id]["range"][0].as<float>(), data["events"][type][id]["range"][1].as<float>());
+            if ( data["events"][id]["range"] ) {
+                values[id] = map((float)_message->at(2), 0.0f, 127.0f, data["events"][id]["range"][0].as<float>(), data["events"][id]["range"][1].as<float>());
+
+                if (osc)
+                    sendValue(oscAddress, oscPort, oscFolder + name, values[id]);
+
+                if (csv)
+                    std::cout << csvPre << name << "," << values[id] << std::endl;
+
+                return true;
+            }
+            else if ( data["events"][id]["toggle"] ) {
+                if ((int)_message->at(2) == 127) {
+                    toggles[id] = !toggles[id];
+                    
+                    if (osc)
+                        sendValue(oscAddress, oscPort, oscFolder + name, toggles[id]);
+
+                    if (csv)
+                        std::cout << csvPre << name << "," << (toggles[id]? "on" : "off") << std::endl;
+
+                    if (midiOut) {
+                        std::vector<unsigned char> msg;
+                        msg.push_back( 0xB0 );
+                        msg.push_back( id );
+                        msg.push_back( toggles[id]? 127 : 0 );
+                        midiOut->sendMessage( &msg );
+                    }
+                }
+                return true;
+            }
         }
     }
 
-    if (osc) {
-
-        lo_message m = lo_message_new();
-        // lo_message_add_string(m, type.c_str());
-        lo_message_add_float(m, value);
-
-        lo_address t = lo_address_new(oscAddress.c_str(), oscPort.c_str());
-        std::stringstream path;
-        path << oscFolder << name;
-
-        std::string pathString;
-        pathString = path.str();
-        lo_send_message(t, pathString.c_str(), m);
-        lo_address_free(t);
-        lo_message_free(m);
-    }
-
     if (csv)
-        std::cout << csvPre << name << "," << value << std::endl;
+        std::cout << " x " << csvPre << name << " " << (int)_message->at(2) << " (" << type << ")" << std::endl;
 
-    return true;
+    return false;
 }

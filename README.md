@@ -24,6 +24,12 @@ sudo make install
 midiglue config.yaml 
 ```
 
+# Setup
+
+## nanoKontrol2
+
+https://i.korg.com/uploads/Support/nanoKONTROL2_PG_E1_634479709631760000.pdf
+
 # Aknowladgements 
 
 - Based on [MidiOSC](https://github.com/jstutters/MidiOSC/) by [Jon Stutters](https://github.com/jstutters) and [Christian Ashby](https://github.com/cscashby)

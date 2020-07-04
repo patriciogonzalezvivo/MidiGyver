@@ -7,7 +7,9 @@
 #include <vector>
 
 #include "RtMidi.h"
-#include "MidiInput.h"
+#include "MidiDevice.h"
+
+#include "tools.h"
 
 void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters = " ") {
     // Skip delimiters at beginning.
@@ -25,90 +27,56 @@ void tokenize(const std::string& str, std::vector<std::string>& tokens, const st
     }
 }
 
-std::vector<int> selectPorts() {
-    int port;
-    std::vector<std::string>::iterator it;
-    std::string userInput;
-    std::vector<std::string>userInputTokenized;
-    std::vector<int> portList;
+std::vector<std::string> getInputPorts() {
+    std::vector<std::string> devices;
 
-    std::cout << "Select ports: ";
-    getline(std::cin, userInput);
-    tokenize(userInput, userInputTokenized);
-
-    for (it = userInputTokenized.begin(); it < userInputTokenized.end(); it++) {
-        std::stringstream(*it) >> port;
-        portList.push_back(port);
-    }
-    return portList;
-}
-
-void listInputPorts() {
     RtMidiIn* midiIn = new RtMidiIn();
     unsigned int nPorts = midiIn->getPortCount();
-    std::cout << "Found " << nPorts << " MIDI inputs." << std::endl;
-    std::string portName;
-    if(nPorts == 0) {
-        std::cout << "No ports available!\n";
-    } else {
-        for(unsigned int i = 0; i < nPorts; i++) {
-            portName = midiIn->getPortName(i);
-            std::cout << "   Input port #" << i+1 << ": " << portName << std::endl;
-        }
-    }
+
+    for(unsigned int i = 0; i < nPorts; i++)
+        devices.push_back( midiIn->getPortName(i) );
+
     delete midiIn;
-}
 
-std::map<std::string, int> populateMap() {
-    std::map<std::string, int> stringToStatus;
-    stringToStatus["note_off"] = 0x80;
-    stringToStatus["note_on"] = 0x90;
-    stringToStatus["key_pressure"] = 0xa0;
-    stringToStatus["controller_change"] = 0xb0;
-    stringToStatus["program_change"] = 0xc0;
-    stringToStatus["channel_pressure"] = 0xd0;
-    stringToStatus["pitch_bend"] = 0xe0;
-    stringToStatus["system_exclusive"] = 0xf0;
-    stringToStatus["song_position"] = 0xf2;
-    stringToStatus["song_select"] = 0xf3;
-    stringToStatus["tune_request"] = 0xf6;
-    stringToStatus["end_of_sysex"] = 0xf7;
-    stringToStatus["timing_tick"] = 0xf8;
-    stringToStatus["start_song"] = 0xfa;
-    stringToStatus["continue_song"] = 0xfb;
-    stringToStatus["stop_song"] = 0xfc;
-    return stringToStatus;
-}
-
-void stringReplace(std::string* str) {
-    replace_if(str->begin(), str->end(), std::bind2nd(std::equal_to<char>(), '_'), ' ');
+    return devices;
 }
 
 int main(int argc, char** argv) {
-    std::vector<MidiInput*> inputs;
+    std::vector<MidiDevice*> inputs;
     std::vector<int> portList;
     std::vector<int>::iterator portIterator;
-    std::vector<MidiInput*>::iterator inputIterator;
     std::string configfile = "";
 
-    for (int i = 1; i < argc; i++) {
-        configfile = std::string(argv[i]);
+    if (argc == 1) {
+        std::cout << "Use: " << std::string(argv[0]) << " config.yaml " << std::endl;
+        return 0;
+    }
+    
+    configfile = std::string(argv[1]);
+
+    YAML::Node node = YAML::LoadFile(configfile);
+    std::vector<std::string> devices = getInputPorts();
+
+    for (size_t i = 0; i < devices.size(); i++) {
+        std::string device = devices[i];
+        stringReplace( device, '_');
+        if (node[device]) {
+            MidiDevice* m  = new MidiDevice(configfile, i);
+            inputs.push_back(m);
+        }
     }
 
-    listInputPorts();
-    portList = selectPorts();
-
-    for (portIterator = portList.begin(); portIterator < portList.end(); portIterator++) {
-        *portIterator -= 1;
-        MidiInput* m  = new MidiInput(configfile, *portIterator);
-        inputs.push_back(m);
+    if (inputs.size() == 0) {
+        std::cout << "Listening to no device. Please load the config.yaml for: " << std::endl;
+        for (size_t i = 0; i < devices.size(); i++)
+            std::cout << "  - " << devices[i] << std::endl;
+    }
+    else {
+        // std::cout << std::endl << "Reading MIDI input ... press <enter> to quit." << std::endl;
+        char input;
+        std::cin.get(input);
     }
 
-    std::cout << std::endl << "Reading MIDI input ... press <enter> to quit." << std::endl;
-    char input;
-    std::cin.get(input);
-
-    for (inputIterator = inputs.begin(); inputIterator < inputs.end(); inputIterator++) {
+    for (std::vector<MidiDevice*>::iterator inputIterator = inputs.begin(); inputIterator < inputs.end(); inputIterator++)
         delete *inputIterator;
-    }
 }

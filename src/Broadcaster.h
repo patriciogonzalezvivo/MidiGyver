@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <map>
 
+#include "RtMidi.h"
 #include "yaml-cpp/yaml.h"
 
 class Broadcaster {
@@ -10,6 +12,7 @@ public:
     virtual ~Broadcaster();
 
     bool load(const std::string& _filename, const std::string& _setupname);
+    void setCallbackPort(RtMidiOut* _midiout) { midiOut = _midiout; };
 
     bool broadcast(std::vector<unsigned char>* _message);
 
@@ -24,6 +27,9 @@ private:
     std::string csvPre;
     bool        csv;
 
-    YAML::Node data;
+    std::map<size_t, bool>  toggles;
+    std::map<size_t, float> values;
 
+    YAML::Node  data;
+    RtMidiOut*  midiOut;
 };
