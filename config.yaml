@@ -63,7 +63,7 @@ nanoKONTROL2_20_0:
         -   name: v31
 
         -   name: sBtns0
-            toggle: off
+            toggle: on
         -   name: sBtns1
             toggle: off
         -   name: sBtns2

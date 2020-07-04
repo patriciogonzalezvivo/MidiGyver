@@ -16,6 +16,8 @@ public:
 
     bool broadcast(std::vector<unsigned char>* _message);
 
+    void setLED(size_t _id, bool _value);
+
 private:
     std::string deviceName;
 

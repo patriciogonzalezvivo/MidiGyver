@@ -57,6 +57,16 @@ void sendValue(const std::string& _address, const std::string& _port, const std:
     lo_message_free(m);
 }
 
+void Broadcaster::setLED(size_t _id, bool _value) {
+    if (midiOut) {
+        std::vector<unsigned char> msg;
+        msg.push_back( 0xB0 );
+        msg.push_back( _id );
+        msg.push_back( _value? 127 : 0 );
+        midiOut->sendMessage( &msg );
+    }
+}
+
 bool Broadcaster::load(const std::string& _filename, const std::string& _setupname) {
     deviceName = _setupname;
 
@@ -102,6 +112,7 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
                     else if ( data["events"][i]["toggle"] ) {
                         toggles[i] = data["events"][i]["toggle"].as<bool>();
                         sendValue(oscAddress, oscPort, oscFolder + name, toggles[i]);
+                        setLED(i, toggles[i]);
                     }
                 }
             }
@@ -270,13 +281,7 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
                     if (csv)
                         std::cout << csvPre << name << "," << (toggles[id]? "on" : "off") << std::endl;
 
-                    if (midiOut) {
-                        std::vector<unsigned char> msg;
-                        msg.push_back( 0xB0 );
-                        msg.push_back( id );
-                        msg.push_back( toggles[id]? 127 : 0 );
-                        midiOut->sendMessage( &msg );
-                    }
+                    setLED(id, toggles[id]);
                 }
                 return true;
             }

@@ -20,8 +20,8 @@ MidiDevice::MidiDevice(const std::string& _filename, int _MidiPort) {
     std::string portName = midiIn->getPortName(_MidiPort);
     stringReplace(portName, '_');
 
-    broadcaster.load(_filename, portName);
     broadcaster.setCallbackPort(midiOut);
+    broadcaster.load(_filename, portName);
 
     midiIn->setCallback(onMidi, &broadcaster);
     //respond to sysex and timing, ignore active sensing
