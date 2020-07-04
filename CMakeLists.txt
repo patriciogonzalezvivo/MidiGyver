@@ -6,8 +6,8 @@ else()
     cmake_policy(VERSION 3.15)
 endif()
 
-project(MidiMagic VERSION 0.1
-                  DESCRIPTION "MidiMagic"
+project(midiglue VERSION 0.1
+                  DESCRIPTION "midiglue"
                   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -22,19 +22,22 @@ endif(POLICY CMP0002)
 find_package(Threads)
 find_package(ALSA)
 find_package(yaml-cpp REQUIRED)
+# find_package(liblo REQUIRED)
 
 file(GLOB ROOT_HEADER "${PROJECT_SOURCE_DIR}/src/*.h")
 file(GLOB ROOT_SOURCE "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
-add_executable (midiMagic "${PROJECT_SOURCE_DIR}/src/main.cpp")
+add_executable (midiglue "${PROJECT_SOURCE_DIR}/src/main.cpp")
 
-add_library(midiMagic ${ROOT_SOURCE})
-target_link_libraries(midiMagic Threads::Threads)
-target_link_libraries(midiMagic ${YAML_CPP_LIBRARIES})
+add_library(midiglue ${ROOT_SOURCE})
+target_link_libraries(midiglue Threads::Threads)
+target_link_libraries(midiglue ${YAML_CPP_LIBRARIES})
+# target_link_libraries (midiglue ${LIBLO_LIBRARY})
+target_link_libraries (midiglue "/usr/lib/x86_64-linux-gnu/liblo.a")
 if(ALSA_FOUND)
-  target_compile_definitions(midiMagic PUBLIC __LINUX_ALSA__)
-  target_link_libraries (midiMagic ${ALSA_LIBRARY})
+  target_compile_definitions(midiglue PUBLIC __LINUX_ALSA__)
+  target_link_libraries (midiglue ${ALSA_LIBRARY})
 endif()
 
-install(TARGETS midiMagic
+install(TARGETS midiglue
         RUNTIME DESTINATION bin)

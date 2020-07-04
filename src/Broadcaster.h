@@ -13,9 +13,17 @@ public:
 
     bool broadcast(std::vector<unsigned char>* _message);
 
-    std::string portName;
-
 private:
+    std::string deviceName;
+
+    std::string oscAddress;
+    std::string oscPort;
+    std::string oscFolder;
+    bool        osc;
+
+    std::string csvPre;
+    bool        csv;
+
     YAML::Node data;
 
 };

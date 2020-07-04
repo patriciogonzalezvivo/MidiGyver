@@ -1,5 +1,7 @@
 #include "Broadcaster.h"
 
+#include "lo/lo.h"
+
 #include <iostream>
 
 //status bytes
@@ -22,20 +24,45 @@ const unsigned char STOP_SONG = 0xFC;
 const unsigned char ACTIVE_SENSING = 0xFE;
 const unsigned char SYSTEM_RESET = 0xFF;
 
-Broadcaster::Broadcaster() {
-}
+Broadcaster::Broadcaster() : 
+    deviceName("default"),
+    oscAddress("localhost"), oscPort("8000"), oscFolder("/"), osc(false),
+    csvPre(""), csv(false) 
+{ }
 
-Broadcaster::~Broadcaster() {
-}
+Broadcaster::~Broadcaster() 
+{ }
 
 bool Broadcaster::load(const std::string& _filename, const std::string& _setupname) {
-    portName = _setupname;
+    deviceName = _setupname;
 
     YAML::Node node = YAML::LoadFile(_filename);
-    std::cout << portName << " " << node.size() << std::endl;
 
-    if (node[portName]) {
-        data = node[portName];
+    if (node[deviceName]) {
+        data = node[deviceName];
+
+        if (data["out"]) {
+            if (data["out"]["osc"]) {
+                osc = true;
+
+                if (data["out"]["osc"]["address"])
+                    oscAddress = data["out"]["osc"]["address"].as<std::string>();
+
+                if (data["out"]["osc"]["port"])
+                    oscPort = data["out"]["osc"]["port"].as<std::string>();
+
+                if (data["out"]["osc"]["folder"])
+                    oscFolder = data["out"]["osc"]["folder"].as<std::string>();
+                
+            }
+
+            if (data["out"]["csv"]) {
+                csv = true;
+
+                if (data["out"]["csv"]["pre"])
+                    csvPre = data["out"]["csv"]["pre"].as<std::string>();
+            }
+        }
         return true;
     }
 
@@ -170,29 +197,49 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
 
     extractHeader(_message, type, bytes, channel);
 
-    // std::cout << " Port Name: " << portName << std::endl;
+    // std::cout << " Port Name: " << deviceName << std::endl;
     // std::cout << "   Channel: " << (int)channel << std::endl;
-    std::cout << "      Type: " << type << std::endl;
+    // std::cout << "      Type: " << type << std::endl;
 
     size_t id = _message->at(1);
+    std::string name = "unknown";
     float value = (float)_message->at(2);
 
-    if (data[type].IsNull())
-        return value;
+    if (data["events"].IsNull())
+        return false;
 
-    if (bytes == 2 && id < data[type].size() ) {
-        if (!data[type][id].IsNull()) {
-            if (data[type][id]["name"])
-                std::cout << "      name: " << data[type][id]["name"].as<std::string>() << std::endl;
+    if (data["events"][type].IsNull())
+        return false;
 
-            if (data[type][id]["range"])
-                value = map((float)_message->at(2), 0.0f, 127.0f, data[type][id]["range"][0].as<float>(), data[type][id]["range"][1].as<float>());
+    if (bytes == 2 && id < data["events"][type].size() ) {
+        if (data["events"][type][id]) {
+            if (data["events"][type][id]["name"])
+                name = data["events"][type][id]["name"].as<std::string>();
+
+            if (data["events"][type][id]["range"])
+                value = map((float)_message->at(2), 0.0f, 127.0f, data["events"][type][id]["range"][0].as<float>(), data["events"][type][id]["range"][1].as<float>());
         }
     }
-    else
-        std::cout << "        id: " << (int)id << std::endl;
 
-    std::cout << "     value: " << value << std::endl;
+    if (osc) {
+
+        lo_message m = lo_message_new();
+        // lo_message_add_string(m, type.c_str());
+        lo_message_add_float(m, value);
+
+        lo_address t = lo_address_new(oscAddress.c_str(), oscPort.c_str());
+        std::stringstream path;
+        path << oscFolder << name;
+
+        std::string pathString;
+        pathString = path.str();
+        lo_send_message(t, pathString.c_str(), m);
+        lo_address_free(t);
+        lo_message_free(m);
+    }
+
+    if (csv)
+        std::cout << csvPre << name << "," << value << std::endl;
 
     return true;
 }

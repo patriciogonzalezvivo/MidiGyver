@@ -1,68 +1,76 @@
 nanoKONTROL2_20_0:
-    osc:
-        port: 8000
-        
-    controller_change:
-        -   name: slider_00
-            range: [0, 1]
-        -   name: slider_01
-            range: [0, 1]
-        -   name: slider_02
-            range: [0, 1]
-        -   name: slider_03
-            range: [0, 1]
-        -   name: slider_04
-            range: [0, 1]
-        -   name: slider_05
-            range: [0, 1]
-        -   name: slider_06
-            range: [0, 1]
-        -   name: slider_07
-            range: [0, 1]
 
-        -   name: v08
-        -   name: v09
-        -   name: v10
-        -   name: v11
-        -   name: v12
-        -   name: v13
-        -   name: v14
-        -   name: v15
+    out:
+        osc:
+            address: localhost
+            port: 8000
+            folder: /u/
 
-        -   name: knob_00
-            range: [0, 1]
-        -   name: knob_01
-            range: [0, 1]
-        -   name: knob_02
-            range: [0, 1]
-        -   name: knob_03
-            range: [0, 1]
-        -   name: knob_04
-            range: [0, 1]
-        -   name: knob_05
-            range: [0, 1]
-        -   name: knob_06
-            range: [0, 1]
-        -   name: knob_07
-            range: [0, 1]
+        csv:
+            pre: u_
 
-        -   name: v24
-        -   name: v25
-        -   name: v26
-        -   name: v27
-        -   name: v28
-        -   name: v29
-        -   name: v30
-        -   name: v31
+    events:
+        controller_change:
+            -   name: slider_00
+                range: [0, 1]
+            -   name: slider_01
+                range: [0, 1]
+            -   name: slider_02
+                range: [0, 1]
+            -   name: slider_03
+                range: [0, 1]
+            -   name: slider_04
+                range: [0, 1]
+            -   name: slider_05
+                range: [0, 1]
+            -   name: slider_06
+                range: [0, 1]
+            -   name: slider_07
+                range: [0, 1]
 
-        -   name: v32
-        -   name: v33
-        -   name: v34
-        -   name: v35
-        -   name: v36
-        -   name: v37
-        -   name: v38
-        -   name: v39
-            
+            -   name: v08
+            -   name: v09
+            -   name: v10
+            -   name: v11
+            -   name: v12
+            -   name: v13
+            -   name: v14
+            -   name: v15
 
-  
+            -   name: knob_00
+                range: [0, 1]
+            -   name: knob_01
+                range: [0, 1]
+            -   name: knob_02
+                range: [0, 1]
+            -   name: knob_03
+                range: [0, 1]
+            -   name: knob_04
+                range: [0, 1]
+            -   name: knob_05
+                range: [0, 1]
+            -   name: knob_06
+                range: [0, 1]
+            -   name: knob_07
+                range: [0, 1]
+
+            -   name: v24
+            -   name: v25
+            -   name: v26
+            -   name: v27
+            -   name: v28
+            -   name: v29
+            -   name: v30
+            -   name: v31
+
+            -   name: v32
+            -   name: v33
+            -   name: v34
+            -   name: v35
+            -   name: v36
+            -   name: v37
+            -   name: v38
+            -   name: v39
+                
+
+    
