@@ -252,7 +252,10 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
             else if ( type == "switch" ) {
                 
                 if ((int)_message->at(2) == 127) {
-                    bool value = data["events"][id]["value"].as<bool>();
+                    bool value = false;
+                    
+                    if (data["events"][id]["value"])
+                        value = data["events"][id]["value"].as<bool>();
 
                     data["events"][id]["value"] = !value;
 

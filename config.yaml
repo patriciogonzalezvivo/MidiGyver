@@ -93,13 +93,13 @@ nanoKONTROL2_20_0:
         -   name: sBtns0
             type: switch
             value: off
-            map:
-                on: define,TEST
-                off: undefine,TEST
 
         -   name: sBtns1
             type: switch
             value: off
+            map:
+                on: define,TEST
+                off: undefine,TEST
 
         -   name: sBtns2
             type: switch
@@ -189,9 +189,7 @@ nanoKONTROL2_20_0:
             type: button
 
         -   name: markerSet
-            map:
-                on: debug,on
-                off: debug,off
+            type: switch
 
         -   name: markerPrev
             type: button
