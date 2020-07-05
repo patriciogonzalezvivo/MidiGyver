@@ -15,6 +15,7 @@ public:
     void setCallbackPort(RtMidiOut* _midiout) { midiOut = _midiout; };
 
     bool broadcast(std::vector<unsigned char>* _message);
+    bool broadcast(size_t _id);
 
     void setLED(size_t _id, bool _value);
 

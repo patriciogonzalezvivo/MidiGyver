@@ -4,10 +4,10 @@ nanoKONTROL2_20_0:
         osc:
             address: localhost
             port: 8000
-            folder: /u/
+            # folder: /u/
 
-        csv:
-            pre: u_
+        csv: on
+        #     pre: u_
 
     events:
         -   name: fader00
@@ -63,7 +63,9 @@ nanoKONTROL2_20_0:
         -   name: v31
 
         -   name: sBtns0
-            toggle: on
+            toggle: off
+            on: define,TEST
+            off: undefine,TEST
         -   name: sBtns1
             toggle: off
         -   name: sBtns2

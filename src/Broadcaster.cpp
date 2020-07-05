@@ -57,6 +57,17 @@ void sendValue(const std::string& _address, const std::string& _port, const std:
     lo_message_free(m);
 }
 
+void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, const std::string& _value) {
+    lo_message m = lo_message_new();
+    lo_message_add_string(m, _value.c_str());
+
+    lo_address t = lo_address_new(_address.c_str(), _port.c_str());
+
+    lo_send_message(t, _path.c_str(), m);
+    lo_address_free(t);
+    lo_message_free(m);
+}
+
 void Broadcaster::setLED(size_t _id, bool _value) {
     if (midiOut) {
         std::vector<unsigned char> msg;
@@ -94,27 +105,21 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
             if (data["out"]["csv"]) {
                 csv = true;
 
-                if (data["out"]["csv"]["pre"])
-                    csvPre = data["out"]["csv"]["pre"].as<std::string>();
+                if (data["out"]["csv"].IsMap())
+                    if (data["out"]["csv"]["pre"])
+                        csvPre = data["out"]["csv"]["pre"].as<std::string>();
             }
         }
 
         // Load default values
         if ( data["events"] ) {
             for ( size_t i = 0; i < data["events"].size(); i++ ) {
-                if ( data["events"][i]["name"] ) {
-                    std::string name = data["events"][i]["name"].as<std::string>();
+                if ( data["events"][i]["value"] )
+                    values[i] = data["events"][i]["value"].as<float>();
+                else if ( data["events"][i]["toggle"] )
+                    toggles[i] = data["events"][i]["toggle"].as<bool>();
 
-                    if ( data["events"][i]["value"] ) {
-                        values[i] = data["events"][i]["value"].as<float>();
-                        sendValue(oscAddress, oscPort, oscFolder + name, values[i]);
-                    }
-                    else if ( data["events"][i]["toggle"] ) {
-                        toggles[i] = data["events"][i]["toggle"].as<bool>();
-                        sendValue(oscAddress, oscPort, oscFolder + name, toggles[i]);
-                        setLED(i, toggles[i]);
-                    }
-                }
+                broadcast(i);
             }
         }
 
@@ -257,39 +262,82 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
          bytes == 2 ) {
 
         if ( data["events"][id] ) {
-            if ( data["events"][id]["name"] )
-                name = data["events"][id]["name"].as<std::string>();
-
             if ( data["events"][id]["range"] ) {
                 values[id] = map((float)_message->at(2), 0.0f, 127.0f, data["events"][id]["range"][0].as<float>(), data["events"][id]["range"][1].as<float>());
-
-                if (osc)
-                    sendValue(oscAddress, oscPort, oscFolder + name, values[id]);
-
-                if (csv)
-                    std::cout << csvPre << name << "," << values[id] << std::endl;
-
-                return true;
+                return broadcast(id);
             }
             else if ( data["events"][id]["toggle"] ) {
                 if ((int)_message->at(2) == 127) {
                     toggles[id] = !toggles[id];
-                    
-                    if (osc)
-                        sendValue(oscAddress, oscPort, oscFolder + name, toggles[id]);
-
-                    if (csv)
-                        std::cout << csvPre << name << "," << (toggles[id]? "on" : "off") << std::endl;
-
-                    setLED(id, toggles[id]);
+                    return broadcast(id);
                 }
-                return true;
             }
         }
     }
 
-    if (csv)
-        std::cout << " x " << csvPre << name << " " << (int)_message->at(2) << " (" << type << ")" << std::endl;
+    // if (csv)
+    //     std::cout << " x " << csvPre << name << " " << (int)_message->at(2) << " (" << type << ")" << std::endl;
+
+    return false;
+}
+
+bool Broadcaster::broadcast(size_t _id) {
+
+    if ( data["events"][_id]["name"] ) {
+        std::string name = data["events"][_id]["name"].as<std::string>();
+
+        if ( data["events"][_id]["toggle"] ) {
+            setLED(_id, toggles[_id]);
+
+            if (data["events"][_id][toggles[_id]? "on" : "off"]) {
+                YAML::Node custom = data["events"][_id][toggles[_id]? "on" : "off"];
+
+                if (custom) {
+                    std::string msg = custom.as<std::string>();
+                    stringReplace(msg, '_');
+                    std::vector<std::string> el = split(msg, '_', true);
+
+                    if (el.size() == 1) {
+                        if (osc)
+                            sendValue(oscAddress, oscPort, oscFolder + name, msg );
+
+                        if (csv)
+                            std::cout << oscFolder + name << "," << msg << std::endl;
+                    }
+                    else {
+                        if (osc)
+                            sendValue(oscAddress, oscPort, el[0], el[1] );
+
+                        if (csv)
+                            std::cout << el[0] << "," << el[1] << std::endl;
+                    }
+
+                    return true;
+                }
+            }
+            else {
+
+                if (osc)
+                    sendValue(oscAddress, oscPort, oscFolder + name, toggles[_id]);
+
+                if (csv)
+                    std::cout << csvPre << name << "," << (toggles[_id]? "on" : "off") << std::endl;
+
+                return true;
+
+            }
+        }
+        else if ( data["events"][_id] ) {
+
+            if (osc)
+                sendValue(oscAddress, oscPort, oscFolder + name, values[_id]);
+
+            if (csv)
+                std::cout << csvPre << name << "," << values[_id] << std::endl;
+
+            return true;
+        }
+    }
 
     return false;
 }
