@@ -230,15 +230,3 @@ nanoKONTROL2_20_0:
         -   name: rBtns7
             type: switch
             value: off
-
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-
-
-    
