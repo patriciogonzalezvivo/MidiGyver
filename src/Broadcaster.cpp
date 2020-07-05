@@ -28,7 +28,7 @@ const unsigned char SYSTEM_RESET = 0xFF;
 Broadcaster::Broadcaster() : 
     deviceName("default"),
     oscAddress("localhost"), oscPort("8000"), oscFolder("/"), osc(false),
-    csvPre(""), csv(false),
+    csv(false),
     midiOut(nullptr)
 { }
 
@@ -38,17 +38,6 @@ Broadcaster::~Broadcaster()
 void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, float _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value);
-
-    lo_address t = lo_address_new(_address.c_str(), _port.c_str());
-
-    lo_send_message(t, _path.c_str(), m);
-    lo_address_free(t);
-    lo_message_free(m);
-}
-
-void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, bool _value) {
-    lo_message m = lo_message_new();
-    lo_message_add_string(m, _value ? "on": "off");
 
     lo_address t = lo_address_new(_address.c_str(), _port.c_str());
 
@@ -102,24 +91,16 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
             }
 
             // CSV
-            if (data["out"]["csv"]) {
+            if (data["out"]["csv"])
                 csv = true;
-
-                if (data["out"]["csv"].IsMap())
-                    if (data["out"]["csv"]["pre"])
-                        csvPre = data["out"]["csv"]["pre"].as<std::string>();
-            }
+        
         }
 
         // Load default values
         if ( data["events"] ) {
             for ( size_t i = 0; i < data["events"].size(); i++ ) {
-                if ( data["events"][i]["value"] )
-                    values[i] = data["events"][i]["value"].as<float>();
-                else if ( data["events"][i]["toggle"] )
-                    toggles[i] = data["events"][i]["toggle"].as<bool>();
-
-                broadcast(i);
+                if (data["events"][i]["value"])
+                    broadcast(i);
             }
         }
 
@@ -181,19 +162,18 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
         case SYSTEM_EXCLUSIVE:
             if(_message->size() == 6) {
                 unsigned int type = _message->at(4);
-                if(type == 1) {
+                if (type == 1)
                     _type = "mmc_stop";
-                } else if(type == 2) {
+                else if(type == 2)
                     _type = "mmc_play";
-                } else if(type == 4) {
+                else if(type == 4)
                     _type = "mmc_fast_forward";
-                } else if(type == 5) {
+                else if(type == 5)
                     _type = "mmc_rewind";
-                } else if(type == 6) {
+                else if(type == 6)
                     _type = "mmc_record";
-                } else if(type == 9) {
+                else if(type == 9)
                     _type = "mmc_pause";
-                }
             }
             _bytes = 0;
             break;
@@ -262,35 +242,65 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
          bytes == 2 ) {
 
         if ( data["events"][id] ) {
-            if ( data["events"][id]["range"] ) {
-                values[id] = map((float)_message->at(2), 0.0f, 127.0f, data["events"][id]["range"][0].as<float>(), data["events"][id]["range"][1].as<float>());
+            std::string type = "none";
+
+            if ( data["events"][id]["type"] )
+                type =  data["events"][id]["type"].as<std::string>();
+
+            if ( type == "button" ) {
+                data["events"][id]["value"] = (int)_message->at(2) == 127;
                 return broadcast(id);
             }
-            else if ( data["events"][id]["toggle"] ) {
+            else if ( type == "switch" ) {
+                
                 if ((int)_message->at(2) == 127) {
-                    toggles[id] = !toggles[id];
+                    bool value = data["events"][id]["value"].as<bool>();
+
+                    data["events"][id]["value"] = !value;
+
                     return broadcast(id);
                 }
+
             }
+            else if ( type == "scalar" ) {
+                float value = (float)_message->at(2);
+
+                if ( data["events"][id]["map"] )
+                    value = map(value, 0.0f, 127.0f, data["events"][id]["map"][0].as<float>(), data["events"][id]["map"][1].as<float>());
+
+                data["events"][id]["value"] = value;
+
+                return broadcast(id);
+            }
+            
         }
     }
-
-    // if (csv)
-    //     std::cout << " x " << csvPre << name << " " << (int)_message->at(2) << " (" << type << ")" << std::endl;
 
     return false;
 }
 
 bool Broadcaster::broadcast(size_t _id) {
+    std::string name = "unknown" + toString(_id);
+    std::string type = "none";
+    YAML::Node  value = data["events"][_id]["value"];
 
-    if ( data["events"][_id]["name"] ) {
-        std::string name = data["events"][_id]["name"].as<std::string>();
+    if ( data["events"][_id]["value"].IsNull() )
+        return false;
 
-        if ( data["events"][_id]["toggle"] ) {
-            setLED(_id, toggles[_id]);
+    if ( data["events"][_id]["name"] )
+        name = data["events"][_id]["name"].as<std::string>();
 
-            if (data["events"][_id][toggles[_id]? "on" : "off"]) {
-                YAML::Node custom = data["events"][_id][toggles[_id]? "on" : "off"];
+    if ( data["events"][_id]["type"] )
+        type =  data["events"][_id]["type"].as<std::string>();
+
+    if ( type == "switch" || type == "button" ) {
+        std::string value_str = (value.as<bool>()) ? "on" : "off";
+        setLED(_id, value.as<bool>() );
+
+        if (data["events"][_id]["map"]) {
+
+            if (data["events"][_id]["map"][value_str]) {
+                YAML::Node custom = data["events"][_id]["map"][value_str];
 
                 if (custom) {
                     std::string msg = custom.as<std::string>();
@@ -315,28 +325,28 @@ bool Broadcaster::broadcast(size_t _id) {
                     return true;
                 }
             }
-            else {
 
-                if (osc)
-                    sendValue(oscAddress, oscPort, oscFolder + name, toggles[_id]);
-
-                if (csv)
-                    std::cout << csvPre << name << "," << (toggles[_id]? "on" : "off") << std::endl;
-
-                return true;
-
-            }
         }
-        else if ( data["events"][_id] ) {
+        else {
 
             if (osc)
-                sendValue(oscAddress, oscPort, oscFolder + name, values[_id]);
+                sendValue(oscAddress, oscPort, oscFolder + name, value_str);
 
             if (csv)
-                std::cout << csvPre << name << "," << values[_id] << std::endl;
+                std::cout << name << "," << (value_str) << std::endl;
 
             return true;
         }
+    }
+
+    else if ( type == "scalar" ) {
+        if (osc)
+            sendValue(oscAddress, oscPort, oscFolder + name, value.as<float>());
+
+        if (csv)
+            std::cout << name << "," << value.as<float>() << std::endl;
+
+        return true;
     }
 
     return false;

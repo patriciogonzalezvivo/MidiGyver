@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -10,22 +11,6 @@
 #include "MidiDevice.h"
 
 #include "tools.h"
-
-void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters = " ") {
-    // Skip delimiters at beginning.
-    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-    // Find first "non-delimiter".
-    std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-
-    while (std::string::npos != pos || std::string::npos != lastPos) {
-        // Found a token, add it to the std::vector.
-        tokens.push_back(str.substr(lastPos, pos - lastPos));
-        // Skip delimiters.  Note the "not_of"
-        lastPos = str.find_first_not_of(delimiters, pos);
-        // Find next "non-delimiter"
-        pos = str.find_first_of(delimiters, lastPos);
-    }
-}
 
 std::vector<std::string> getInputPorts() {
     std::vector<std::string> devices;
@@ -42,9 +27,6 @@ std::vector<std::string> getInputPorts() {
 }
 
 int main(int argc, char** argv) {
-    std::vector<MidiDevice*> inputs;
-    std::vector<int> portList;
-    std::vector<int>::iterator portIterator;
     std::string configfile = "";
 
     if (argc == 1) {
@@ -57,6 +39,7 @@ int main(int argc, char** argv) {
     YAML::Node node = YAML::LoadFile(configfile);
     std::vector<std::string> devices = getInputPorts();
 
+    std::vector<MidiDevice*> inputs;
     for (size_t i = 0; i < devices.size(); i++) {
         std::string device = devices[i];
         stringReplace( device, '_');
@@ -76,6 +59,12 @@ int main(int argc, char** argv) {
         char input;
         std::cin.get(input);
     }
+
+    for (size_t i = 0; i < inputs.size(); i++)
+        node[ inputs[i]->broadcaster.deviceName ] = inputs[i]->broadcaster.data;
+
+    std::ofstream fout("tmp.yaml");
+    fout << node;
 
     for (std::vector<MidiDevice*>::iterator inputIterator = inputs.begin(); inputIterator < inputs.end(); inputIterator++)
         delete *inputIterator;

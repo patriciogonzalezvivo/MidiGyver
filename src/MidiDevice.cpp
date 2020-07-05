@@ -24,9 +24,7 @@ MidiDevice::MidiDevice(const std::string& _filename, int _MidiPort) {
     broadcaster.load(_filename, portName);
 
     midiIn->setCallback(onMidi, &broadcaster);
-    //respond to sysex and timing, ignore active sensing
     midiIn->ignoreTypes(false, false, true);
-    // std::cout << "Listening to port " << midiIn->getPortName(_MidiPort) << std::endl;
 }
 
 MidiDevice::~MidiDevice() {

@@ -19,20 +19,15 @@ public:
 
     void setLED(size_t _id, bool _value);
 
-private:
+    YAML::Node  data;
     std::string deviceName;
 
+private:
     std::string oscAddress;
     std::string oscPort;
     std::string oscFolder;
     bool        osc;
-
-    std::string csvPre;
     bool        csv;
 
-    std::map<size_t, bool>  toggles;
-    std::map<size_t, float> values;
-
-    YAML::Node  data;
     RtMidiOut*  midiOut;
 };
