@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < inputs.size(); i++)
         node[ inputs[i]->broadcaster.deviceName ] = inputs[i]->broadcaster.data;
 
-    std::ofstream fout("tmp.yaml");
+    std::ofstream fout(configfile);
     fout << node;
 
     for (std::vector<MidiDevice*>::iterator inputIterator = inputs.begin(); inputIterator < inputs.end(); inputIterator++)

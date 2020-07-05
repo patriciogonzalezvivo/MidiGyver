@@ -1,9 +1,10 @@
 #include "Broadcaster.h"
 
+#include <iostream>
+#include <cmath> 
+
 #include "lo/lo.h"
 #include "tools.h"
-
-#include <iostream>
 
 //status bytes
 const unsigned char NOTE_OFF = 0x80;
@@ -78,6 +79,10 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
         // Load OUT setup
         if (data["out"]) {
 
+            // CSV
+            if (data["out"]["csv"])
+                csv = true;
+
             // OSC
             if (data["out"]["osc"]) {
                 osc = true;
@@ -89,20 +94,13 @@ bool Broadcaster::load(const std::string& _filename, const std::string& _setupna
                 if (data["out"]["osc"]["folder"])
                     oscFolder = data["out"]["osc"]["folder"].as<std::string>();
             }
-
-            // CSV
-            if (data["out"]["csv"])
-                csv = true;
-        
         }
 
         // Load default values
-        if ( data["events"] ) {
-            for ( size_t i = 0; i < data["events"].size(); i++ ) {
+        if ( data["events"] )
+            for ( size_t i = 0; i < data["events"].size(); i++ )
                 if (data["events"][i]["value"])
                     broadcast(i);
-            }
-        }
 
         return true;
     }
@@ -272,6 +270,54 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
 
                 return broadcast(id);
             }
+            else if ( type == "states" ) {
+                int value = (int)_message->at(2);
+                std::string value_str = toString(value);
+
+                if ( data["events"][id]["map"] ) {
+                    if ( data["events"][id]["map"].IsSequence() ) {
+                        float total = data["events"][id]["map"].size();
+
+                        if (value == 127.0f) {
+                            value_str = data["events"][id]["map"][total-1].as<std::string>();
+                        } 
+                        else {
+                            size_t index = (value / 127.0f) * (data["events"][id]["map"].size());
+                            value_str = data["events"][id]["map"][index].as<std::string>();
+                        } 
+                    }
+                }
+                
+                data["events"][id]["value"] = value_str;
+                return broadcast(id);
+            }
+            else if ( type == "lerp" ) {
+                float value = (float)_message->at(2) / 127.0f;
+
+                if ( data["events"][id]["map"] ) {
+                    if ( data["events"][id]["map"].IsSequence() ) {
+                        if (data["events"][id]["map"].size() > 1) {
+                            float total = data["events"][id]["map"].size() - 1;
+
+                            if (value == 127.0f) {
+                                value = data["events"][id]["map"][total-1].as<float>();
+                            } 
+                            else {
+                                size_t i_low = value * total;
+                                size_t i_high = std::min(i_low + 1, size_t(total));
+                                float pct = (value * total) - (float)i_low;
+                                value = lerp(   data["events"][id]["map"][i_low].as<float>(),
+                                                data["events"][id]["map"][i_high].as<float>(),
+                                                pct );
+                            }
+                        }
+
+                    }
+                }
+                
+                data["events"][id]["value"] = value;
+                return broadcast(id);
+            }
             
         }
     }
@@ -339,12 +385,22 @@ bool Broadcaster::broadcast(size_t _id) {
         }
     }
 
-    else if ( type == "scalar" ) {
+    else if ( type == "scalar" || type == "lerp" ) {
         if (osc)
             sendValue(oscAddress, oscPort, oscFolder + name, value.as<float>());
 
         if (csv)
             std::cout << name << "," << value.as<float>() << std::endl;
+
+        return true;
+    }
+
+    else if ( type == "states" ) {
+        if (osc)
+            sendValue(oscAddress, oscPort, oscFolder + name, value.as<std::string>());
+
+        if (csv)
+            std::cout << name << "," << value.as<std::string>() << std::endl;
 
         return true;
     }

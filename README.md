@@ -27,12 +27,14 @@ midiglue config.yaml
 
 ### Config
 Each YAML file can contain the configuration of multiple devices. The configuration of a device is set under the node with it own name (**note**: empty spaces and other symbols are replaced with `_` ).
+
 In that node you set up the `out` protocols (`osc` and/or 'csv') and the `events`.
+
 Each event is compose by:
     * `name`: name of the event. This is use to construct the OSC path or the first column on the CSV output
-    * `type`: could be: `button`, `switch`, `scalar`, `sequence`
+    * `type`: could be: `button`, `switch`, `scalar`, `states`, `lerp`
     * `map`: depend on the type of the event
-    * `value`:
+    * `value`: 
 
 ```yaml
 nanoKONTROL2_20_0:
@@ -50,12 +52,12 @@ nanoKONTROL2_20_0:
             map: [0, 1]
 
         -   name: fader01
-            type: scalar
-            map: [0, 1]
+            type: lerp
+            map: [0, 50, 150, 250, 255, 0]
 
         -   name: fader02
-            type: scalar
-            map: [0, 1]
+            type: states
+            map: [low, med, high, ultra_high]
 
         -   name: fader03
             type: scalar
