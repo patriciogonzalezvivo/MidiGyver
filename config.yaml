@@ -1,11 +1,10 @@
 nanoKONTROL2_20_0:
-
+    
     out:
+        csv: on
         osc:
             address: localhost
             port: 8000
-
-        csv: on
 
     events:
         -   name: fader00
@@ -93,13 +92,22 @@ nanoKONTROL2_20_0:
         -   name: sBtns0
             type: switch
             value: off
+            map:
+                on: 
+                    - define,TEST
+                off:
+                    - undefine,TEST
 
         -   name: sBtns1
             type: switch
             value: off
             map:
-                on: define,TEST
-                off: undefine,TEST
+                on: 
+                    - on
+                    - define,TEST
+                off: 
+                    - off
+                    - undefine,TEST
 
         -   name: sBtns2
             type: switch

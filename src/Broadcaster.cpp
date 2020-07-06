@@ -385,6 +385,27 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
     return false;
 }
 
+bool parseString(  const YAML::Node& _node, std::string& _propName, std::string& _msg ) {
+    if (_node) {
+
+        std::string value = _node.as<std::string>();
+        stringReplace(value, ',');
+        std::vector<std::string> el = split(value, ',', true);
+
+        if (el.size() == 1) {
+            _msg = value;
+            return true;
+        }
+        else {
+            _propName = el[0];
+            _msg = el[1];
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool Broadcaster::broadcast(size_t _id) {
     std::string name = "unknown" + toString(_id);
     std::string type = "none";
@@ -406,31 +427,62 @@ bool Broadcaster::broadcast(size_t _id) {
         if (data["events"][_id]["map"]) {
 
             if (data["events"][_id]["map"][value_str]) {
-                YAML::Node custom = data["events"][_id]["map"][value_str];
 
-                if (custom) {
-                    std::string msg = custom.as<std::string>();
-                    stringReplace(msg, '_');
-                    std::vector<std::string> el = split(msg, '_', true);
+                // If the end mapped string is a sequence
+                if (data["events"][_id]["map"][value_str].IsSequence()) {
+                    for (size_t i = 0; i < data["events"][_id]["map"][value_str].size(); i++) {
+                        std::string prop = name;
+                        std::string msg = "";
 
-                    if (el.size() == 1) {
+                        if ( parseString(data["events"][_id]["map"][value_str][i], prop, msg) ) {
+                            if (osc)
+                                sendValue(oscAddress, oscPort, oscFolder + prop, msg );
+                            if (csv)
+                                std::cout << prop << "," << msg << std::endl;
+                        }
+
+                    }
+                }
+                else {
+                    std::string prop = name;
+                    std::string msg = "";
+
+                    if ( parseString(data["events"][_id]["map"][value_str], prop, msg) ) {
                         if (osc)
-                            sendValue(oscAddress, oscPort, oscFolder + name, msg );
-
+                            sendValue(oscAddress, oscPort, oscFolder + prop, msg );
                         if (csv)
                             std::cout << oscFolder + name << "," << msg << std::endl;
                     }
-                    else {
-                        if (osc)
-                            sendValue(oscAddress, oscPort, el[0], el[1] );
-
-                        if (csv)
-                            std::cout << el[0] << "," << el[1] << std::endl;
-                    }
-
-                    return true;
                 }
+
             }
+
+            // if (data["events"][_id]["map"][value_str]) {
+            //     YAML::Node custom = data["events"][_id]["map"][value_str];
+
+            //     if (custom) {
+            //         std::string msg = custom.as<std::string>();
+            //         stringReplace(msg, ',');
+            //         std::vector<std::string> el = split(msg, ',', true);
+
+            //         if (el.size() == 1) {
+            //             if (osc)
+            //                 sendValue(oscAddress, oscPort, oscFolder + name, msg );
+
+            //             if (csv)
+            //                 std::cout << name << "," << msg << std::endl;
+            //         }
+            //         else {
+            //             if (osc)
+            //                 sendValue(oscAddress, oscPort, el[0], el[1] );
+
+            //             if (csv)
+            //                 std::cout << el[0] << "," << el[1] << std::endl;
+            //         }
+
+            //         return true;
+            //     }
+            // }
 
         }
         else {

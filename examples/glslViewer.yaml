@@ -1,0 +1,201 @@
+nanoKONTROL2_20_0:
+  out:
+    csv: on
+    osc:
+      address: localhost
+      port: 8000
+  events:
+    - name: u_fader00
+      type: scalar
+      map: [0, 1]
+      value: 0
+    - name: u_fader01
+      type: scalar
+      map: [0, 1]
+      value: 0
+    - name: u_fader02
+      type: scalar
+      map: [0, 1]
+      value: 1
+    - name: u_fader03
+      type: color
+      map: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+      value:
+        - 1
+        - 0
+        - 0
+        - 1
+    - name: u_fader04
+      type: vector
+      map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
+      value:
+        - 0
+        - 0
+        - 0
+    - name: u_fader05
+      type: color
+      map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0]]
+      value:
+        - 1
+        - 1
+        - 0
+        - 1
+    - name: u_fader06
+      type: states
+      map: [low, med, high, ultra_high]
+    - name: u_fader07
+      type: scalar
+      map: [0, 1]
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - name: u_knob00
+      type: scalar
+      map: [-3.1415, 3.1415]
+    - name: u_knob01
+      type: scalar
+      map: [0, 1]
+    - name: u_knob02
+      type: scalar
+      map: [0, 1]
+    - name: u_knob03
+      type: scalar
+      map: [0, 1]
+    - name: u_knob04
+      type: scalar
+      map: [-3.1415, 3.1415]
+    - name: u_knob05
+      type: scalar
+      map: [0, 1]
+    - name: u_knob06
+      type: scalar
+      map: [0, 1]
+    - name: u_knob07
+      type: scalar
+      map: [0, 1]
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - type: none
+    - name: sBtns0
+      type: switch
+      value: true
+      map:
+        on: 
+          - define,DRAW_SHAPE
+          - reload,all
+        off:
+          - undefine,DRAW_SHAPE
+          - reload,all
+    - name: sBtns1
+      type: switch
+      value: off
+    - name: sBtns2
+      type: switch
+      value: off
+    - name: sBtns3
+      type: switch
+      value: off
+    - name: sBtns4
+      type: switch
+      value: true
+      map:
+        on:
+          - define,DRAW_AXIS
+          - reload,all
+        off:
+          - undefine,DRAW_AXIS
+          - reload,all
+    - name: sBtns5
+      type: switch
+      value: off
+    - name: sBtns6
+      type: switch
+      value: off
+    - name: sBtns7
+      type: switch
+      value: off
+    - type: none
+    - name: play
+      type: button
+    - name: stop
+      type: button
+    - name: backward
+      type: button
+    - name: forward
+      type: button
+    - name: rec
+      type: button
+    - name: cycle
+      type: button
+    - type: none
+    - name: mBtns0
+      type: switch
+      value: off
+    - name: mBtns1
+      type: switch
+      value: off
+    - name: mBtns2
+      type: switch
+      value: off
+    - name: mBtns3
+      type: switch
+      value: off
+    - name: mBtns4
+      type: switch
+      value: off
+    - name: mBtns5
+      type: switch
+      value: off
+    - name: mBtns6
+      type: switch
+      value: off
+    - name: mBtns7
+      type: switch
+      value: off
+    - type: none
+    - type: none
+    - name: trackPrev
+      type: button
+    - name: trackNext
+      type: button
+    - name: markerSet
+      type: switch
+    - name: markerPrev
+      type: button
+    - name: markerNext
+      type: button
+    - type: none
+    - name: rBtns0
+      type: switch
+      value: off
+    - name: rBtns1
+      type: switch
+      value: off
+    - name: rBtns2
+      type: switch
+      value: off
+    - name: rBtns3
+      type: switch
+      value: off
+    - name: rBtns4
+      type: switch
+      value: off
+    - name: rBtns5
+      type: switch
+      value: off
+    - name: rBtns6
+      type: switch
+      value: off
+    - name: rBtns7
+      type: switch
+      value: off
