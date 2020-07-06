@@ -32,7 +32,7 @@ In that node you set up the `out` protocols (`osc` and/or 'csv') and the `events
 
 Each event is compose by:
     * `name`: name of the event. This is use to construct the OSC path or the first column on the CSV output
-    * `type`: could be: `button`, `switch`, `scalar`, `states`, `lerp`
+    * `type`: could be: `button`, `switch`, `scalar`, `vector`, `color`, and `states` 
     * `map`: depend on the type of the event
     * `value`: 
 
@@ -52,7 +52,7 @@ nanoKONTROL2_20_0:
             map: [0, 1]
 
         -   name: fader01
-            type: lerp
+            type: scalar
             map: [0, 50, 150, 250, 255, 0]
 
         -   name: fader02

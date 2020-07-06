@@ -13,28 +13,28 @@ nanoKONTROL2_20_0:
             map: [0, 1]
 
         -   name: fader01
-            type: lerp
+            type: scalar
             map: [0, 50, 150, 250, 255, 0]
 
         -   name: fader02
-            type: states
-            map: [low, med, high, ultra_high]
+            type: vector
+            map: [ [-1, 0], [0, 1] ]
 
         -   name: fader03
-            type: scalar
-            map: [0, 1]
+            type: vector
+            map: [ [1, 1, 1], [-1, 1, 0], [-1, -1, 1], [1, -1, 0]  ]
 
         -   name: fader04
-            type: scalar
-            map: [0, 1]
+            type: color
+            map: [ [1,0,0], [0,0,1] ]
 
         -   name: fader05
-            type: scalar
-            map: [0, 1]
+            type: color
+            map: [ [1,0,0], [0,1,0], [0,0,1] ]
 
         -   name: fader06
-            type: scalar
-            map: [0, 1]
+            type: states
+            map: [low, med, high, ultra_high]
 
         -   name: fader07
             type: scalar

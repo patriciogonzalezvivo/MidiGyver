@@ -4,7 +4,8 @@
 #include <map>
 
 #include "RtMidi.h"
-#include "yaml-cpp/yaml.h"
+#include "Vector.h"
+#include "Color.h"
 
 class Broadcaster {
 public:

@@ -58,6 +58,33 @@ void sendValue(const std::string& _address, const std::string& _port, const std:
     lo_message_free(m);
 }
 
+void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, Vector _value) {
+    lo_message m = lo_message_new();
+    lo_message_add_float(m, _value.x);
+    lo_message_add_float(m, _value.y);
+    lo_message_add_float(m, _value.z);
+
+    lo_address t = lo_address_new(_address.c_str(), _port.c_str());
+
+    lo_send_message(t, _path.c_str(), m);
+    lo_address_free(t);
+    lo_message_free(m);
+}
+
+void sendValue(const std::string& _address, const std::string& _port, const std::string& _path, Color _value) {
+    lo_message m = lo_message_new();
+    lo_message_add_float(m, _value.r);
+    lo_message_add_float(m, _value.g);
+    lo_message_add_float(m, _value.b);
+    lo_message_add_float(m, _value.a);
+
+    lo_address t = lo_address_new(_address.c_str(), _port.c_str());
+
+    lo_send_message(t, _path.c_str(), m);
+    lo_address_free(t);
+    lo_message_free(m);
+}
+
 void Broadcaster::setLED(size_t _id, bool _value) {
     if (midiOut) {
         std::vector<unsigned char> msg;
@@ -263,16 +290,6 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
                 }
 
             }
-            else if ( type == "scalar" ) {
-                float value = (float)_message->at(2);
-
-                if ( data["events"][id]["map"] )
-                    value = map(value, 0.0f, 127.0f, data["events"][id]["map"][0].as<float>(), data["events"][id]["map"][1].as<float>());
-
-                data["events"][id]["value"] = value;
-
-                return broadcast(id);
-            }
             else if ( type == "states" ) {
                 int value = (int)_message->at(2);
                 std::string value_str = toString(value);
@@ -294,7 +311,7 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
                 data["events"][id]["value"] = value_str;
                 return broadcast(id);
             }
-            else if ( type == "lerp" ) {
+            else if ( type == "scalar" ) {
                 float value = (float)_message->at(2) / 127.0f;
 
                 if ( data["events"][id]["map"] ) {
@@ -302,17 +319,12 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
                         if (data["events"][id]["map"].size() > 1) {
                             float total = data["events"][id]["map"].size() - 1;
 
-                            if (value == 127.0f) {
-                                value = data["events"][id]["map"][total-1].as<float>();
-                            } 
-                            else {
-                                size_t i_low = value * total;
-                                size_t i_high = std::min(i_low + 1, size_t(total));
-                                float pct = (value * total) - (float)i_low;
-                                value = lerp(   data["events"][id]["map"][i_low].as<float>(),
-                                                data["events"][id]["map"][i_high].as<float>(),
-                                                pct );
-                            }
+                            size_t i_low = value * total;
+                            size_t i_high = std::min(i_low + 1, size_t(total));
+                            float pct = (value * total) - (float)i_low;
+                            value = lerp(   data["events"][id]["map"][i_low].as<float>(),
+                                            data["events"][id]["map"][i_high].as<float>(),
+                                            pct );
                         }
 
                     }
@@ -321,7 +333,52 @@ bool Broadcaster::broadcast(std::vector<unsigned char>* _message) {
                 data["events"][id]["value"] = value;
                 return broadcast(id);
             }
-            
+            else if ( type == "vector" ) {
+                float pct = (float)_message->at(2) / 127.0f;
+                Vector value = Vector(0.0, 0.0, 0.0);
+
+                if ( data["events"][id]["map"] ) {
+                    if ( data["events"][id]["map"].IsSequence() ) {
+                        if (data["events"][id]["map"].size() > 1) {
+                            float total = data["events"][id]["map"].size() - 1;
+
+                            size_t i_low = pct * total;
+                            size_t i_high = std::min(i_low + 1, size_t(total));
+
+                            value = lerp(   data["events"][id]["map"][i_low].as<Vector>(),
+                                            data["events"][id]["map"][i_high].as<Vector>(),
+                                            (pct * total) - (float)i_low );
+                        }
+
+                    }
+                }
+                
+                data["events"][id]["value"] = value;
+                return broadcast(id);
+            }
+            else if ( type == "color" ) {
+                float pct = (float)_message->at(2) / 127.0f;
+                Color value = Color(0.0, 0.0, 0.0);
+
+                if ( data["events"][id]["map"] ) {
+                    if ( data["events"][id]["map"].IsSequence() ) {
+                        if (data["events"][id]["map"].size() > 1) {
+                            float total = data["events"][id]["map"].size() - 1;
+
+                            size_t i_low = pct * total;
+                            size_t i_high = std::min(i_low + 1, size_t(total));
+
+                            value = lerp(   data["events"][id]["map"][i_low].as<Color>(),
+                                            data["events"][id]["map"][i_high].as<Color>(),
+                                            (pct * total) - (float)i_low );
+                        }
+
+                    }
+                }
+                
+                data["events"][id]["value"] = value;
+                return broadcast(id);
+            }
         }
     }
 
@@ -388,7 +445,7 @@ bool Broadcaster::broadcast(size_t _id) {
         }
     }
 
-    else if ( type == "scalar" || type == "lerp" ) {
+    else if ( type == "scalar" ) {
         if (osc)
             sendValue(oscAddress, oscPort, oscFolder + name, value.as<float>());
 
@@ -404,6 +461,26 @@ bool Broadcaster::broadcast(size_t _id) {
 
         if (csv)
             std::cout << name << "," << value.as<std::string>() << std::endl;
+
+        return true;
+    }
+
+    else if ( type == "vector" ) {
+        if (osc)
+            sendValue(oscAddress, oscPort, oscFolder + name, value.as<Vector>());
+
+        if (csv)
+            std::cout << name << "," << value.as<Vector>() << std::endl;
+
+        return true;
+    }
+
+    else if ( type == "color" ) {
+        if (osc)
+            sendValue(oscAddress, oscPort, oscFolder + name, value.as<Color>());
+
+        if (csv)
+            std::cout << name << "," << value.as<Color>() << std::endl;
 
         return true;
     }
