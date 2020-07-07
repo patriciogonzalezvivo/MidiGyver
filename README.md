@@ -1,4 +1,4 @@
-# MidiGlue
+# MidiGyver
 
 Small app to convert Midi inputs into OSC and CSV 
 
@@ -22,7 +22,7 @@ sudo make install
 Devices are program using a YAML file, which is past as the only argument
 
 ```bash
-midiglue config.yaml 
+midigyver config.yaml 
 ```
 
 ### Config
