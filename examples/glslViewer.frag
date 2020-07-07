@@ -77,9 +77,11 @@ void main(void) {
 
 #ifdef DRAW_AXIS
     vec2 st2 = rotate(st, u_knob04);
-    st2 = st2 * 2.0 - 1.0;
-    color.rgb += u_fader05.rgb * (  stroke(st2.x, u_fader04.x, 3.0/u_resolution.x) +
-                                    stroke(st2.y, u_fader04.y, 3.0/u_resolution.y) );
+    st2 = st2 * -2.0 + 1.;
+    float axis = (  stroke(st2.x, u_fader04.x, 3.0/u_resolution.x) +
+                    stroke(st2.y, u_fader04.y, 3.0/u_resolution.y) );
+    color.rgb = mix(color.rgb, u_fader05.rgb, clamp(axis, 0.0, 1.0)); 
+
 #endif
 
     gl_FragColor = color;

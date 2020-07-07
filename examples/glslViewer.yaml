@@ -18,16 +18,16 @@ nanoKONTROL2_20_0:
             value: 1
         -   name: u_fader03
             type: color
-            map: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-            value: [1, 0, 0, 1]
+            map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
+            value: [1, 1, 1, 1]
         -   name: u_fader04
             type: vector
             map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
             value: [0, 0, 0]
         -   name: u_fader05
             type: color
-            map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0]]
-            value: [1, 1, 1, 1]
+            map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 0, 0]]
+            value: [1, 0, 0, 1]
         -   name: u_fader06
             type: states
             map: [low, med, high, ultra_high]
