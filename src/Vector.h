@@ -29,6 +29,12 @@ inline std::ostream& operator<<(std::ostream& strm, const Vector& v) {
     return strm;
 }
 
+inline YAML::Emitter& operator << (YAML::Emitter& out, const Vector& v) {
+	out << YAML::Flow;
+	out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
+	return out;
+}
+
 namespace YAML {
 template<>
 struct convert<Vector> {

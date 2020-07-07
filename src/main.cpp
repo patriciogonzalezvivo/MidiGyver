@@ -8,8 +8,9 @@
 #include <vector>
 
 #include "RtMidi.h"
-#include "MidiDevice.h"
+#include "yaml-cpp/yaml.h"
 
+#include "MidiDevice.h"
 #include "tools.h"
 
 std::vector<std::string> getInputPorts() {
@@ -63,8 +64,13 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < inputs.size(); i++)
         node[ inputs[i]->broadcaster.deviceName ] = inputs[i]->broadcaster.data;
 
+    YAML::Emitter out;
+    out.SetIndent(4);
+    out.SetSeqFormat(YAML::Flow);
+    out << node;
+
     std::ofstream fout(configfile);
-    fout << node;
+    fout << out.c_str();
 
     for (std::vector<MidiDevice*>::iterator inputIterator = inputs.begin(); inputIterator < inputs.end(); inputIterator++)
         delete *inputIterator;

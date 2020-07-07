@@ -30,6 +30,12 @@ inline std::ostream& operator<<(std::ostream& strm, const Color& c) {
     return strm;
 }
 
+inline YAML::Emitter& operator << (YAML::Emitter& out, const Color& c) {
+	out << YAML::Flow;
+	out << YAML::BeginSeq << c.r << c.g << c.b << c.a << YAML::EndSeq;
+	return out;
+}
+
 namespace YAML {
 template<>
 struct convert<Color> {

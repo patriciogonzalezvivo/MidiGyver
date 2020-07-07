@@ -451,38 +451,11 @@ bool Broadcaster::broadcast(size_t _id) {
                         if (osc)
                             sendValue(oscAddress, oscPort, oscFolder + prop, msg );
                         if (csv)
-                            std::cout << oscFolder + name << "," << msg << std::endl;
+                            std::cout << name << "," << msg << std::endl;
                     }
                 }
 
             }
-
-            // if (data["events"][_id]["map"][value_str]) {
-            //     YAML::Node custom = data["events"][_id]["map"][value_str];
-
-            //     if (custom) {
-            //         std::string msg = custom.as<std::string>();
-            //         stringReplace(msg, ',');
-            //         std::vector<std::string> el = split(msg, ',', true);
-
-            //         if (el.size() == 1) {
-            //             if (osc)
-            //                 sendValue(oscAddress, oscPort, oscFolder + name, msg );
-
-            //             if (csv)
-            //                 std::cout << name << "," << msg << std::endl;
-            //         }
-            //         else {
-            //             if (osc)
-            //                 sendValue(oscAddress, oscPort, el[0], el[1] );
-
-            //             if (csv)
-            //                 std::cout << el[0] << "," << el[1] << std::endl;
-            //         }
-
-            //         return true;
-            //     }
-            // }
 
         }
         else {
