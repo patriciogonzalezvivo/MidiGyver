@@ -7,33 +7,41 @@ nanoKONTROL2_20_0:
         -   name: u_fader00
             type: scalar
             map: [0, 1]
-            value: 1
+            value: 0
+
         -   name: u_fader01
             type: scalar
             map: [0, 1]
-            value: 0
+            value: 0.4251969
+
         -   name: u_fader02
             type: scalar
             map: [0, 1]
-            value: 1
+            value: 0.1889764
+
         -   name: u_fader03
             type: color
             map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
             value: [1, 1, 1, 1]
+
         -   name: u_fader04
             type: vector
             map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
             value: [0, 0, 0]
+
         -   name: u_fader05
             type: color
             map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 0, 0]]
             value: [1, 0, 0, 1]
+
         -   name: u_fader06
             type: states
             map: [low, med, high, ultra_high]
+
         -   name: u_fader07
             type: scalar
             map: [0, 1]
+
         -   type: none
         -   type: none
         -   type: none
@@ -42,35 +50,44 @@ nanoKONTROL2_20_0:
         -   type: none
         -   type: none
         -   type: none
+
         -   name: u_knob00
             type: scalar
             map: [-3.1415, 3.1415]
-            value: 3.1415
+            value: -2.349941
+
         -   name: u_knob01
             type: scalar
             map: [0, 1]
             value: 0
+
         -   name: u_knob02
             type: scalar
             map: [0, 1]
             value: 0
+
         -   name: u_knob03
             type: scalar
             map: [0, 1]
             value: 0
+
         -   name: u_knob04
             type: scalar
             map: [-3.1415, 3.1415]
-            value: -3.1415
+            value: 3.1415
+
         -   name: u_knob05
             type: scalar
             map: [0, 1]
+
         -   name: u_knob06
             type: scalar
             map: [0, 1]
+
         -   name: u_knob07
             type: scalar
             map: [0, 1]
+
         -   type: none
         -   type: none
         -   type: none
@@ -79,18 +96,22 @@ nanoKONTROL2_20_0:
         -   type: none
         -   type: none
         -   type: none
+
         -   name: sBtns0
             type: switch
             value: true
             map:
                 on: define,DRAW_SHAPE
                 off: undefine,DRAW_SHAPE
+
         -   name: sBtns1
             type: switch
             value: off
+
         -   name: sBtns2
             type: switch
             value: off
+            
         -   name: sBtns3
             type: switch
             value: off
