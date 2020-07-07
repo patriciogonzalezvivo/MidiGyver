@@ -1,4 +1,4 @@
-# MidiGyver
+![](imgs/header.png)
 
 Small app to convert Midi inputs into OSC and CSV 
 
