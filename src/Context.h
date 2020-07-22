@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "JSContext.h"
+
 #include "ops/strings.h"
 #include "yaml-cpp/yaml.h"
 
@@ -34,7 +36,8 @@ public:
     bool updateKey(const std::string& _device, const std::string& _key);
     bool updateDevice(const std::string& _device);
 
-    YAML::Node config;
-
     std::vector<std::string> devices;
+
+    YAML::Node  config;
+    JSContext   js;
 };

@@ -15,6 +15,10 @@ Context::~Context() {
 
 bool Context::load(const std::string& _filename) {
     config = YAML::LoadFile(_filename);
+
+    auto jsValue = parseSceneGlobals(js, config["global"]);
+    js.setGlobalValue("global", std::move(jsValue));
+
     return true;
 }
 
@@ -42,6 +46,7 @@ bool Context::updateDevice(const std::string& _device) {
 }
 
 bool Context::updateKey(const std::string& _device, const std::string& _key) {
+    
     // CSV
     bool csv = false;
     if (config["out"]["csv"])

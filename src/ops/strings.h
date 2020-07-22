@@ -18,6 +18,20 @@ inline int toInt(const std::string& _string) {
     return x;
 }
 
+inline float toFloat(const std::string& _string) {
+    float x = 0;
+    std::istringstream cur(_string);
+    cur >> x;
+    return x;
+}
+
+inline double toDouble(const std::string& _string) {
+    double x = 0;
+    std::istringstream cur(_string);
+    cur >> x;
+    return x;
+}
+
 inline bool match(const char* _pattern, const char* _target) { 
     // If we reach at the end of both strings, we are done 
     if (*_pattern == '\0' && *_target == '\0') 

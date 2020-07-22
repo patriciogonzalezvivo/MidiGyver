@@ -30,12 +30,39 @@ In that node you set up the `out` protocols (`osc` and/or 'csv') and the `events
 
 Each event is compose by:
     * `name`: name of the event. This is use to construct the OSC path or the first column on the CSV output
-    * `type`: could be: `button`, `toggle`, `states`, `scalar`, `vector`, `color` and `script`
+    * `type`: could be: `button`, `toggle`, `states`, `scalar`, `vector` and `color`.
     * `map`: depend on the type of the event
     * `value`: 
 
 ```yaml
-
+out:
+    csv: on
+    osc:
+        address: localhost
+        port: 8000
+in:
+    nanoKONTROL2*:
+        0:
+            name: fader00
+            type: scalar
+            value: 0
+            map: [0, 1]
+        16:
+            name: knob00
+            type: scalar
+            value: 0
+        32:
+            name: sBtns0
+            type: toggle
+            value: false
+        48:
+            name: mBtns0
+            type: toggle
+            value: false
+        64:
+            name: rBtns0
+            type: toggle
+            value: false
 ```
 
 # Aknowladgements 
