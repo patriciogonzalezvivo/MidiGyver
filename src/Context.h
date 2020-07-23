@@ -8,10 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "JSContext.h"
-
-#include "ops/strings.h"
-#include "yaml-cpp/yaml.h"
+#include "ops/nodes.h"
 
 enum DataType {
     unknown,
@@ -36,8 +33,9 @@ public:
     bool updateKey(const std::string& _device, const std::string& _key);
     bool updateDevice(const std::string& _device);
 
-    std::vector<std::string> devices;
+    std::vector<std::string>            devices;
+    std::map<std::string, OscTarget>    oscTargets;
 
-    YAML::Node  config;
-    JSContext   js;
+    YAML::Node                          config;
+    JSContext                           js;
 };

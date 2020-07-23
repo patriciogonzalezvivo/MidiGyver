@@ -12,8 +12,8 @@ public:
     JSContext();
     ~JSContext();
 
-    void setGlobalValue(const std::string& name, JSValue value);
-    bool setFunction(JSFunctionIndex index, const std::string& source);
+    void    setGlobalValue(const std::string& name, JSValue value);
+    bool    setFunction(JSFunctionIndex index, const std::string& source);
     // bool evaluateBooleanFunction(JSFunctionIndex index);
 
 // protected:

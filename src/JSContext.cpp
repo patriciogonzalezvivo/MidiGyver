@@ -68,11 +68,11 @@ JSContext::JSContext() {
     //     duk_pop(_ctx);
     // }
 
-    // // Set up 'fns' array.
-    // duk_push_array(_ctx);
-    // if (!duk_put_global_string(_ctx, FUNC_ID)) {
-    //     printf("'fns' object not set");
-    // }
+    // Set up 'fns' array.
+    duk_push_array(_ctx);
+    if (!duk_put_global_string(_ctx, FUNC_ID)) {
+        printf("'fns' object not set");
+    }
 }
 
 JSContext::~JSContext() {
@@ -84,32 +84,33 @@ void JSContext::setGlobalValue(const std::string& name, JSValue value) {
     duk_put_global_lstring(_ctx, name.data(), name.length());
 }
 
-// bool JSContext::setFunction(JSFunctionIndex index, const std::string& source) {
-//     // Get all functions (array) in context
-//     if (!duk_get_global_string(_ctx, FUNC_ID)) {
-//         std::cout << "AddFunction - functions array not initialized" << std::endl;
-//         duk_pop(_ctx); // pop [undefined] sitting at stack top
-//         return false;
-//     }
+bool JSContext::setFunction(JSFunctionIndex index, const std::string& source) {
+    // Get all functions (array) in context
+    if (!duk_get_global_string(_ctx, FUNC_ID)) {
+        std::cout << "AddFunction - functions array not initialized" << std::endl;
+        duk_pop(_ctx); // pop [undefined] sitting at stack top
+        return false;
+    }
 
-//     duk_push_string(_ctx, source.c_str());
-//     duk_push_string(_ctx, "");
+    duk_push_string(_ctx, source.c_str());
+    duk_push_string(_ctx, "");
 
-//     if (duk_pcompile(_ctx, DUK_COMPILE_FUNCTION) == 0) {
-//         duk_put_prop_index(_ctx, -2, index);
-//     } else {
-//         printf("Compile failed: %s\n%s\n---",
-//              duk_safe_to_string(_ctx, -1),
-//              source.c_str());
-//         duk_pop(_ctx);
-//         return false;
-//     }
+    if (duk_pcompile(_ctx, DUK_COMPILE_FUNCTION) == 0) {
+        duk_put_prop_index(_ctx, -2, index);
+    } 
+    else {
+        printf("Compile failed: %s\n%s\n---",
+             duk_safe_to_string(_ctx, -1),
+             source.c_str());
+        duk_pop(_ctx);
+        return false;
+    }
 
-//     // Pop the functions array off the stack
-//     duk_pop(_ctx);
+    // Pop the functions array off the stack
+    duk_pop(_ctx);
 
-//     return true;
-// }
+    return true;
+}
 
 // bool JSContext::evaluateBooleanFunction(uint32_t index) {
 //     if (!evaluateFunction(index)) {
