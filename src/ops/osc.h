@@ -12,6 +12,37 @@ struct OscTarget {
     std::string folder  = "/";
 };
 
+inline OscTarget parseOscTarget(const std::string _address) {
+    OscTarget target;
+
+    std::string address = _address.substr(6, _address.size() - 6);
+    std::size_t addressEnd = address.find(":");
+    std::size_t portStart = addressEnd+1;
+    std::size_t portEnd = address.find("/"); 
+    size_t total = address.size();
+
+    if (portEnd == std::string::npos) {
+        portStart = total;
+        portEnd = total;
+    }
+
+    if (addressEnd == std::string::npos)
+        addressEnd = portStart;
+
+    if (addressEnd != 0)
+        target.address = address.substr(0, addressEnd);
+
+    if (portEnd != total)
+        target.port = address.substr(portStart, portEnd - portStart);
+
+    if (portEnd != total)
+        target.folder = address.substr(portEnd, total - portEnd);
+
+    // std::cout << target.address << " " << target.port  << " " << target.folder  << std::endl;
+
+    return target;
+}
+
 inline void sendValue(const OscTarget& _osc, const std::string& _folder, float _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value);

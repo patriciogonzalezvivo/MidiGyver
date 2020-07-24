@@ -3,10 +3,8 @@ global:
     string: test
     question: true
 out:
-    csv: on
-    osc:
-        address: localhost
-        port: 8000
+    -   csv
+    -   osc://localhost:8000
 in:
     nanoKONTROL2*:
         0:
@@ -44,6 +42,7 @@ in:
         16:
             name: knob00
             type: scalar
+            value: 0
         17:
             name: knob01
             type: scalar

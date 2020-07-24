@@ -37,8 +37,8 @@ int main(int argc, char** argv) {
 
             if (deviceKeyName.size() > 0) {
                 ctx.devices.push_back(deviceKeyName);
-                ctx.updateDevice(deviceKeyName);
                 inputs.push_back(new MidiDevice(&ctx, deviceKeyName, i));
+                ctx.updateDevice(deviceKeyName);
             }
         }
 

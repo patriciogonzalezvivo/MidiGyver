@@ -8,17 +8,18 @@
 #include <string>
 #include <vector>
 
+#include "rtmidi/RtMidi.h"
+
 #include "ops/nodes.h"
 
 enum DataType {
-    unknown,
-    button,
-    toggle,
-    states,
-    scalar,
-    vector,
-    color,
-    script
+    unknown_type,
+    button_type,
+    toggle_type,
+    state_type,
+    scalar_type,
+    vector_type,
+    color_type
 };
 
 class Context {
@@ -30,12 +31,23 @@ public:
     bool load(const std::string& _filename);
     bool save(const std::string& _filename);
 
-    bool updateKey(const std::string& _device, const std::string& _key);
     bool updateDevice(const std::string& _device);
 
+    bool        doKeyExist(const std::string& _device, size_t _key);
+    YAML::Node  getKeyNode(const std::string& _device, size_t _key);
+    std::string getKeyName(const std::string& _device, size_t _key);
+    DataType    getKeyDataType(const std::string& _device, size_t _key);
+
+    bool        mapKeyValue(const std::string& _device, size_t _key, size_t _value);
+    bool        updateKey(const std::string& _device, size_t _key);
+    bool        sendKeyValue(const std::string& _device, size_t _key);
+
+    std::vector<std::string>            targets;
     std::vector<std::string>            devices;
-    std::map<std::string, OscTarget>    oscTargets;
+    std::map<std::string, RtMidiOut*>   devicesOut;
 
     YAML::Node                          config;
+
     JSContext                           js;
+    std::map<std::string, u_int32_t>    jsFunctions;
 };

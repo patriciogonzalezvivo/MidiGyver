@@ -14,26 +14,23 @@ JSContext::JSContext() {
 
     //// Create global geometry constants
     // TODO make immutable
-    duk_push_number(_ctx, DataType::button);
+    duk_push_number(_ctx, DataType::button_type);
     duk_put_global_string(_ctx, "button");
 
-    duk_push_number(_ctx, DataType::toggle);
+    duk_push_number(_ctx, DataType::toggle_type);
     duk_put_global_string(_ctx, "toggle");
 
-    duk_push_number(_ctx, DataType::states);
+    duk_push_number(_ctx, DataType::state_type);
     duk_put_global_string(_ctx, "states");
 
-    duk_push_number(_ctx, DataType::scalar);
+    duk_push_number(_ctx, DataType::scalar_type);
     duk_put_global_string(_ctx, "scalar");
 
-    duk_push_number(_ctx, DataType::vector);
+    duk_push_number(_ctx, DataType::vector_type);
     duk_put_global_string(_ctx, "vector");
 
-    duk_push_number(_ctx, DataType::color);
+    duk_push_number(_ctx, DataType::color_type);
     duk_put_global_string(_ctx, "color");
-
-    duk_push_number(_ctx, DataType::script);
-    duk_put_global_string(_ctx, "script");
 
     // // //// Create global 'feature' object
     // // // Get Proxy constructor

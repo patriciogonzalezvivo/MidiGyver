@@ -27,40 +27,41 @@ const unsigned char ACTIVE_SENSING = 0xFE;
 const unsigned char SYSTEM_RESET = 0xFF;
 
 MidiDevice::MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _midiPort) {
+    ctx = _ctx;
+    midiPort = _midiPort;
+    deviceName = _deviceName;
+
     try {
         midiIn = new RtMidiIn();
     } catch(RtMidiError &error) {
         error.printMessage();
     }
+
     midiIn->openPort(_midiPort);
-
-    try {
-        midiOut = new RtMidiOut();
-        midiOut->openPort(_midiPort);
-    } catch(RtMidiError &error) {
-        error.printMessage();
-        midiOut = nullptr;
-    }
-
-    midiPort = _midiPort;
-    midiName = midiIn->getPortName(_midiPort);
-    stringReplace(midiName, '_');
-
-    deviceName = _deviceName;
-    ctx = _ctx;
-
     midiIn->setCallback(onMidi, this);
     midiIn->ignoreTypes(false, false, true);
 
-    // Load default values for toggles
-    if ( ctx->config["in"][deviceName].IsMap() ) {
-        for (YAML::const_iterator it = ctx->config["in"][deviceName].begin(); it != ctx->config["in"][deviceName].end(); ++it) {
-            std::string key = it->first.as<std::string>();       // <- key
-            if (it->second["value"] && it->second["type"])
-                if (it->second["type"].as<std::string>() == "toggle")
-                    setLED(toInt(key), it->second["value"].as<bool>());
-        }
+    // midiName = midiIn->getPortName(_midiPort);
+    // stringReplace(midiName, '_');
+
+    try {
+        RtMidiOut* midiOut = new RtMidiOut();
+        midiOut->openPort(_midiPort);
+        ctx->devicesOut[deviceName] = midiOut;
     }
+    catch(RtMidiError &error) {
+        error.printMessage();
+    }
+
+    // // Load default values for toggles
+    // if ( ctx->config["in"][deviceName].IsMap() ) {
+    //     for (YAML::const_iterator it = ctx->config["in"][deviceName].begin(); it != ctx->config["in"][deviceName].end(); ++it) {
+    //         std::string key = it->first.as<std::string>();       // <- key
+    //         if (it->second["value"] && it->second["type"])
+    //             if (it->second["type"].as<std::string>() == "toggle")
+    //                 setLED(toInt(key), it->second["value"].as<bool>());
+    //     }
+    // }
 }
 
 MidiDevice::~MidiDevice() {
@@ -201,153 +202,7 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     size_t key = _message->at(1);
     size_t value = _message->at(2);
 
-    device->parseMessage( key, value );
-}
-
-void MidiDevice::setLED(size_t _key, bool _value) {
-    if (midiOut) {
-        std::vector<unsigned char> msg;
-        msg.push_back( 0xB0 );
-        msg.push_back( _key );
-        msg.push_back( _value? 127 : 0 );
-        midiOut->sendMessage( &msg );
-    }
-}
-
-bool MidiDevice::parseMessage(size_t _key, size_t _value) {
-    std::string key = toString(_key);
-    std::string name = key;
-
-    // If there is no device associated finish
-    if ( ctx->config["in"][deviceName].IsNull() )
-        return false;
-
-    // 
-    if ( ctx->config["in"][deviceName][key] ) {
-        std::string type = "unknown";
-
-        if ( ctx->config["in"][deviceName][key]["type"] )
-            type =  ctx->config["in"][deviceName][key]["type"].as<std::string>();
-
-        if ( type == "button" ) {
-            bool value = (int)_value == 127;
-            ctx->config["in"][deviceName][key]["value"] = value;
-            setLED(_key, value );
-            return ctx->updateKey(deviceName, key);
-        }
-        else if ( type == "toggle" ) {
-            
-            if ((int)_value == 127) {
-                bool value = false;
-                
-                if (ctx->config["in"][deviceName][key]["value"])
-                    value = ctx->config["in"][deviceName][key]["value"].as<bool>();
-                ctx->config["in"][deviceName][key]["value"] = !value;
-                setLED(_key, !value );
-                return ctx->updateKey(deviceName, key);
-            }
-        }
-        else if ( type == "states" ) {
-            int value = (int)_value;
-            std::string value_str = toString(value);
-
-            if ( ctx->config["in"][deviceName][key]["map"] ) {
-                if ( ctx->config["in"][deviceName][key]["map"].IsSequence() ) {
-                    float total = ctx->config["in"][deviceName][key]["map"].size();
-
-                    if (value == 127.0f) {
-                        value_str = ctx->config["in"][deviceName][key]["map"][total-1].as<std::string>();
-                    } 
-                    else {
-                        size_t index = (value / 127.0f) * (ctx->config["in"][deviceName][key]["map"].size());
-                        value_str = ctx->config["in"][deviceName][key]["map"][index].as<std::string>();
-                    } 
-                }
-            }
-            
-            ctx->config["in"][deviceName][key]["value"] = value_str;
-            return ctx->updateKey(deviceName, key);
-        }
-        else if ( type == "scalar" ) {
-            float value = (float)_value / 127.0f;
-
-            if ( ctx->config["in"][deviceName][key]["map"] ) {
-                if ( ctx->config["in"][deviceName][key]["map"].IsSequence() ) {
-                    if (ctx->config["in"][deviceName][key]["map"].size() > 1) {
-                        float total = ctx->config["in"][deviceName][key]["map"].size() - 1;
-
-                        size_t i_low = value * total;
-                        size_t i_high = std::min(i_low + 1, size_t(total));
-                        float pct = (value * total) - (float)i_low;
-                        value = lerp(   ctx->config["in"][deviceName][key]["map"][i_low].as<float>(),
-                                        ctx->config["in"][deviceName][key]["map"][i_high].as<float>(),
-                                        pct );
-                    }
-
-                }
-            }
-            
-            ctx->config["in"][deviceName][key]["value"] = value;
-            return ctx->updateKey(deviceName, key);
-        }
-        else if ( type == "vector" ) {
-            float pct = (float)_value / 127.0f;
-            Vector value = Vector(0.0, 0.0, 0.0);
-
-            if ( ctx->config["in"][deviceName][key]["map"] ) {
-                if ( ctx->config["in"][deviceName][key]["map"].IsSequence() ) {
-                    if (ctx->config["in"][deviceName][key]["map"].size() > 1) {
-                        float total = ctx->config["in"][deviceName][key]["map"].size() - 1;
-
-                        size_t i_low = pct * total;
-                        size_t i_high = std::min(i_low + 1, size_t(total));
-
-                        value = lerp(   ctx->config["in"][deviceName][key]["map"][i_low].as<Vector>(),
-                                        ctx->config["in"][deviceName][key]["map"][i_high].as<Vector>(),
-                                        (pct * total) - (float)i_low );
-                    }
-
-                }
-            }
-            
-            ctx->config["in"][deviceName][key]["value"] = value;
-            return ctx->updateKey(deviceName, key);
-        }
-        else if ( type == "color" ) {
-            float pct = (float)_value / 127.0f;
-            Color value = Color(0.0, 0.0, 0.0);
-
-            if ( ctx->config["in"][deviceName][key]["map"] ) {
-                if ( ctx->config["in"][deviceName][key]["map"].IsSequence() ) {
-                    if (ctx->config["in"][deviceName][key]["map"].size() > 1) {
-                        float total = ctx->config["in"][deviceName][key]["map"].size() - 1;
-
-                        size_t i_low = pct * total;
-                        size_t i_high = std::min(i_low + 1, size_t(total));
-
-                        value = lerp(   ctx->config["in"][deviceName][key]["map"][i_low].as<Color>(),
-                                        ctx->config["in"][deviceName][key]["map"][i_high].as<Color>(),
-                                        (pct * total) - (float)i_low );
-                    }
-
-                }
-            }
-            
-            ctx->config["in"][deviceName][key]["value"] = value;
-            return ctx->updateKey(deviceName, key);
-        }
-    }
-
-    // else {
-    //     int value = (int)_value;
-    //     if (osc)
-    //         sendValue(oscAddress, oscPort, oscFolder + key, value);
-
-    //     if (csv)
-    //         std::cout << key << "," << value << std::endl;
-    // }
-
-    return false;
+    device->ctx->mapKeyValue(device->deviceName, key, value);
 }
 
 

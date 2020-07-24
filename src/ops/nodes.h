@@ -116,14 +116,3 @@ inline JSValue parseNode(JSContext& _js, const YAML::Node& _node) {
             return _js.newNull();
     }
 }
-
-inline OscTarget parseOscTarget(const YAML::Node& _node) {
-    OscTarget target;
-
-    if (_node["address"])   target.address = _node["address"].as<std::string>();
-    if (_node["port"])      target.port = _node["port"].as<std::string>();
-    if (_node["folder"])    target.folder = _node["folder"].as<std::string>();
-
-    return target;
-}
-
