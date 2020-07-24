@@ -5,10 +5,12 @@ in:
         0:
             name: u_fader00
             type: scalar
+            map: [0, 1]
             value: 0
         1:
             name: u_fader01
             type: scalar
+            map: [0, 1]
             value: 0
         2:
             name: u_fader02

@@ -1,72 +1,85 @@
 global:
-    time: 13.0
-    string: test
-    question: true
-    
+    track: 0
+    marker: 0
+
 out:
-    -   osc://localhost:8000
+    - csv
+    - osc://localhost:8000
 in:
     nanoKONTROL2*:
         0:
             name: fader00
             type: scalar
+            map: [0, 1]
             value: 0
-            out:
-                -   osc://localhost:8000
-                -   csv
         1:
             name: fader01
             type: scalar
+            map: [0, 1]
             value: 0
         2:
             name: fader02
             type: scalar
+            map: [0, 1]
             value: 0
         3:
             name: fader03
             type: scalar
+            map: [0, 1]
             value: 0
         4:
             name: fader04
             type: scalar
+            map: [0, 1]
             value: 0
         5:
             name: fader05
             type: scalar
+            map: [0, 1]
             value: 0
         6:
             name: fader06
-            type: states
+            type: scalar
+            map: [0, 1]
             value: 0
         7:
             name: fader07
             type: scalar
+            map: [0, 1]
             value: 0
         16:
             name: knob00
             type: scalar
+            map: [0, 1]
             value: 0
         17:
             name: knob01
             type: scalar
+            map: [0, 1]
         18:
             name: knob02
             type: scalar
+            map: [0, 1]
         19:
             name: knob03
             type: scalar
+            map: [0, 1]
         20:
             name: knob04
             type: scalar
+            map: [0, 1]
         21:
             name: knob05
             type: scalar
+            map: [0, 1]
         22:
             name: knob06
             type: scalar
+            map: [0, 1]
         23:
             name: knob07
             type: scalar
+            map: [0, 1]
         32:
             name: sBtns0
             type: toggle
@@ -150,6 +163,61 @@ in:
             name: mBtns7
             type: toggle
             value: off
+
+        58:
+            name: track_back
+            type: scalar
+            shape: |
+                function() {
+                    if (global.track == 0)
+                        return false;
+
+                    if (value == 127)
+                        return global.track--;
+                    
+                    return false;
+                }
+
+        59:
+            name: track_fwd
+            type: scalar
+            shape: |
+                function() {
+                    if (value == 127)
+                        return ++global.track;
+                    
+                    return false;
+                }
+
+        60:
+            name: marker_set
+            type: toggle
+
+        61:
+            name: marker_fwd
+            type: scalar
+            shape: |
+                function() {
+                    if (global.marker == 0)
+                        return false;
+
+                    if (value == 127)
+                        return --global.marker;
+                    
+                    return false;
+                }
+
+        62:
+            name: marker_fwd
+            type: scalar
+            shape: |
+                function() {
+                    if (value == 127)
+                        return global.marker++;
+                    
+                    return false;
+                }
+
         64:
             name: rBtns0
             type: toggle

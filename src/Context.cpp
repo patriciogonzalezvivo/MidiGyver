@@ -27,10 +27,10 @@ bool Context::load(const std::string& _filename) {
             std::string dev_key = dev->first.as<std::string>();
             for (YAML::const_iterator it = config["in"][dev_key].begin(); it != config["in"][dev_key].end(); ++it) {
                 std::string key = it->first.as<std::string>();
-                if (config["in"][dev_key][key]["update"].IsDefined()) {
-                    std::string function = config["in"][dev_key][key]["update"].as<std::string>();
+                if (config["in"][dev_key][key]["shape"].IsDefined()) {
+                    std::string function = config["in"][dev_key][key]["shape"].as<std::string>();
                     if ( js.setFunction(id, function) ) {
-                        jsFunctions[dev_key + "_" + key] = id;
+                        shapeFncs[dev_key + "_" + key] = id;
                         id++;
                     }
                 }
@@ -117,7 +117,36 @@ std::string Context::getKeyName(const std::string& _device, size_t _key) {
     return toString(_key);
 }
 
-bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value) {
+bool Context::shapeKeyValue(const std::string& _device, size_t _key, float* _value) {
+    std::string key = toString(_key);
+
+    if ( config["in"][_device][key]["shape"].IsDefined() ) {
+
+        js.setGlobalValue("device", js.newString(_device));
+        js.setGlobalValue("key", js.newNumber(_key));
+        js.setGlobalValue("value", js.newNumber(*_value));
+        // YAML::Node keyNode = getKeyNode(_device, _key);
+        // JSValue keyData = parseNode(js, keyNode);
+        // js.setGlobalValue("data", std::move(keyData));
+        
+        JSValue result = js.getFunctionResult( shapeFncs[_device + "_" + key] );
+
+        if (!result.isNull()) {
+            if (result.isString()) {
+                std::cout << "Update result on string: " << result.toString() << " but don't know what to do with it"<< std::endl;
+                return false;
+            }
+            else if (result.isNumber())
+                *_value = result.toFloat();
+            else if (result.isBoolean())
+                return result.toBool();
+        }
+    }
+
+    return true;
+}
+
+bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value) {
     if (!doKeyExist(_device, _key))
         return false;
 
@@ -127,14 +156,14 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
 
     // BUTTON
     if (type == button_type) {
-        bool value = (int)_value == 127;
+        bool value = _value > 0;
         config["in"][_device][key]["value"] = value;
         return updateKey(_device, _key);
     }
     
     // TOGGLE
     else if ( type == toggle_type ) {
-        if ((int)_value == 127) {
+        if (_value > 0) {
             bool value = false;
                 
             if (config["in"][_device][key]["value"])
@@ -170,9 +199,10 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
     
     // SCALAR
     else if ( type == scalar_type ) {
-        float value = (float)_value / 127.0f;
+        float value = _value;
 
         if ( config["in"][_device][key]["map"] ) {
+            value /= 127.0f;
             if ( config["in"][_device][key]["map"].IsSequence() ) {
                 if ( config["in"][_device][key]["map"].size() > 1 ) {
                     float total = config["in"][_device][key]["map"].size() - 1;
@@ -193,7 +223,7 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
     
     // VECTOR
     else if ( type == vector_type ) {
-        float pct = (float)_value / 127.0f;
+        float pct = _value / 127.0f;
         Vector value = Vector(0.0, 0.0, 0.0);
 
         if ( config["in"][_device][key]["map"] ) {
@@ -217,7 +247,7 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
 
     // COLOR
     else if ( type == color_type ) {
-        float pct = (float)_value / 127.0f;
+        float pct = _value / 127.0f;
         Color value = Color(0.0, 0.0, 0.0);
 
         if ( config["in"][_device][key]["map"] ) {
@@ -243,31 +273,10 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
 }
 
 bool Context::updateKey(const std::string& _device, size_t _key) {
-    DataType type = getKeyDataType(_device, _key);
     std::string key = toString(_key);
 
-    if ( config["in"][_device][key]["update"].IsDefined() ) {
-
-        js.setGlobalValue("device", js.newString(_device));
-        js.setGlobalValue("key", js.newNumber(_key));
-        YAML::Node keyNode = getKeyNode(_device, _key);
-        JSValue keyData = parseNode(js, keyNode);
-        js.setGlobalValue("data", std::move(keyData));
-        
-        JSValue result = js.getFunctionResult( jsFunctions[_device + "_" + key] );
-
-        if (!result.isNull()) {
-            if (result.isString())
-                std::cout << "Update result on string: " << result.toString() << std::endl;
-            else if (result.isNumber())
-                std::cout << "Update result on number: " << result.toFloat() << std::endl;
-            else if (result.isBoolean())
-                std::cout << "Update result on boolean: " << result.toBool() << std::endl;
-        }
-
-    }
-
     if ( config["in"][_device][key]["value"].IsDefined() ) {
+        DataType type = getKeyDataType(_device, _key);
         // BUTTONs and TOGGLEs need to change state on the device
         if (type == button_type || type == toggle_type) {
             bool value = config["in"][_device][key]["value"].as<bool>();

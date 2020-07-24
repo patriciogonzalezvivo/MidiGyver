@@ -38,7 +38,8 @@ public:
     std::string getKeyName(const std::string& _device, size_t _key);
     DataType    getKeyDataType(const std::string& _device, size_t _key);
 
-    bool        mapKeyValue(const std::string& _device, size_t _key, size_t _value);
+    bool        shapeKeyValue(const std::string& _device, size_t _key, float* _value);
+    bool        mapKeyValue(const std::string& _device, size_t _key, float _value);
     bool        updateKey(const std::string& _device, size_t _key);
     bool        sendKeyValue(const std::string& _device, size_t _key);
 
@@ -49,5 +50,5 @@ public:
     YAML::Node                          config;
 
     JSContext                           js;
-    std::map<std::string, u_int32_t>    jsFunctions;
+    std::map<std::string, u_int32_t>    shapeFncs;
 };

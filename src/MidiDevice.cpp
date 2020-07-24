@@ -200,9 +200,11 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     extractHeader(_message, type, bytes, channel);
 
     size_t key = _message->at(1);
-    size_t value = _message->at(2);
+    float value = (float)_message->at(2);
 
-    device->ctx->mapKeyValue(device->deviceName, key, value);
+    if (device->ctx->shapeKeyValue(device->deviceName, key, &value))
+        device->ctx->mapKeyValue(device->deviceName, key, value);
+
 }
 
 
