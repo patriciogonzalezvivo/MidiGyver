@@ -98,7 +98,8 @@ in:
             value: off
         41:
             name: play
-            type: button
+            type: toggle
+            value: false
         42:
             name: stop
             type: button

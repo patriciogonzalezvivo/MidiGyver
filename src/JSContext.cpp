@@ -140,7 +140,7 @@ JSValue JSContext::newBoolean(bool value) {
     return getStackTopValue();
 }
 
-JSValue JSContext::newNumber(double value) {
+JSValue JSContext::newNumber(float value) {
     duk_push_number(_ctx, value);
     return getStackTopValue();
 }

@@ -195,8 +195,8 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     MidiDevice *device = static_cast<MidiDevice*>(_userData);
 
     std::string type;
-    unsigned char channel;
     int bytes;
+    unsigned char channel;
     extractHeader(_message, type, bytes, channel);
 
     size_t key = _message->at(1);

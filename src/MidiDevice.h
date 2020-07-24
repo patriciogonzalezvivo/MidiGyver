@@ -22,9 +22,7 @@ public:
     std::string deviceName;
     size_t      midiPort;
 
-    // std::string midiName;
-
-// private:
+private:
     Context*    ctx;
     RtMidiIn*   midiIn;
 };

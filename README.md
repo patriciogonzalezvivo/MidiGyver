@@ -32,37 +32,71 @@ Each event is compose by:
     * `name`: name of the event. This is use to construct the OSC path or the first column on the CSV output
     * `type`: could be: `button`, `toggle`, `states`, `scalar`, `vector` and `color`.
     * `map`: depend on the type of the event
+    * `update`: update JS function 
     * `value`: 
 
 ```yaml
+global:
+    counter: 0
+
 out:
-    csv: on
-    osc:
-        address: localhost
-        port: 8000
+    -   csv
+    -   osc://localhost:8000
 in:
     nanoKONTROL2*:
         0:
             name: fader00
             type: scalar
-            value: 0
-            map: [0, 1]
+            value: 1
+
         16:
             name: knob00
             type: scalar
-            value: 0
+            map: [-3.1415, 3.1415]
+            value: 3.1415
+
+        17:
+            name: knob01
+            type: color
+            map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
+            value: [1, 1, 1, 1]
+
+        18:
+            name: knob02
+            type: vector
+            map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
+            value: [0, 0, 0]
+
+        19:
+            name: knob03
+            type: states
+            map: [low, med, high, ultra_high]
+            value: ultra_high
+        
         32:
             name: sBtns0
             type: toggle
-            value: false
-        48:
-            name: mBtns0
-            type: toggle
-            value: false
-        64:
-            name: rBtns0
-            type: toggle
-            value: false
+            value: true
+            map:
+                on: define,DRAW_SHAPE
+                off: undefine,DRAW_SHAPE
+
+        43:
+            name: backward
+            type: button
+            update: |
+                function() {
+                    global.counter--;
+                    return global.counter;
+                }
+        44:
+            name: forward
+            type: button
+            update: |
+                function() {
+                    global.counter++;
+                    return global.counter;
+                }
 ```
 
 # Aknowladgements 

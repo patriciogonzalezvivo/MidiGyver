@@ -17,8 +17,8 @@ bool Context::load(const std::string& _filename) {
     config = YAML::LoadFile(_filename);
 
     // JS Globals
-    auto jsValue = parseNode(js, config["global"]);
-    js.setGlobalValue("global", std::move(jsValue));
+    JSValue global = parseNode(js, config["global"]);
+    js.setGlobalValue("global", std::move(global));
 
     // JS Functions
     uint32_t id = 0;
@@ -27,19 +27,16 @@ bool Context::load(const std::string& _filename) {
             std::string dev_key = dev->first.as<std::string>();
             for (YAML::const_iterator it = config["in"][dev_key].begin(); it != config["in"][dev_key].end(); ++it) {
                 std::string key = it->first.as<std::string>();
-                if (config["in"][dev_key][key]["map"].IsDefined()) {
-                    std::string function = config["in"][dev_key][key]["map"].as<std::string>();
-                    if (function.compare(0, 8, "function") == 0) {
-                        if ( js.setFunction(id, function) ) {
-                            jsFunctions[dev_key + "_" + key] = id;
-                            id++;
-                        }
+                if (config["in"][dev_key][key]["update"].IsDefined()) {
+                    std::string function = config["in"][dev_key][key]["update"].as<std::string>();
+                    if ( js.setFunction(id, function) ) {
+                        jsFunctions[dev_key + "_" + key] = id;
+                        id++;
                     }
                 }
             }
         }
     }
-    // auto result = js.getFunctionResult(id);
 
     // Define OSC out targets
     if (config["out"].IsSequence())
@@ -132,7 +129,6 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
     if (type == button_type) {
         bool value = (int)_value == 127;
         config["in"][_device][key]["value"] = value;
-        // setLED(_key, value );
         return updateKey(_device, _key);
     }
     
@@ -145,7 +141,6 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
                 value = config["in"][_device][key]["value"].as<bool>();
 
             config["in"][_device][key]["value"] = !value;
-            // setLED(_key, !value );
             return updateKey(_device, _key);
         }
     }
@@ -250,6 +245,27 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, size_t _value
 bool Context::updateKey(const std::string& _device, size_t _key) {
     DataType type = getKeyDataType(_device, _key);
     std::string key = toString(_key);
+
+    if ( config["in"][_device][key]["update"].IsDefined() ) {
+
+        js.setGlobalValue("device", js.newString(_device));
+        js.setGlobalValue("key", js.newNumber(_key));
+        YAML::Node keyNode = getKeyNode(_device, _key);
+        JSValue keyData = parseNode(js, keyNode);
+        js.setGlobalValue("data", std::move(keyData));
+        
+        JSValue result = js.getFunctionResult( jsFunctions[_device + "_" + key] );
+
+        if (!result.isNull()) {
+            if (result.isString())
+                std::cout << "Update result on string: " << result.toString() << std::endl;
+            else if (result.isNumber())
+                std::cout << "Update result on number: " << result.toFloat() << std::endl;
+            else if (result.isBoolean())
+                std::cout << "Update result on boolean: " << result.toBool() << std::endl;
+        }
+
+    }
 
     if ( config["in"][_device][key]["value"].IsDefined() ) {
         // BUTTONs and TOGGLEs need to change state on the device

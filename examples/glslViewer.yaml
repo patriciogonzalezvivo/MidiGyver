@@ -1,207 +1,188 @@
-nanoKONTROL2_20_0:
-    out:
-        osc:
-            address: localhost
-            port: 8000
-    events:
-        -   name: u_fader00
+out:
+    -   osc://localhost:8000
+in:
+    nanoKONTROL2*:
+        0:
+            name: u_fader00
             type: scalar
-            map: [0, 1]
             value: 0
-
-        -   name: u_fader01
+        1:
+            name: u_fader01
+            type: scalar
+            value: 0
+        2:
+            name: u_fader02
             type: scalar
             map: [0, 1]
-            value: 0.4251969
-
-        -   name: u_fader02
-            type: scalar
-            map: [0, 1]
-            value: 0.1889764
-
-        -   name: u_fader03
+            value: 1
+        3:
+            name: u_fader03
             type: color
             map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
             value: [1, 1, 1, 1]
-
-        -   name: u_fader04
+        4:
+            name: u_fader04
             type: vector
             map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
             value: [0, 0, 0]
-
-        -   name: u_fader05
+        5:
+            name: u_fader05
             type: color
             map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 0, 0]]
             value: [1, 0, 0, 1]
-
-        -   name: u_fader06
+        6:
+            name: u_fader06
             type: states
             map: [low, med, high, ultra_high]
-
-        -   name: u_fader07
+        7:
+            name: u_fader07
             type: scalar
-            map: [0, 1]
-
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-
-        -   name: u_knob00
+        16:
+            name: u_knob00
             type: scalar
             map: [-3.1415, 3.1415]
-            value: -2.349941
-
-        -   name: u_knob01
+            value: -3.1415
+        17:
+            name: u_knob01
             type: scalar
-            map: [0, 1]
-            value: 0
-
-        -   name: u_knob02
+        18:
+            name: u_knob02
             type: scalar
-            map: [0, 1]
-            value: 0
-
-        -   name: u_knob03
+        19:
+            name: u_knob03
             type: scalar
-            map: [0, 1]
-            value: 0
-
-        -   name: u_knob04
+        20:
+            name: u_knob04
             type: scalar
             map: [-3.1415, 3.1415]
             value: 3.1415
-
-        -   name: u_knob05
+        21:
+            name: u_knob05
             type: scalar
-            map: [0, 1]
-
-        -   name: u_knob06
+        22:
+            name: u_knob06
             type: scalar
-            map: [0, 1]
-
-        -   name: u_knob07
+        23:
+            name: u_knob07
             type: scalar
-            map: [0, 1]
-
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-        -   type: none
-
-        -   name: sBtns0
-            type: switch
+        32:
+            name: sBtns0
+            type: toggle
             value: true
             map:
                 on: define,DRAW_SHAPE
                 off: undefine,DRAW_SHAPE
-
-        -   name: sBtns1
-            type: switch
+        33:
+            name: sBtns1
+            type: toggle
             value: off
-
-        -   name: sBtns2
-            type: switch
+        34:
+            name: sBtns2
+            type: toggle
             value: off
-            
-        -   name: sBtns3
-            type: switch
+        35:
+            name: sBtns3
+            type: toggle
             value: off
-        -   name: sBtns4
-            type: switch
+        36:
+            name: sBtns4
+            type: toggle
             value: true
             map:
                 on: define,DRAW_AXIS
                 off: undefine,DRAW_AXIS
-        -   name: sBtns5
-            type: switch
+        37:
+            name: sBtns5
+            type: toggle
             value: off
-        -   name: sBtns6
-            type: switch
+        38:
+            name: sBtns6
+            type: toggle
             value: off
-        -   name: sBtns7
-            type: switch
+        39:
+            name: sBtns7
+            type: toggle
             value: off
-        -   type: none
-        -   name: play
-            type: button
-        -   name: stop
-            type: button
-        -   name: backward
-            type: button
-        -   name: forward
-            type: button
-        -   name: rec
-            type: button
-        -   name: cycle
-            type: button
-        -   type: none
-        -   name: mBtns0
-            type: switch
+        41:
+            name: play
+            type: toggle
             value: false
-        -   name: mBtns1
-            type: switch
-            value: off
-        -   name: mBtns2
-            type: switch
-            value: off
-        -   name: mBtns3
-            type: switch
-            value: off
-        -   name: mBtns4
-            type: switch
-            value: off
-        -   name: mBtns5
-            type: switch
-            value: off
-        -   name: mBtns6
-            type: switch
-            value: off
-        -   name: mBtns7
-            type: switch
-            value: off
-        -   type: none
-        -   type: none
-        -   name: trackPrev
+        42:
+            name: stop
             type: button
-        -   name: trackNext
+        43:
+            name: backward
             type: button
-        -   name: markerSet
-            type: switch
-        -   name: markerPrev
+        44:
+            name: forward
             type: button
-        -   name: markerNext
+        45:
+            name: rec
             type: button
-        -   type: none
-        -   name: rBtns0
-            type: switch
+        46:
+            name: cycle
+            type: button
+        48:
+            name: mBtns0
+            type: toggle
             value: false
-        -   name: rBtns1
-            type: switch
+        49:
+            name: mBtns1
+            type: toggle
             value: off
-        -   name: rBtns2
-            type: switch
+        50:
+            name: mBtns2
+            type: toggle
             value: off
-        -   name: rBtns3
-            type: switch
+        51:
+            name: mBtns3
+            type: toggle
             value: off
-        -   name: rBtns4
-            type: switch
+        52:
+            name: mBtns4
+            type: toggle
             value: off
-        -   name: rBtns5
-            type: switch
+        53:
+            name: mBtns5
+            type: toggle
             value: off
-        -   name: rBtns6
-            type: switch
+        54:
+            name: mBtns6
+            type: toggle
             value: off
-        -   name: rBtns7
-            type: switch
+        55:
+            name: mBtns7
+            type: toggle
+            value: off
+        64:
+            name: rBtns0
+            type: toggle
+            value: false
+        65:
+            name: rBtns1
+            type: toggle
+            value: off
+        66:
+            name: rBtns2
+            type: toggle
+            value: off
+        67:
+            name: rBtns3
+            type: toggle
+            value: off
+        68:
+            name: rBtns4
+            type: toggle
+            value: off
+        69:
+            name: rBtns5
+            type: toggle
+            value: off
+        70:
+            name: rBtns6
+            type: toggle
+            value: off
+        71:
+            name: rBtns7
+            type: toggle
             value: off

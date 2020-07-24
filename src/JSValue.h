@@ -32,7 +32,7 @@ public:
 
     bool    toBool() { return duk_to_boolean(_ctx, _index) != 0; }
     int     toInt() { return duk_to_int(_ctx, _index); }
-    double  toDouble() { return duk_to_number(_ctx, _index); }
+    float   toFloat() { return duk_to_number(_ctx, _index); }
     std::string toString() { return std::string(duk_to_string(_ctx, _index)); }
 
     size_t  getLength() { return duk_get_length(_ctx, _index); }

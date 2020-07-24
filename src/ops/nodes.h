@@ -42,21 +42,13 @@ inline bool getFloat(const YAML::Node& node, float& result, bool allowTrailingJu
         float value = toFloat(scalar);
 
         try {
-            if (value == node.as<float>()) {
+            if (value = node.as<float>()) {
+                result = value;
                 return true;
             }
         }
         catch (YAML::BadConversion& e) {
         }
-
-        // int size = static_cast<int>(scalar.size());
-        // int count = 0;
-        // float value = ff::stof(scalar.data(), size, &count);
-
-        // if (count > 0 && (count == size || allowTrailingJunk)) {
-        //     result = value;
-        //     return true;
-        // }
     }
     return false;
 }
