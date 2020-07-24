@@ -2,8 +2,8 @@ global:
     time: 13.0
     string: test
     question: true
+    
 out:
-    -   csv
     -   osc://localhost:8000
 in:
     nanoKONTROL2*:
@@ -11,6 +11,9 @@ in:
             name: fader00
             type: scalar
             value: 0
+            out:
+                -   osc://localhost:8000
+                -   csv
         1:
             name: fader01
             type: scalar
@@ -111,7 +114,7 @@ in:
             type: button
         45:
             name: rec
-            type: button
+            type: toggle
         46:
             name: cycle
             type: button

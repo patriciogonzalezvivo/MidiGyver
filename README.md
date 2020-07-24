@@ -48,6 +48,8 @@ in:
             name: fader00
             type: scalar
             value: 1
+            out:
+                -   osc://localhost:8001
 
         16:
             name: knob00
