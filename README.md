@@ -124,3 +124,4 @@ in:
 - Based on [MidiOSC](https://github.com/jstutters/MidiOSC/) by [Jon Stutters](https://github.com/jstutters) and [Christian Ashby](https://github.com/cscashby)
 - Using [liblo]((http://liblo.sourceforge.net)) library from Steve Harris and Stephen Sinclair 
 - Using [RtMidi](http://www.music.mcgill.ca/~gary/rtmidi) classes from Gary P. Scavone 
+- The JS scripts (using [Duktape](https://duktape.org/)) inside YAML file was mostly inspired by [tangram-es](https://github.com/tangrams/tangram-es) implemented by [Matt Blair](https://github.com/matteblair)
