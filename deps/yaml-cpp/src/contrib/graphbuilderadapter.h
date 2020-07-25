@@ -1,4 +1,11 @@
+#ifndef GRAPHBUILDERADAPTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define GRAPHBUILDERADAPTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include <cstdlib>
 #include <map>
@@ -19,23 +26,31 @@ namespace YAML {
 class GraphBuilderAdapter : public EventHandler {
  public:
   GraphBuilderAdapter(GraphBuilderInterface& builder)
-      : m_builder(builder), m_pRootNode(nullptr), m_pKeyNode(nullptr) {}
+      : m_builder(builder),
+        m_containers{},
+        m_anchors{},
+        m_pRootNode(nullptr),
+        m_pKeyNode(nullptr) {}
+  GraphBuilderAdapter(const GraphBuilderAdapter&) = delete;
+  GraphBuilderAdapter(GraphBuilderAdapter&&) = delete;
+  GraphBuilderAdapter& operator=(const GraphBuilderAdapter&) = delete;
+  GraphBuilderAdapter& operator=(GraphBuilderAdapter&&) = delete;
 
-  void OnDocumentStart(const Mark& mark) override { (void)mark; }
-  void OnDocumentEnd() override {}
+  virtual void OnDocumentStart(const Mark& mark) { (void)mark; }
+  virtual void OnDocumentEnd() {}
 
-  void OnNull(const Mark& mark, anchor_t anchor) override;
-  void OnAlias(const Mark& mark, anchor_t anchor) override;
-  void OnScalar(const Mark& mark, const std::string& tag,
-                anchor_t anchor, std::string value) override;
+  virtual void OnNull(const Mark& mark, anchor_t anchor);
+  virtual void OnAlias(const Mark& mark, anchor_t anchor);
+  virtual void OnScalar(const Mark& mark, const std::string& tag,
+                        anchor_t anchor, const std::string& value);
 
-  void OnSequenceStart(const Mark& mark, const std::string& tag,
-                       anchor_t anchor, EmitterStyle style) override;
-  void OnSequenceEnd() override;
+  virtual void OnSequenceStart(const Mark& mark, const std::string& tag,
+                               anchor_t anchor, EmitterStyle::value style);
+  virtual void OnSequenceEnd();
 
-  void OnMapStart(const Mark& mark, const std::string& tag,
-                  anchor_t anchor, EmitterStyle style) override;
-  void OnMapEnd() override;
+  virtual void OnMapStart(const Mark& mark, const std::string& tag,
+                          anchor_t anchor, EmitterStyle::value style);
+  virtual void OnMapEnd();
 
   void* RootNode() const { return m_pRootNode; }
 
@@ -43,8 +58,8 @@ class GraphBuilderAdapter : public EventHandler {
   struct ContainerFrame {
     ContainerFrame(void* pSequence)
         : pContainer(pSequence), pPrevKeyNode(&sequenceMarker) {}
-    ContainerFrame(void* pMap, void* pPrevKeyNode)
-        : pContainer(pMap), pPrevKeyNode(pPrevKeyNode) {}
+    ContainerFrame(void* pMap, void* pPreviousKeyNode)
+        : pContainer(pMap), pPrevKeyNode(pPreviousKeyNode) {}
 
     void* pContainer;
     void* pPrevKeyNode;
@@ -67,4 +82,6 @@ class GraphBuilderAdapter : public EventHandler {
   void RegisterAnchor(anchor_t anchor, void* pNode);
   void DispositionNode(void* pNode);
 };
-}
+}  // namespace YAML
+
+#endif  // GRAPHBUILDERADAPTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66

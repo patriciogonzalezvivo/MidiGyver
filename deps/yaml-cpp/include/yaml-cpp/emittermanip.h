@@ -1,4 +1,11 @@
+#ifndef EMITTERMANIP_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define EMITTERMANIP_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include <string>
 
@@ -77,14 +84,16 @@ struct _Anchor {
 inline _Anchor Anchor(const std::string content) { return _Anchor(content); }
 
 struct _Tag {
-  enum class Type : char { Verbatim, PrimaryHandle, NamedHandle };
+  struct Type {
+    enum value { Verbatim, PrimaryHandle, NamedHandle };
+  };
 
   explicit _Tag(const std::string& prefix_, const std::string& content_,
-                Type type_)
+                Type::value type_)
       : prefix(prefix_), content(content_), type(type_) {}
   std::string prefix;
   std::string content;
-  Type type;
+  Type::value type;
 };
 
 inline _Tag VerbatimTag(const std::string content) {
@@ -124,3 +133,5 @@ inline _Precision DoublePrecision(int n) { return _Precision(-1, n); }
 
 inline _Precision Precision(int n) { return _Precision(n, n); }
 }
+
+#endif  // EMITTERMANIP_H_62B23520_7C8E_11DE_8A39_0800200C9A66

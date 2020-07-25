@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <cassert>
 
-#include "yaml-cpp/nodebuilder.h"
+#include "nodebuilder.h"
 #include "yaml-cpp/node/detail/node.h"
 #include "yaml-cpp/node/impl.h"
 #include "yaml-cpp/node/node.h"
@@ -11,7 +11,12 @@ namespace YAML {
 struct Mark;
 
 NodeBuilder::NodeBuilder()
-    : m_pMemory(new detail::memory_ref), m_pRoot(nullptr), m_mapDepth(0) {
+    : m_pMemory(new detail::memory_holder),
+      m_pRoot(nullptr),
+      m_stack{},
+      m_anchors{},
+      m_keys{},
+      m_mapDepth(0) {
   m_anchors.push_back(nullptr);  // since the anchors start at 1
 }
 
@@ -41,15 +46,15 @@ void NodeBuilder::OnAlias(const Mark& /* mark */, anchor_t anchor) {
 }
 
 void NodeBuilder::OnScalar(const Mark& mark, const std::string& tag,
-                           anchor_t anchor, std::string value) {
+                           anchor_t anchor, const std::string& value) {
   detail::node& node = Push(mark, anchor);
-  node.set_scalar(std::move(value));
+  node.set_scalar(value);
   node.set_tag(tag);
   Pop();
 }
 
 void NodeBuilder::OnSequenceStart(const Mark& mark, const std::string& tag,
-                                  anchor_t anchor, EmitterStyle style) {
+                                  anchor_t anchor, EmitterStyle::value style) {
   detail::node& node = Push(mark, anchor);
   node.set_tag(tag);
   node.set_type(NodeType::Sequence);
@@ -59,7 +64,7 @@ void NodeBuilder::OnSequenceStart(const Mark& mark, const std::string& tag,
 void NodeBuilder::OnSequenceEnd() { Pop(); }
 
 void NodeBuilder::OnMapStart(const Mark& mark, const std::string& tag,
-                             anchor_t anchor, EmitterStyle style) {
+                             anchor_t anchor, EmitterStyle::value style) {
   detail::node& node = Push(mark, anchor);
   node.set_type(NodeType::Map);
   node.set_tag(tag);
@@ -127,4 +132,4 @@ void NodeBuilder::RegisterAnchor(anchor_t anchor, detail::node& node) {
     m_anchors.push_back(&node);
   }
 }
-}
+}  // namespace YAML

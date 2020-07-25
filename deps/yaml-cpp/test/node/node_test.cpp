@@ -22,16 +22,6 @@ using ::testing::Eq;
 
 namespace YAML {
 namespace {
-
-TEST(NodeTest, EmptyNode) {
-  Node node;
-  EXPECT_TRUE(node.IsDefined());
-  EXPECT_TRUE(node.IsNull());
-  node = "Hello, World!";
-  EXPECT_TRUE(node.IsDefined());
-  EXPECT_TRUE(node.Type() == NodeType::Scalar);
-}
-
 TEST(NodeTest, SimpleScalar) {
   Node node = Node("Hello, World!");
   EXPECT_TRUE(node.IsScalar());
@@ -401,7 +391,13 @@ TEST(NodeTest, AutoBoolConversion) {
   EXPECT_TRUE(!!node["foo"]);
 }
 
-TEST(NodeTest, FloatingPrecision) {
+TEST(NodeTest, FloatingPrecisionFloat) {
+  const float x = 0.123456789;
+  Node node = Node(x);
+  EXPECT_EQ(x, node.as<float>());
+}
+
+TEST(NodeTest, FloatingPrecisionDouble) {
   const double x = 0.123456789;
   Node node = Node(x);
   EXPECT_EQ(x, node.as<double>());
@@ -424,13 +420,8 @@ TEST(NodeTest, KeyNodeExitsScope) {
     Node temp("Hello, world");
     node[temp] = 0;
   }
-
-  EXPECT_TRUE(node.IsMap());
-  EXPECT_EQ(node.size(), 1);
-
   for (Node::const_iterator it = node.begin(); it != node.end(); ++it) {
-    EXPECT_EQ(it->first.Scalar(), "Hello, world");
-    EXPECT_EQ(it->second.Scalar(), "0");
+    (void)it;
   }
 }
 
@@ -467,184 +458,108 @@ class NodeEmitterTest : public ::testing::Test {
 TEST_F(NodeEmitterTest, SimpleFlowSeqNode) {
   Node node;
   node.SetStyle(EmitterStyle::Flow);
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
-  ExpectOutput("[1.01, 2.01, 3.01]", node);
+  ExpectOutput("[1.5, 2.25, 3.125]", node);
 }
 
 TEST_F(NodeEmitterTest, NestFlowSeqNode) {
   Node node, cell0, cell1;
 
-  cell0.push_back(1.01);
-  cell0.push_back(2.01);
-  cell0.push_back(3.01);
+  cell0.push_back(1.5);
+  cell0.push_back(2.25);
+  cell0.push_back(3.125);
 
-  cell1.push_back(4.01);
-  cell1.push_back(5.01);
-  cell1.push_back(6.01);
+  cell1.push_back(4.5);
+  cell1.push_back(5.25);
+  cell1.push_back(6.125);
 
   node.SetStyle(EmitterStyle::Flow);
   node.push_back(cell0);
   node.push_back(cell1);
 
-  ExpectOutput("[[1.01, 2.01, 3.01], [4.01, 5.01, 6.01]]", node);
+  ExpectOutput("[[1.5, 2.25, 3.125], [4.5, 5.25, 6.125]]", node);
 }
 
 TEST_F(NodeEmitterTest, MixBlockFlowSeqNode) {
   Node node, cell0, cell1;
 
   cell0.SetStyle(EmitterStyle::Flow);
-  cell0.push_back(1.01);
-  cell0.push_back(2.01);
-  cell0.push_back(3.01);
+  cell0.push_back(1.5);
+  cell0.push_back(2.25);
+  cell0.push_back(3.125);
 
-  cell1.push_back(4.01);
-  cell1.push_back(5.01);
-  cell1.push_back(6.01);
+  cell1.push_back(4.5);
+  cell1.push_back(5.25);
+  cell1.push_back(6.125);
 
   node.SetStyle(EmitterStyle::Block);
   node.push_back(cell0);
   node.push_back(cell1);
 
-  ExpectOutput("- [1.01, 2.01, 3.01]\n-\n  - 4.01\n  - 5.01\n  - 6.01", node);
+  ExpectOutput("- [1.5, 2.25, 3.125]\n-\n  - 4.5\n  - 5.25\n  - 6.125", node);
 }
 
 TEST_F(NodeEmitterTest, NestBlockFlowMapListNode) {
   Node node, mapNode, blockNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Flow);
   mapNode["position"] = node;
 
-  blockNode.push_back(1.01);
+  blockNode.push_back(1.0625);
   blockNode.push_back(mapNode);
 
-  ExpectOutput("- 1.01\n- {position: [1.01, 2.01, 3.01]}", blockNode);
+  ExpectOutput("- 1.0625\n- {position: [1.5, 2.25, 3.125]}", blockNode);
 }
 
 TEST_F(NodeEmitterTest, NestBlockMixMapListNode) {
   Node node, mapNode, blockNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Flow);
   mapNode["position"] = node;
 
-  blockNode["scalar"] = 1.01;
+  blockNode["scalar"] = 1.0625;
   blockNode["object"] = mapNode;
 
   ExpectAnyOutput(blockNode,
-                  "scalar: 1.01\nobject: {position: [1.01, 2.01, 3.01]}",
-                  "object: {position: [1.01, 2.01, 3.01]}\nscalar: 1.01");
+                  "scalar: 1.0625\nobject: {position: [1.5, 2.25, 3.125]}",
+                  "object: {position: [1.5, 2.25, 3.125]}\nscalar: 1.5");
 }
 
 TEST_F(NodeEmitterTest, NestBlockMapListNode) {
   Node node, mapNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Block);
   mapNode["position"] = node;
 
-  ExpectOutput("position:\n  - 1.01\n  - 2.01\n  - 3.01", mapNode);
+  ExpectOutput("position:\n  - 1.5\n  - 2.25\n  - 3.125", mapNode);
 }
 
 TEST_F(NodeEmitterTest, NestFlowMapListNode) {
   Node node, mapNode;
 
-  node.push_back(1.01);
-  node.push_back(2.01);
-  node.push_back(3.01);
+  node.push_back(1.5);
+  node.push_back(2.25);
+  node.push_back(3.125);
 
   mapNode.SetStyle(EmitterStyle::Flow);
   mapNode["position"] = node;
 
-  ExpectOutput("{position: [1.01, 2.01, 3.01]}", mapNode);
-}
-
-TEST(NodeTest, ChildNodesAliveAfterOwnerNodeExitsScope) {
-
-  Node node;
-  {
-    Node tmp;
-    Node n = tmp["Message"];
-    n["Hello"] = "World";
-    node = tmp;
-  }
-
-  EXPECT_TRUE(node.IsMap());
-  EXPECT_TRUE(node["Message"].IsMap());
-  EXPECT_TRUE(node["Message"]["Hello"].IsScalar());
-  EXPECT_EQ(node["Message"]["Hello"].Scalar(), "World");
-}
-
-TEST(NodeTest, AdvancedMemoryMerging) {
-
-  {
-    Node src;
-    src["A"] = "a";
-    {
-      Node dst;
-      dst["B"] = "b";
-      dst = src["A"];
-    }
-    printf("dropped dst\n");
-    EXPECT_TRUE(src.IsMap());
-    EXPECT_EQ(src["A"].Scalar(), "a");
-  }
-  {
-    Node src;
-    src["A"] = "a";
-    {
-      Node dst;
-      dst["A"] = src["A"];
-    }
-    printf("dropped dst\n");
-    EXPECT_TRUE(src.IsMap());
-    EXPECT_EQ(src["A"].Scalar(), "a");
-  }
-  {
-    Node src;
-    src["A"] = "a";
-    {
-      Node dst;
-      for (const auto& entry : src) {
-        dst[entry.first] = entry.second;
-      }
-    }
-    printf("dropped dst\n");
-    EXPECT_TRUE(src.IsMap());
-    EXPECT_EQ(src["A"].Scalar(), "a");
-  }
-}
-
-std::unique_ptr<Node> s_node;
-
-TEST(NodeTest, StaticNodeTest) {
-
-  Node node;
-  {
-    Node tmp;
-    Node n = tmp["Message"];
-    n["Hello"] = "World";
-    node = tmp;
-  }
-
-  EXPECT_TRUE(node.IsMap());
-  EXPECT_TRUE(node["Message"].IsMap());
-  EXPECT_TRUE(node["Message"]["Hello"].IsScalar());
-  EXPECT_EQ(node["Message"]["Hello"].Scalar(), "World");
-
-  s_node = std::unique_ptr<Node>(new Node(node));
+  ExpectOutput("{position: [1.5, 2.25, 3.125]}", mapNode);
 }
 }
 }

@@ -11,7 +11,7 @@ namespace YAML {
 class Binary;
 struct _Null;
 
-Emitter::Emitter() : m_pState(new EmitterState) {}
+Emitter::Emitter() : m_pState(new EmitterState), m_stream{} {}
 
 Emitter::Emitter(std::ostream& stream)
     : m_pState(new EmitterState), m_stream(stream) {}
@@ -257,7 +257,7 @@ bool Emitter::CanEmitNewline() const { return true; }
 
 // Put the stream in a state so we can simply write the next node
 // E.g., if we're in a sequence, write the "- "
-void Emitter::PrepareNode(EmitterNodeType child) {
+void Emitter::PrepareNode(EmitterNodeType::value child) {
   switch (m_pState->CurGroupNodeType()) {
     case EmitterNodeType::NoType:
       PrepareTopNode(child);
@@ -281,7 +281,7 @@ void Emitter::PrepareNode(EmitterNodeType child) {
   }
 }
 
-void Emitter::PrepareTopNode(EmitterNodeType child) {
+void Emitter::PrepareTopNode(EmitterNodeType::value child) {
   if (child == EmitterNodeType::NoType)
     return;
 
@@ -307,7 +307,7 @@ void Emitter::PrepareTopNode(EmitterNodeType child) {
   }
 }
 
-void Emitter::FlowSeqPrepareNode(EmitterNodeType child) {
+void Emitter::FlowSeqPrepareNode(EmitterNodeType::value child) {
   const std::size_t lastIndent = m_pState->LastIndent();
 
   if (!m_pState->HasBegunNode()) {
@@ -338,7 +338,7 @@ void Emitter::FlowSeqPrepareNode(EmitterNodeType child) {
   }
 }
 
-void Emitter::BlockSeqPrepareNode(EmitterNodeType child) {
+void Emitter::BlockSeqPrepareNode(EmitterNodeType::value child) {
   const std::size_t curIndent = m_pState->CurIndent();
   const std::size_t nextIndent = curIndent + m_pState->CurGroupIndent();
 
@@ -372,7 +372,7 @@ void Emitter::BlockSeqPrepareNode(EmitterNodeType child) {
   }
 }
 
-void Emitter::FlowMapPrepareNode(EmitterNodeType child) {
+void Emitter::FlowMapPrepareNode(EmitterNodeType::value child) {
   if (m_pState->CurGroupChildCount() % 2 == 0) {
     if (m_pState->GetMapKeyFormat() == LongKey)
       m_pState->SetLongKey();
@@ -389,7 +389,7 @@ void Emitter::FlowMapPrepareNode(EmitterNodeType child) {
   }
 }
 
-void Emitter::FlowMapPrepareLongKey(EmitterNodeType child) {
+void Emitter::FlowMapPrepareLongKey(EmitterNodeType::value child) {
   const std::size_t lastIndent = m_pState->LastIndent();
 
   if (!m_pState->HasBegunNode()) {
@@ -420,7 +420,7 @@ void Emitter::FlowMapPrepareLongKey(EmitterNodeType child) {
   }
 }
 
-void Emitter::FlowMapPrepareLongKeyValue(EmitterNodeType child) {
+void Emitter::FlowMapPrepareLongKeyValue(EmitterNodeType::value child) {
   const std::size_t lastIndent = m_pState->LastIndent();
 
   if (!m_pState->HasBegunNode()) {
@@ -448,7 +448,7 @@ void Emitter::FlowMapPrepareLongKeyValue(EmitterNodeType child) {
   }
 }
 
-void Emitter::FlowMapPrepareSimpleKey(EmitterNodeType child) {
+void Emitter::FlowMapPrepareSimpleKey(EmitterNodeType::value child) {
   const std::size_t lastIndent = m_pState->LastIndent();
 
   if (!m_pState->HasBegunNode()) {
@@ -479,7 +479,7 @@ void Emitter::FlowMapPrepareSimpleKey(EmitterNodeType child) {
   }
 }
 
-void Emitter::FlowMapPrepareSimpleKeyValue(EmitterNodeType child) {
+void Emitter::FlowMapPrepareSimpleKeyValue(EmitterNodeType::value child) {
   const std::size_t lastIndent = m_pState->LastIndent();
 
   if (!m_pState->HasBegunNode()) {
@@ -507,7 +507,7 @@ void Emitter::FlowMapPrepareSimpleKeyValue(EmitterNodeType child) {
   }
 }
 
-void Emitter::BlockMapPrepareNode(EmitterNodeType child) {
+void Emitter::BlockMapPrepareNode(EmitterNodeType::value child) {
   if (m_pState->CurGroupChildCount() % 2 == 0) {
     if (m_pState->GetMapKeyFormat() == LongKey)
       m_pState->SetLongKey();
@@ -527,7 +527,7 @@ void Emitter::BlockMapPrepareNode(EmitterNodeType child) {
   }
 }
 
-void Emitter::BlockMapPrepareLongKey(EmitterNodeType child) {
+void Emitter::BlockMapPrepareLongKey(EmitterNodeType::value child) {
   const std::size_t curIndent = m_pState->CurIndent();
   const std::size_t childCount = m_pState->CurGroupChildCount();
 
@@ -560,7 +560,7 @@ void Emitter::BlockMapPrepareLongKey(EmitterNodeType child) {
   }
 }
 
-void Emitter::BlockMapPrepareLongKeyValue(EmitterNodeType child) {
+void Emitter::BlockMapPrepareLongKeyValue(EmitterNodeType::value child) {
   const std::size_t curIndent = m_pState->CurIndent();
 
   if (child == EmitterNodeType::NoType)
@@ -586,7 +586,7 @@ void Emitter::BlockMapPrepareLongKeyValue(EmitterNodeType child) {
   }
 }
 
-void Emitter::BlockMapPrepareSimpleKey(EmitterNodeType child) {
+void Emitter::BlockMapPrepareSimpleKey(EmitterNodeType::value child) {
   const std::size_t curIndent = m_pState->CurIndent();
   const std::size_t childCount = m_pState->CurGroupChildCount();
 
@@ -614,7 +614,7 @@ void Emitter::BlockMapPrepareSimpleKey(EmitterNodeType child) {
   }
 }
 
-void Emitter::BlockMapPrepareSimpleKeyValue(EmitterNodeType child) {
+void Emitter::BlockMapPrepareSimpleKeyValue(EmitterNodeType::value child) {
   const std::size_t curIndent = m_pState->CurIndent();
   const std::size_t nextIndent = curIndent + m_pState->CurGroupIndent();
 
@@ -677,7 +677,7 @@ Emitter& Emitter::Write(const std::string& str) {
     return *this;
 
   const bool escapeNonAscii = m_pState->GetOutputCharset() == EscapeNonAscii;
-  const StringFormat strFormat =
+  const StringFormat::value strFormat =
       Utils::ComputeStringFormat(str, m_pState->GetStringFormat(),
                                  m_pState->CurGroupFlowType(), escapeNonAscii);
 
@@ -906,4 +906,4 @@ Emitter& Emitter::Write(const Binary& binary) {
 
   return *this;
 }
-}
+}  // namespace YAML

@@ -12,7 +12,6 @@ aliases:
             if (Math.abs((value/127.0) - parseFloat(data.value)) < 0.1) {
                 return value;
             }
-            
             return false;
         }
 
@@ -20,91 +19,106 @@ in:
     nanoKONTROL2*:
         -   key: 0
             name: fader00
-            type: scalar
             shape: *defaultScalarFunction
+            type: scalar
             map: [0, 1]
             value: 0.5
 
         -   key: 1
             name: fader01
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
 
         -   key: 2
             name: fader02
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
 
         -   key: 3
             name: fader03
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
         
         -   key: 4
             name: fader04
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
     
         -   key: 5
             name: fader05
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
         
         -   key: 6
             name: fader06
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
 
         -   key: 7
             name: fader07
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
 
         -   key: 16
             name: knob00
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
             value: 0
 
         -   key: 17
             name: knob01
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         
         -   key: 18
             name: knob02
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         
         -   key: 19
             name: knob03
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         
         -   key: 20
             name: knob04
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         
         -   key: 21
             name: knob05
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         
         -   key: 22
             name: knob06
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         
         -   key: 23
             name: knob07
+            shape: *defaultScalarFunction
             type: scalar
             map: [0, 1]
         

@@ -1,4 +1,11 @@
+#ifndef VALUE_DETAIL_NODE_ITERATOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define VALUE_DETAIL_NODE_ITERATOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include "yaml-cpp/dll.h"
 #include "yaml-cpp/node/ptr.h"
@@ -9,19 +16,19 @@
 #include <utility>
 #include <vector>
 
-// Iterator over raw node*, pair<node*,node*> (node_iterator_value)
-
 namespace YAML {
 namespace detail {
-enum class iterator_type : char { NoneType, Sequence, Map };
+struct iterator_type {
+  enum value { NoneType, Sequence, Map };
+};
 
 template <typename V>
 struct node_iterator_value : public std::pair<V*, V*> {
   typedef std::pair<V*, V*> kv;
 
-  node_iterator_value() : kv(), pNode(0) {}
+  node_iterator_value() : kv(), pNode(nullptr) {}
   explicit node_iterator_value(V& rhs) : kv(), pNode(&rhs) {}
-  explicit node_iterator_value(V& key, V& value) : kv(&key, &value), pNode(0) {}
+  explicit node_iterator_value(V& key, V& value) : kv(&key, &value), pNode(nullptr) {}
 
   V& operator*() const { return *pNode; }
   V& operator->() const { return *pNode; }
@@ -159,7 +166,7 @@ class node_iterator_base
   }
 
  private:
-  iterator_type m_type;
+  typename iterator_type::value m_type;
 
   SeqIter m_seqIt;
   MapIter m_mapIt, m_mapEnd;
@@ -169,3 +176,5 @@ typedef node_iterator_base<node> node_iterator;
 typedef node_iterator_base<const node> const_node_iterator;
 }
 }
+
+#endif  // VALUE_DETAIL_NODE_ITERATOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66

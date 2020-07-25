@@ -1,80 +1,70 @@
+#ifndef TOKEN_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define TOKEN_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include "yaml-cpp/mark.h"
 #include <iostream>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace YAML {
 const std::string TokenNames[] = {
-    "DIRECTIVE", "DOC_START", "DOC_END", "BLOCK_SEQ_START", "BLOCK_MAP_START",
-    "BLOCK_SEQ_END", "BLOCK_MAP_END", "BLOCK_ENTRY", "FLOW_SEQ_START",
-    "FLOW_MAP_START", "FLOW_SEQ_END", "FLOW_MAP_END", "FLOW_MAP_COMPACT",
-    "FLOW_ENTRY", "KEY", "VALUE", "ANCHOR", "ALIAS", "TAG", "SCALAR", "NON_PLAIN_SCALAR"};
+    "DIRECTIVE",        "DOC_START",      "DOC_END",       "BLOCK_SEQ_START",
+    "BLOCK_MAP_START",  "BLOCK_SEQ_END",  "BLOCK_MAP_END", "BLOCK_ENTRY",
+    "FLOW_SEQ_START",   "FLOW_MAP_START", "FLOW_SEQ_END",  "FLOW_MAP_END",
+    "FLOW_MAP_COMPACT", "FLOW_ENTRY",     "KEY",           "VALUE",
+    "ANCHOR",           "ALIAS",          "TAG",           "SCALAR"};
 
 struct Token {
   // enums
-  enum STATUS : char { VALID, INVALID, UNVERIFIED };
-  enum TYPE : char {
-    NONE = 0,
-    PLAIN_SCALAR = 1,
-    NON_PLAIN_SCALAR,
-    FLOW_SEQ_START,
-    BLOCK_SEQ_START,
-    FLOW_MAP_START,
-    BLOCK_MAP_START,
-    KEY,
-    VALUE,
+  enum STATUS { VALID, INVALID, UNVERIFIED };
+  enum TYPE {
     DIRECTIVE,
     DOC_START,
     DOC_END,
+    BLOCK_SEQ_START,
+    BLOCK_MAP_START,
     BLOCK_SEQ_END,
     BLOCK_MAP_END,
     BLOCK_ENTRY,
+    FLOW_SEQ_START,
+    FLOW_MAP_START,
     FLOW_SEQ_END,
     FLOW_MAP_END,
     FLOW_MAP_COMPACT,
     FLOW_ENTRY,
+    KEY,
+    VALUE,
     ANCHOR,
     ALIAS,
     TAG,
+    PLAIN_SCALAR,
+    NON_PLAIN_SCALAR
   };
 
   // data
-  Token() {}
-
-  Token(TYPE type_, Mark mark_)
-      : type(type_), status(VALID), data(0), mark(mark_) {}
-
-  Token(TYPE type_, Mark mark_, std::string&& value_)
-      : type(type_), status(VALID), data(0), mark(mark_), value(std::move(value_)) {}
+  Token(TYPE type_, const Mark& mark_)
+      : status(VALID), type(type_), mark(mark_), value{}, params{}, data(0) {}
 
   friend std::ostream& operator<<(std::ostream& out, const Token& token) {
     out << TokenNames[token.type] << std::string(": ") << token.value;
-    if (token.params) {
-        for (auto& p : *token.params) {
-            out << std::string(" ") << p;
-        }
-    }
+    for (std::size_t i = 0; i < token.params.size(); i++)
+      out << std::string(" ") << token.params[i];
     return out;
   }
 
-  void clearParam() {
-    if (params) { params->clear(); }
-  }
-  void pushParam(std::string param) {
-    if (!params) {
-      params = std::unique_ptr<std::vector<std::string>>(new std::vector<std::string>);
-    }
-    params->push_back(std::move(param));
-  }
-
-  TYPE type;
   STATUS status;
-  char data;
+  TYPE type;
   Mark mark;
   std::string value;
-  std::unique_ptr<std::vector<std::string>> params;
+  std::vector<std::string> params;
+  int data;
 };
-}
+}  // namespace YAML
+
+#endif  // TOKEN_H_62B23520_7C8E_11DE_8A39_0800200C9A66

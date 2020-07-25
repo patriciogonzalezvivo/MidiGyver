@@ -16,10 +16,11 @@ std::string ToString(YAML::anchor_t anchor) {
   stream << anchor;
   return stream.str();
 }
-}
+}  // namespace
 
 namespace YAML {
-EmitFromEvents::EmitFromEvents(Emitter& emitter) : m_emitter(emitter) {}
+EmitFromEvents::EmitFromEvents(Emitter& emitter)
+    : m_emitter(emitter), m_stateStack{} {}
 
 void EmitFromEvents::OnDocumentStart(const Mark&) {}
 
@@ -37,14 +38,15 @@ void EmitFromEvents::OnAlias(const Mark&, anchor_t anchor) {
 }
 
 void EmitFromEvents::OnScalar(const Mark&, const std::string& tag,
-                              anchor_t anchor, std::string value) {
+                              anchor_t anchor, const std::string& value) {
   BeginNode();
   EmitProps(tag, anchor);
   m_emitter << value;
 }
 
 void EmitFromEvents::OnSequenceStart(const Mark&, const std::string& tag,
-                                     anchor_t anchor, EmitterStyle style) {
+                                     anchor_t anchor,
+                                     EmitterStyle::value style) {
   BeginNode();
   EmitProps(tag, anchor);
   switch (style) {
@@ -68,7 +70,7 @@ void EmitFromEvents::OnSequenceEnd() {
 }
 
 void EmitFromEvents::OnMapStart(const Mark&, const std::string& tag,
-                                anchor_t anchor, EmitterStyle style) {
+                                anchor_t anchor, EmitterStyle::value style) {
   BeginNode();
   EmitProps(tag, anchor);
   switch (style) {
@@ -115,4 +117,4 @@ void EmitFromEvents::EmitProps(const std::string& tag, anchor_t anchor) {
   if (anchor)
     m_emitter << Anchor(ToString(anchor));
 }
-}
+}  // namespace YAML

@@ -5,10 +5,7 @@ namespace YAML {
 struct Mark;
 
 Scanner::SimpleKey::SimpleKey(const Mark& mark_, std::size_t flowLevel_)
-    : markPos(mark_.pos),
-      markLine(mark_.line),
-      flowLevel(flowLevel_),
-      pIndent(nullptr), pMapStart(nullptr), pKey(nullptr) {}
+    : mark(mark_), flowLevel(flowLevel_), pIndent(nullptr), pMapStart(nullptr), pKey(nullptr) {}
 
 void Scanner::SimpleKey::Validate() {
   // Note: pIndent will *not* be garbage here;
@@ -33,10 +30,10 @@ void Scanner::SimpleKey::Invalidate() {
 
 // CanInsertPotentialSimpleKey
 bool Scanner::CanInsertPotentialSimpleKey() const {
-  if (__builtin_expect(m_simpleKeyAllowed, 1)) {
-    return !ExistsActiveSimpleKey();
-  }
-  return false;
+  if (!m_simpleKeyAllowed)
+    return false;
+
+  return !ExistsActiveSimpleKey();
 }
 
 // ExistsActiveSimpleKey
@@ -44,37 +41,38 @@ bool Scanner::CanInsertPotentialSimpleKey() const {
 //   (there's allowed at most one per flow level, i.e., at the start of the flow
 // start token)
 bool Scanner::ExistsActiveSimpleKey() const {
-  if (__builtin_expect(!m_simpleKeys.empty(), 1)) {
-    return m_simpleKeys.top().flowLevel == GetFlowLevel();
-  }
-  return false;
+  if (m_simpleKeys.empty())
+    return false;
+
+  const SimpleKey& key = m_simpleKeys.top();
+  return key.flowLevel == GetFlowLevel();
 }
 
 // InsertPotentialSimpleKey
 // . If we can, add a potential simple key to the queue,
 //   and save it on a stack.
 void Scanner::InsertPotentialSimpleKey() {
-  if (CanInsertPotentialSimpleKey()) {
-    m_simpleKeys.emplace(INPUT.mark(), GetFlowLevel());
-    SimpleKey& key = m_simpleKeys.top();
+  if (!CanInsertPotentialSimpleKey())
+    return;
 
-    // first add a map start, if necessary
-    if (InBlockContext()) {
-      key.pIndent = PushIndentTo(INPUT.column(), IndentMarker::MAP);
-      if (key.pIndent) {
-        key.pIndent->status = IndentMarker::UNKNOWN;
-        key.pMapStart = key.pIndent->pStartToken;
-        key.pMapStart->status = Token::UNVERIFIED;
-      }
+  SimpleKey key(INPUT.mark(), GetFlowLevel());
+
+  // first add a map start, if necessary
+  if (InBlockContext()) {
+    key.pIndent = PushIndentTo(INPUT.column(), IndentMarker::MAP);
+    if (key.pIndent) {
+      key.pIndent->status = IndentMarker::UNKNOWN;
+      key.pMapStart = key.pIndent->pStartToken;
+      key.pMapStart->status = Token::UNVERIFIED;
     }
-
-    // then add the (now unverified) key
-    Token& token = push();
-    token.type = Token::KEY;
-    token.mark = INPUT.mark();
-    token.status = Token::UNVERIFIED;
-    key.pKey = &token;
   }
+
+  // then add the (now unverified) key
+  m_tokens.push(Token(Token::KEY, INPUT.mark()));
+  key.pKey = &m_tokens.back();
+  key.pKey->status = Token::UNVERIFIED;
+
+  m_simpleKeys.push(key);
 }
 
 // InvalidateSimpleKey
@@ -111,7 +109,7 @@ bool Scanner::VerifySimpleKey() {
   bool isValid = true;
 
   // needs to be less than 1024 characters and inline
-  if (INPUT.line() != key.markLine || INPUT.pos() - key.markPos > 1024)
+  if (INPUT.line() != key.mark.line || INPUT.pos() - key.mark.pos > 1024)
     isValid = false;
 
   // invalidate key

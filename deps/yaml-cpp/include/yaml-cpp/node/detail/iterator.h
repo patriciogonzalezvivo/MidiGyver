@@ -1,10 +1,13 @@
-#pragma once
+#ifndef VALUE_DETAIL_ITERATOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define VALUE_DETAIL_ITERATOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66
 
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
+#pragma once
+#endif
 
 #include "yaml-cpp/dll.h"
-#include "yaml-cpp/node/detail/iterator.h"
-#include "yaml-cpp/node/detail/memory.h"
-#include "yaml-cpp/node/detail/node.h"
 #include "yaml-cpp/node/detail/node_iterator.h"
 #include "yaml-cpp/node/node.h"
 #include "yaml-cpp/node/ptr.h"
@@ -14,22 +17,7 @@
 
 namespace YAML {
 namespace detail {
-
-struct iterator_value : public Node, std::pair<Node, Node> {
-  iterator_value()
-      : Node(Node::ZombieNode),
-        std::pair<Node, Node>(Node(Node::ZombieNode), Node(Node::ZombieNode)) {
-  }
-
-  void set_seq(detail::node& rhs, shared_memory& memory) {
-    set(rhs, memory);
-  }
-
-  void set_map(detail::node& key, detail::node& value, shared_memory& memory) {
-    first.set(key, memory);
-    second.set(value, memory);
-  }
-};
+struct iterator_value;
 
 template <typename V>
 class iterator_base {
@@ -56,18 +44,15 @@ class iterator_base {
   using reference = V;
 
  public:
-  iterator_base() : m_iterator(), m_pMemory(nullptr) {}
-  explicit iterator_base(base_type rhs, shared_memory& pMemory)
-      : m_iterator(rhs),
-        m_pMemory(&pMemory) {}
+  iterator_base() : m_iterator(), m_pMemory() {}
+  explicit iterator_base(base_type rhs, shared_memory_holder pMemory)
+      : m_iterator(rhs), m_pMemory(pMemory) {}
 
   template <class W>
   iterator_base(const iterator_base<W>& rhs,
                 typename std::enable_if<std::is_convertible<W*, V*>::value,
                                         enabler>::type = enabler())
-      : m_iterator(rhs.m_iterator),
-        m_pMemory(rhs.m_pMemory) {
-  }
+      : m_iterator(rhs.m_iterator), m_pMemory(rhs.m_pMemory) {}
 
   iterator_base<V>& operator++() {
     ++m_iterator;
@@ -90,30 +75,22 @@ class iterator_base {
     return m_iterator != rhs.m_iterator;
   }
 
-  value_type& operator*() const {
+  value_type operator*() const {
     const typename base_type::value_type& v = *m_iterator;
-
-    if (!v.pNode) {
-      if (!v.first || !v.second) {
-        m_elem = iterator_value();
-      } else {
-        m_elem.set_map(*v.first, *v.second, *m_pMemory);
-      }
-    } else  {
-      m_elem.set_seq(*v, *m_pMemory);
-    }
-    return m_elem;
+    if (v.pNode)
+      return value_type(Node(*v, m_pMemory));
+    if (v.first && v.second)
+      return value_type(Node(*v.first, m_pMemory), Node(*v.second, m_pMemory));
+    return value_type();
   }
 
   proxy operator->() const { return proxy(**this); }
 
  private:
-
   base_type m_iterator;
-  shared_memory* m_pMemory;
-
-  mutable iterator_value m_elem;
-
+  shared_memory_holder m_pMemory;
 };
-}
-}
+}  // namespace detail
+}  // namespace YAML
+
+#endif  // VALUE_DETAIL_ITERATOR_H_62B23520_7C8E_11DE_8A39_0800200C9A66

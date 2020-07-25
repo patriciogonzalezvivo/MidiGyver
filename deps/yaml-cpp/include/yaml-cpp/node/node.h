@@ -1,14 +1,21 @@
+#ifndef NODE_NODE_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define NODE_NODE_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include <stdexcept>
+#include <string>
 
 #include "yaml-cpp/dll.h"
 #include "yaml-cpp/emitterstyle.h"
 #include "yaml-cpp/mark.h"
 #include "yaml-cpp/node/detail/bool_type.h"
 #include "yaml-cpp/node/detail/iterator_fwd.h"
-#include "yaml-cpp/node/detail/string_view.h"
-#include "yaml-cpp/node/detail/memory.h"
+#include "yaml-cpp/node/ptr.h"
 #include "yaml-cpp/node/type.h"
 
 namespace YAML {
@@ -31,22 +38,20 @@ class YAML_CPP_API Node {
   friend class detail::iterator_base;
   template <typename T, typename S>
   friend struct as_if;
-  template <typename T>
-  friend struct convert;
 
   typedef YAML::iterator iterator;
   typedef YAML::const_iterator const_iterator;
 
   Node();
-  ~Node();
-  Node(const Node& rhs);
-  Node(Node&& rhs);
-  explicit Node(NodeType type);
+  explicit Node(NodeType::value type);
   template <typename T>
   explicit Node(const T& rhs);
+  explicit Node(const detail::iterator_value& rhs);
+  Node(const Node& rhs);
+  ~Node();
 
   YAML::Mark Mark() const;
-  NodeType Type() const;
+  NodeType::value Type() const;
   bool IsDefined() const;
   bool IsNull() const { return Type() == NodeType::Null; }
   bool IsScalar() const { return Type() == NodeType::Scalar; }
@@ -69,20 +74,15 @@ class YAML_CPP_API Node {
 
   // style
   // WARNING: This API might change in future releases.
-  EmitterStyle Style() const;
-  void SetStyle(EmitterStyle style);
+  EmitterStyle::value Style() const;
+  void SetStyle(EmitterStyle::value style);
 
   // assignment
   bool is(const Node& rhs) const;
   template <typename T>
   Node& operator=(const T& rhs);
   Node& operator=(const Node& rhs);
-
-  // Reset Node to another Node (or create new Node)
   void reset(const Node& rhs = Node());
-
-  // Set Node to undefined
-  void clear();
 
   // size/iterator
   std::size_t size() const;
@@ -101,10 +101,8 @@ class YAML_CPP_API Node {
   // indexing
   template <typename Key>
   const Node operator[](const Key& key) const;
-
   template <typename Key>
   Node operator[](const Key& key);
-
   template <typename Key>
   bool remove(const Key& key);
 
@@ -119,12 +117,8 @@ class YAML_CPP_API Node {
  private:
   enum Zombie { ZombieNode };
   explicit Node(Zombie);
-  explicit Node(detail::node& node, detail::shared_memory pMemory);
-
-  explicit Node(const detail::iterator_value& rhs, detail::shared_memory memory);
-
-  template <typename T>
-  inline Node(const T& rhs, detail::shared_memory memory);
+  explicit Node(Zombie, const std::string&);
+  explicit Node(detail::node& node, detail::shared_memory_holder pMemory);
 
   void EnsureNodeExists() const;
 
@@ -133,33 +127,15 @@ class YAML_CPP_API Node {
   void Assign(const char* rhs);
   void Assign(char* rhs);
 
+  void AssignData(const Node& rhs);
   void AssignNode(const Node& rhs);
 
  private:
-  mutable detail::shared_memory m_pMemory;
+  bool m_isValid;
+  // String representation of invalid key, if the node is invalid.
+  std::string m_invalidKey;
+  mutable detail::shared_memory_holder m_pMemory;
   mutable detail::node* m_pNode;
-
-  void ThrowOnInvalid() const;
-  void ThrowInvalidNode() const;
-  bool isValid() const { return m_pMemory != nullptr; }
-
-  void mergeMemory(const Node& rhs) const;
-  detail::node& node() {
-    return *m_pNode;
-  }
-
-  void set(detail::node& node, detail::shared_memory& pMemory) {
-    m_pNode = &node;
-    if (m_pMemory != pMemory) { m_pMemory = pMemory; }
-  }
-
-  template <typename Key>
-  const Node get(const Key& key) const;
-  const Node get(const detail::string_view& key) const;
-
-  template <typename Key>
-  Node get(const Key& key);
-  Node get(const detail::string_view& key);
 };
 
 YAML_CPP_API bool operator==(const Node& lhs, const Node& rhs);
@@ -169,3 +145,5 @@ YAML_CPP_API Node Clone(const Node& node);
 template <typename T>
 struct convert;
 }
+
+#endif  // NODE_NODE_H_62B23520_7C8E_11DE_8A39_0800200C9A66

@@ -4,10 +4,12 @@
 #include "emitterutils.h"
 #include "exp.h"
 #include "indentation.h"
+#include "regex_yaml.h"
+#include "regeximpl.h"
 #include "stringsource.h"
 #include "yaml-cpp/binary.h"  // IWYU pragma: keep
-#include "yaml-cpp/ostream_wrapper.h"
 #include "yaml-cpp/null.h"
+#include "yaml-cpp/ostream_wrapper.h"
 
 namespace YAML {
 namespace Utils {
@@ -149,7 +151,7 @@ void WriteCodePoint(ostream_wrapper& out, int codePoint) {
   }
 }
 
-bool IsValidPlainScalar(const std::string& str, FlowType flowType,
+bool IsValidPlainScalar(const std::string& str, FlowType::value flowType,
                         bool allowOnlyAscii) {
   // check against null
   if (IsNullString(str)) {
@@ -157,39 +159,41 @@ bool IsValidPlainScalar(const std::string& str, FlowType flowType,
   }
 
   // check the start
-  if (flowType == FlowType::Flow) {
-      if (!Exp::PlainScalarInFlow::Matches(str)) { return false; }
-  } else {
-      if (!Exp::PlainScalar::Matches(str)) { return false; }
+  const RegEx& start = (flowType == FlowType::Flow ? Exp::PlainScalarInFlow()
+                                                   : Exp::PlainScalar());
+  if (!start.Matches(str)) {
+    return false;
   }
+
   // and check the end for plain whitespace (which can't be faithfully kept in a
   // plain scalar)
   if (!str.empty() && *str.rbegin() == ' ') {
     return false;
   }
+
   // then check until something is disallowed
-  using namespace Exp;
-  using Disallowed = Matcher <
-      OR < SEQ < detail::BlankOrBreak, detail::Comment >,
-           detail::NotPrintable,
-           detail::Utf8_ByteOrderMark,
-           detail::Break,
-           detail::Tab>>;
+  static const RegEx& disallowed_flow =
+      Exp::EndScalarInFlow() | (Exp::BlankOrBreak() + Exp::Comment()) |
+      Exp::NotPrintable() | Exp::Utf8_ByteOrderMark() | Exp::Break() |
+      Exp::Tab();
+  static const RegEx& disallowed_block =
+      Exp::EndScalar() | (Exp::BlankOrBreak() + Exp::Comment()) |
+      Exp::NotPrintable() | Exp::Utf8_ByteOrderMark() | Exp::Break() |
+      Exp::Tab();
+  const RegEx& disallowed =
+      flowType == FlowType::Flow ? disallowed_flow : disallowed_block;
 
   StringCharSource buffer(str.c_str(), str.size());
   while (buffer) {
-      if ((flowType == FlowType::Flow ?
-           Matcher<detail::EndScalarInFlow>::Matches(buffer) :
-           Matcher<detail::EndScalar>::Matches(buffer)) ||
-          Disallowed::Matches(buffer)) {
-        return false;
+    if (disallowed.Matches(buffer)) {
+      return false;
     }
-
     if (allowOnlyAscii && (0x80 <= static_cast<unsigned char>(buffer[0]))) {
       return false;
     }
     ++buffer;
   }
+
   return true;
 }
 
@@ -206,7 +210,7 @@ bool IsValidSingleQuotedScalar(const std::string& str, bool escapeNonAscii) {
   return true;
 }
 
-bool IsValidLiteralScalar(const std::string& str, FlowType flowType,
+bool IsValidLiteralScalar(const std::string& str, FlowType::value flowType,
                           bool escapeNonAscii) {
   if (flowType == FlowType::Flow) {
     return false;
@@ -254,11 +258,11 @@ bool WriteAliasName(ostream_wrapper& out, const std::string& str) {
   }
   return true;
 }
-}
+}  // namespace
 
-StringFormat ComputeStringFormat(const std::string& str,
+StringFormat::value ComputeStringFormat(const std::string& str,
                                         EMITTER_MANIP strFormat,
-                                        FlowType flowType,
+                                        FlowType::value flowType,
                                         bool escapeNonAscii) {
   switch (strFormat) {
     case Auto:
@@ -397,8 +401,8 @@ bool WriteComment(ostream_wrapper& out, const std::string& str,
   for (std::string::const_iterator i = str.begin();
        GetNextCodePointAndAdvance(codePoint, i, str.end());) {
     if (codePoint == '\n') {
-      out << "\n" << IndentTo(curIndent) << "#"
-          << Indentation(postCommentIndent);
+      out << "\n"
+          << IndentTo(curIndent) << "#" << Indentation(postCommentIndent);
       out.set_comment();
     } else {
       WriteCodePoint(out, codePoint);
@@ -420,13 +424,9 @@ bool WriteAnchor(ostream_wrapper& out, const std::string& str) {
 bool WriteTag(ostream_wrapper& out, const std::string& str, bool verbatim) {
   out << (verbatim ? "!<" : "!");
   StringCharSource buffer(str.c_str(), str.size());
-  auto reValid = verbatim ?
-      [](const StringCharSource& s) { return Exp::URI::Match(s); } :
-      [](const StringCharSource& s) { return Exp::Tag::Match(s); };
-
+  const RegEx& reValid = verbatim ? Exp::URI() : Exp::Tag();
   while (buffer) {
-
-    int n = reValid(buffer);
+    int n = reValid.Match(buffer);
     if (n <= 0) {
       return false;
     }
@@ -447,7 +447,7 @@ bool WriteTagWithPrefix(ostream_wrapper& out, const std::string& prefix,
   out << "!";
   StringCharSource prefixBuffer(prefix.c_str(), prefix.size());
   while (prefixBuffer) {
-    int n = Exp::URI::Match(prefixBuffer);
+    int n = Exp::URI().Match(prefixBuffer);
     if (n <= 0) {
       return false;
     }
@@ -461,7 +461,7 @@ bool WriteTagWithPrefix(ostream_wrapper& out, const std::string& prefix,
   out << "!";
   StringCharSource tagBuffer(tag.c_str(), tag.size());
   while (tagBuffer) {
-    int n = Exp::Tag::Match(tagBuffer);
+    int n = Exp::Tag().Match(tagBuffer);
     if (n <= 0) {
       return false;
     }
@@ -479,5 +479,5 @@ bool WriteBinary(ostream_wrapper& out, const Binary& binary) {
                           false);
   return true;
 }
-}
-}
+}  // namespace Utils
+}  // namespace YAML

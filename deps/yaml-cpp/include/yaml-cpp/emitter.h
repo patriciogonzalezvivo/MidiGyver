@@ -1,15 +1,24 @@
-#pragma once
+#ifndef EMITTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define EMITTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
 
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
+#pragma once
+#endif
+
+#include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 #include "yaml-cpp/binary.h"
 #include "yaml-cpp/dll.h"
 #include "yaml-cpp/emitterdef.h"
 #include "yaml-cpp/emittermanip.h"
-#include "yaml-cpp/noncopyable.h"
 #include "yaml-cpp/null.h"
 #include "yaml-cpp/ostream_wrapper.h"
 
@@ -21,10 +30,12 @@ struct _Null;
 namespace YAML {
 class EmitterState;
 
-class YAML_CPP_API Emitter : private noncopyable {
+class YAML_CPP_API Emitter {
  public:
   Emitter();
   explicit Emitter(std::ostream& stream);
+  Emitter(const Emitter&) = delete;
+  Emitter& operator=(const Emitter&) = delete;
   ~Emitter();
 
   // output
@@ -90,24 +101,24 @@ class YAML_CPP_API Emitter : private noncopyable {
   void EmitKindTag();
   void EmitTag(bool verbatim, const _Tag& tag);
 
-  void PrepareNode(EmitterNodeType child);
-  void PrepareTopNode(EmitterNodeType child);
-  void FlowSeqPrepareNode(EmitterNodeType child);
-  void BlockSeqPrepareNode(EmitterNodeType child);
+  void PrepareNode(EmitterNodeType::value child);
+  void PrepareTopNode(EmitterNodeType::value child);
+  void FlowSeqPrepareNode(EmitterNodeType::value child);
+  void BlockSeqPrepareNode(EmitterNodeType::value child);
 
-  void FlowMapPrepareNode(EmitterNodeType child);
+  void FlowMapPrepareNode(EmitterNodeType::value child);
 
-  void FlowMapPrepareLongKey(EmitterNodeType child);
-  void FlowMapPrepareLongKeyValue(EmitterNodeType child);
-  void FlowMapPrepareSimpleKey(EmitterNodeType child);
-  void FlowMapPrepareSimpleKeyValue(EmitterNodeType child);
+  void FlowMapPrepareLongKey(EmitterNodeType::value child);
+  void FlowMapPrepareLongKeyValue(EmitterNodeType::value child);
+  void FlowMapPrepareSimpleKey(EmitterNodeType::value child);
+  void FlowMapPrepareSimpleKeyValue(EmitterNodeType::value child);
 
-  void BlockMapPrepareNode(EmitterNodeType child);
+  void BlockMapPrepareNode(EmitterNodeType::value child);
 
-  void BlockMapPrepareLongKey(EmitterNodeType child);
-  void BlockMapPrepareLongKeyValue(EmitterNodeType child);
-  void BlockMapPrepareSimpleKey(EmitterNodeType child);
-  void BlockMapPrepareSimpleKeyValue(EmitterNodeType child);
+  void BlockMapPrepareLongKey(EmitterNodeType::value child);
+  void BlockMapPrepareLongKeyValue(EmitterNodeType::value child);
+  void BlockMapPrepareSimpleKey(EmitterNodeType::value child);
+  void BlockMapPrepareSimpleKeyValue(EmitterNodeType::value child);
 
   void SpaceOrIndentTo(bool requireSpace, std::size_t indent);
 
@@ -145,7 +156,28 @@ inline Emitter& Emitter::WriteStreamable(T value) {
 
   std::stringstream stream;
   SetStreamablePrecision<T>(stream);
-  stream << value;
+
+  bool special = false;
+  if (std::is_floating_point<T>::value) {
+    if ((std::numeric_limits<T>::has_quiet_NaN ||
+         std::numeric_limits<T>::has_signaling_NaN) &&
+        std::isnan(value)) {
+      special = true;
+      stream << ".nan";
+    } else if (std::numeric_limits<T>::has_infinity) {
+      if (value == std::numeric_limits<T>::infinity()) {
+        special = true;
+        stream << ".inf";
+      } else if (value == -std::numeric_limits<T>::infinity()) {
+        special = true;
+        stream << "-.inf";
+      }
+    }
+  }
+
+  if (!special) {
+    stream << value;
+  }
   m_stream << stream.str();
 
   StartedScalar();
@@ -242,4 +274,6 @@ inline Emitter& operator<<(Emitter& emitter, _Indent indent) {
 inline Emitter& operator<<(Emitter& emitter, _Precision precision) {
   return emitter.SetLocalPrecision(precision);
 }
-}
+}  // namespace YAML
+
+#endif  // EMITTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66

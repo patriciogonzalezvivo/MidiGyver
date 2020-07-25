@@ -6,14 +6,7 @@
 #include "yaml-cpp/node/node.h"
 #include "yaml-cpp/node/impl.h"
 #include "yaml-cpp/parser.h"
-#include "yaml-cpp/nodebuilder.h"
-
-struct memstream : public std::istream, public std::streambuf {
-    memstream(const char* begin, const char* end): std::istream(this)  {
-        setg(const_cast<char *>(begin), const_cast<char *>(begin), const_cast<char *>(end));
-    }
-};
-
+#include "nodebuilder.h"
 
 namespace YAML {
 Node Load(const std::string& input) {
@@ -21,8 +14,8 @@ Node Load(const std::string& input) {
   return Load(stream);
 }
 
-Node Load(const char* input, size_t length) {
-  memstream stream(input, input + length);
+Node Load(const char* input) {
+  std::stringstream stream(input);
   return Load(stream);
 }
 
@@ -45,6 +38,11 @@ Node LoadFile(const std::string& filename) {
 }
 
 std::vector<Node> LoadAll(const std::string& input) {
+  std::stringstream stream(input);
+  return LoadAll(stream);
+}
+
+std::vector<Node> LoadAll(const char* input) {
   std::stringstream stream(input);
   return LoadAll(stream);
 }

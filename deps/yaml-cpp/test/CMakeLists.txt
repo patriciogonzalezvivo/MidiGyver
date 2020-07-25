@@ -51,6 +51,11 @@ add_executable(run-tests
     ${test_headers}
 )
 
+set_target_properties(run-tests PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON
+)
+
 add_dependencies(run-tests googletest_project)
 
 set_target_properties(run-tests PROPERTIES
@@ -60,8 +65,5 @@ target_link_libraries(run-tests
     yaml-cpp
     gmock
     ${CMAKE_THREAD_LIBS_INIT})
-
-target_compile_options(run-tests
-  PUBLIC -O0)
 
 add_test(yaml-test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests)

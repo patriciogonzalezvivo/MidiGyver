@@ -1,8 +1,14 @@
-#pragma once
+#ifndef COLLECTIONSTACK_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define COLLECTIONSTACK_H_62B23520_7C8E_11DE_8A39_0800200C9A66
 
-#include <stack>
-#include <vector>
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
+#pragma once
+#endif
+
 #include <cassert>
+#include <stack>
 
 namespace YAML {
 struct CollectionType {
@@ -11,6 +17,7 @@ struct CollectionType {
 
 class CollectionStack {
  public:
+  CollectionStack() : collectionStack{} {}
   CollectionType::value GetCurCollectionType() const {
     if (collectionStack.empty())
       return CollectionType::NoCollection;
@@ -27,6 +34,8 @@ class CollectionStack {
   }
 
  private:
-  std::stack<CollectionType::value, std::vector<CollectionType::value>> collectionStack;
+  std::stack<CollectionType::value> collectionStack;
 };
-}
+}  // namespace YAML
+
+#endif  // COLLECTIONSTACK_H_62B23520_7C8E_11DE_8A39_0800200C9A66

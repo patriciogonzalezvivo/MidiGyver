@@ -1,22 +1,24 @@
+#ifndef SCANNER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define SCANNER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include <cstddef>
 #include <ios>
 #include <map>
-#include <memory>
-#include <deque>
+#include <queue>
 #include <set>
 #include <stack>
 #include <string>
-#include <list>
-#include <forward_list>
 
-#include "scanscalar.h"
+#include "ptr_vector.h"
 #include "stream.h"
 #include "token.h"
 #include "yaml-cpp/mark.h"
-#include "exp.h"
-#include "plalloc.h"
 
 namespace YAML {
 class Node;
@@ -36,34 +38,8 @@ class Scanner {
   /** Removes the next token in the queue. */
   void pop();
 
-  void pop_unsafe() {
-    ++m_tokenOut;
-  }
-
-  Token& push() {
-    if (m_tokenOut != m_tokens.begin()) {
-      // Move free token to the end
-      auto last = m_tokens.begin();
-      m_tokens.splice_after(m_tokenIn, m_tokens, m_tokens.before_begin());
-      m_tokenIn = last;
-    } else {
-      // Full
-      CreateToken();
-    }
-    if (m_tokenOut == m_tokens.end()) {
-      m_tokenOut = m_tokenIn;
-    }
-
-    m_tokenIn->status = Token::VALID;
-    return *m_tokenIn;
-  }
-
   /** Returns, but does not remove, the next token in the queue. */
   Token &peek();
-
-  Token &peek_unsafe() {
-    return *m_tokenPtr;
-  }
 
   /** Returns the current mark in the input stream. */
   Mark mark() const;
@@ -108,8 +84,9 @@ class Scanner {
   /** Closes out the stream, finish up, etc. */
   void EndStream();
 
+  Token *PushToken(Token::TYPE type);
 
-  inline bool InFlowContext() const { return !m_flows.empty(); }
+  bool InFlowContext() const { return !m_flows.empty(); }
   bool InBlockContext() const { return m_flows.empty(); }
   std::size_t GetFlowLevel() const { return m_flows.size(); }
 
@@ -138,11 +115,8 @@ class Scanner {
 
   /** Pops a single indent, pushing the proper token. */
   void PopIndent();
+  int GetTopIndent() const;
 
-  inline int GetTopIndent() const {
-    if (m_indents.empty()) { return 0; }
-    return m_indents.top()->column;
-  }
   // checking input
   bool CanInsertPotentialSimpleKey() const;
   bool ExistsActiveSimpleKey() const;
@@ -159,6 +133,10 @@ class Scanner {
 
   bool IsWhitespaceToBeEaten(char ch);
 
+  /**
+   * Returns the appropriate regex to check if the next token is a value token.
+   */
+  const RegEx &GetValueRegex() const;
 
   struct SimpleKey {
     SimpleKey(const Mark &mark_, std::size_t flowLevel_);
@@ -166,8 +144,7 @@ class Scanner {
     void Validate();
     void Invalidate();
 
-    int markPos;
-    int markLine;
+    Mark mark;
     std::size_t flowLevel;
     IndentMarker *pIndent;
     Token *pMapStart, *pKey;
@@ -192,42 +169,22 @@ class Scanner {
   void ScanQuotedScalar();
   void ScanBlockScalar();
 
-  // scanscalar.cpp
-  std::string ScanScalar(ScanScalarParams& info);
-  static int MatchScalarEmpty(Exp::Source<4> in);
-  static int MatchScalarSingleQuoted(Exp::Source<4> in);
-  static int MatchScalarDoubleQuoted(Exp::Source<4> in);
-  static int MatchScalarEnd(Exp::Source<4> in);
-  static int MatchScalarEndInFlow(Exp::Source<4> in);
-  static int MatchScalarIndent(Exp::Source<4> in);
-
  private:
-
-  void CreateToken();
-  void InitTokens();
-
   // the stream
   Stream INPUT;
 
   // the output (tokens)
-  template<typename T>
-  using token_alloc = plalloc<T, 64>;
-
-  std::forward_list<Token, token_alloc<Token>> m_tokens;
-  //std::forward_list<Token> m_tokens;
-  std::forward_list<Token>::iterator m_tokenOut;
-  std::forward_list<Token>::iterator m_tokenIn;
-  Token* m_tokenPtr = nullptr;
+  std::queue<Token> m_tokens;
 
   // state info
   bool m_startedStream, m_endedStream;
   bool m_simpleKeyAllowed;
   bool m_canBeJSONFlow;
-  std::stack<SimpleKey,std::vector<SimpleKey>> m_simpleKeys;
-  std::stack<IndentMarker *,std::vector<IndentMarker *>> m_indents;
-  std::deque<IndentMarker> m_indentRefs;  // for "garbage collection"
-  std::stack<FLOW_MARKER, std::vector<FLOW_MARKER>> m_flows;
-
-  std::string m_scalarBuffer;
+  std::stack<SimpleKey> m_simpleKeys;
+  std::stack<IndentMarker *> m_indents;
+  ptr_vector<IndentMarker> m_indentRefs;  // for "garbage collection"
+  std::stack<FLOW_MARKER> m_flows;
 };
 }
+
+#endif  // SCANNER_H_62B23520_7C8E_11DE_8A39_0800200C9A66

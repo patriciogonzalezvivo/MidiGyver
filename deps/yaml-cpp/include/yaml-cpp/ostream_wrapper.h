@@ -1,4 +1,11 @@
+#ifndef OSTREAM_WRAPPER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+#define OSTREAM_WRAPPER_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+
+#if defined(_MSC_VER) ||                                            \
+    (defined(__GNUC__) && (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || \
+     (__GNUC__ >= 4))  // GCC supports "pragma once" correctly since 3.4
 #pragma once
+#endif
 
 #include <string>
 #include <vector>
@@ -10,6 +17,10 @@ class YAML_CPP_API ostream_wrapper {
  public:
   ostream_wrapper();
   explicit ostream_wrapper(std::ostream& stream);
+  ostream_wrapper(const ostream_wrapper&) = delete;
+  ostream_wrapper(ostream_wrapper&&) = delete;
+  ostream_wrapper& operator=(const ostream_wrapper&) = delete;
+  ostream_wrapper& operator=(ostream_wrapper&&) = delete;
   ~ostream_wrapper();
 
   void write(const std::string& str);
@@ -19,7 +30,7 @@ class YAML_CPP_API ostream_wrapper {
 
   const char* str() const {
     if (m_pStream) {
-      return 0;
+      return nullptr;
     } else {
       m_buffer[m_pos] = '\0';
       return &m_buffer[0];
@@ -45,7 +56,7 @@ class YAML_CPP_API ostream_wrapper {
 
 template <std::size_t N>
 inline ostream_wrapper& operator<<(ostream_wrapper& stream,
-                                   const char(&str)[N]) {
+                                   const char (&str)[N]) {
   stream.write(str, N - 1);
   return stream;
 }
@@ -60,4 +71,6 @@ inline ostream_wrapper& operator<<(ostream_wrapper& stream, char ch) {
   stream.write(&ch, 1);
   return stream;
 }
-}
+}  // namespace YAML
+
+#endif  // OSTREAM_WRAPPER_H_62B23520_7C8E_11DE_8A39_0800200C9A66

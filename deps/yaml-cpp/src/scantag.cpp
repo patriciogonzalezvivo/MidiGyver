@@ -1,4 +1,6 @@
 #include "exp.h"
+#include "regex_yaml.h"
+#include "regeximpl.h"
 #include "stream.h"
 #include "yaml-cpp/exceptions.h"  // IWYU pragma: keep
 #include "yaml-cpp/mark.h"
@@ -17,7 +19,7 @@ const std::string ScanVerbatimTag(Stream& INPUT) {
       return tag;
     }
 
-    int n = Exp::URI::Match(INPUT);
+    int n = Exp::URI().Match(INPUT);
     if (n <= 0)
       break;
 
@@ -41,7 +43,7 @@ const std::string ScanTagHandle(Stream& INPUT, bool& canBeHandle) {
 
     int n = 0;
     if (canBeHandle) {
-      n = Exp::Word::Match(INPUT);
+      n = Exp::Word().Match(INPUT);
       if (n <= 0) {
         canBeHandle = false;
         firstNonWordChar = INPUT.mark();
@@ -49,7 +51,7 @@ const std::string ScanTagHandle(Stream& INPUT, bool& canBeHandle) {
     }
 
     if (!canBeHandle)
-      n = Exp::Tag::Match(INPUT);
+      n = Exp::Tag().Match(INPUT);
 
     if (n <= 0)
       break;
@@ -64,7 +66,7 @@ const std::string ScanTagSuffix(Stream& INPUT) {
   std::string tag;
 
   while (INPUT) {
-    int n = Exp::Tag::Match(INPUT);
+    int n = Exp::Tag().Match(INPUT);
     if (n <= 0)
       break;
 
