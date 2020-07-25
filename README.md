@@ -3,7 +3,7 @@ Small app to convert Midi inputs into OSC and CSV
 ### Install dependencies
 
 ```bash
-sudo apt install cmake liblo-dev libyaml-cpp-dev
+sudo apt install cmake
 ```
 
 ### Compile and Install
