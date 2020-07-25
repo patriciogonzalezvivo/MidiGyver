@@ -5,62 +5,89 @@ global:
 out:
     - csv
     - osc://localhost:8000
+
+aliases: 
+    - &defaultScalar
+        name: defaultName
+        type: scalar
+        map: [0, 1]
+        value: 0.5
+        shape: |
+            function() {
+                if (Math.abs((value/127.0) - parseFloat(data.value)) < 0.1) {
+                    return value;
+                }
+                
+                return false;
+            }
+
 in:
     nanoKONTROL2*:
-        0:
+        -   key: 0
             name: fader00
             type: scalar
             map: [0, 1]
-            value: 0
-        1:
+            value: 0.5
+
+        -   key: 1
             name: fader01
             type: scalar
             map: [0, 1]
             value: 0
-        2:
+
+        -   key: 2
             name: fader02
             type: scalar
             map: [0, 1]
             value: 0
-        3:
+
+        -   key: 3
             name: fader03
             type: scalar
             map: [0, 1]
             value: 0
-        4:
+        
+        -   key: 4
             name: fader04
             type: scalar
             map: [0, 1]
             value: 0
-        5:
+    
+        -   key: 5
             name: fader05
             type: scalar
             map: [0, 1]
             value: 0
-        6:
+        
+        -   key: 6
             name: fader06
             type: scalar
             map: [0, 1]
             value: 0
-        7:
+
+        -   key: 7
             name: fader07
             type: scalar
             map: [0, 1]
             value: 0
-        16:
+
+        -   key: 16
             name: knob00
             type: scalar
             map: [0, 1]
             value: 0
-        17:
+
+        -   key: 17
             name: knob01
             type: scalar
             map: [0, 1]
-        18:
+        
+        -   key: 18
             name: knob02
             type: scalar
             map: [0, 1]
-        19:
+        
+        -   key: 19
             name: knob03
             type: scalar
             map: [0, 1]
@@ -131,6 +158,7 @@ in:
         46:
             name: cycle
             type: button
+
         48:
             name: mBtns0
             type: toggle

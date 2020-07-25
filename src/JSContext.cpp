@@ -170,6 +170,12 @@ JSValue JSContext::newFunction(const std::string& value) {
     return getStackTopValue();
 }
 
+bool JSContext::addNativeFunction(const std::string& _name, duk_c_function func, size_t nargs) {
+    duk_push_c_function(_ctx, func, nargs);
+    duk_put_global_string(_ctx, _name.c_str());
+    return true;
+}
+
 JSScopeMarker JSContext::getScopeMarker() {
     return duk_get_top(_ctx);
 }

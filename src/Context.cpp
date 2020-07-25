@@ -117,29 +117,72 @@ std::string Context::getKeyName(const std::string& _device, size_t _key) {
     return toString(_key);
 }
 
-bool Context::shapeKeyValue(const std::string& _device, size_t _key, float* _value) {
-    std::string key = toString(_key);
 
-    if ( config["in"][_device][key]["shape"].IsDefined() ) {
+
+bool Context::shapeKeyValue(const std::string& _device, size_t _key, float* _value) {
+    if ( !doKeyExist(_device, _key) )
+        return false;
+
+    YAML::Node keyNode = getKeyNode(_device, _key);
+    if ( keyNode["shape"].IsDefined() ) {
 
         js.setGlobalValue("device", js.newString(_device));
         js.setGlobalValue("key", js.newNumber(_key));
+        JSValue keyData = parseNode(js, keyNode);
+        js.setGlobalValue("data", std::move(keyData));
         js.setGlobalValue("value", js.newNumber(*_value));
-        // YAML::Node keyNode = getKeyNode(_device, _key);
-        // JSValue keyData = parseNode(js, keyNode);
-        // js.setGlobalValue("data", std::move(keyData));
         
+        std::string key = toString(_key);
         JSValue result = js.getFunctionResult( shapeFncs[_device + "_" + key] );
-
         if (!result.isNull()) {
+
             if (result.isString()) {
                 std::cout << "Update result on string: " << result.toString() << " but don't know what to do with it"<< std::endl;
                 return false;
             }
-            else if (result.isNumber())
+
+            else if (result.isObject()) {
+                for (size_t j = 0; j < devices.size(); j++) {
+                    JSValue d = result.getValueForProperty(devices[j]);
+                    if (!d.isUndefined()) {
+                        for (size_t i = 0; i < d.getLength(); i++) {
+                            JSValue el = d.getValueAtIndex(i);
+                            if (el.isArray()) {
+                                if (el.getLength() == 2) {
+                                    size_t k = el.getValueAtIndex(0).toInt();
+                                    float v = el.getValueAtIndex(1).toFloat();
+                                    // std::cout << "trigger(" << devices[j] << "," << k << "," << v << ")" << std::endl;
+                                    mapKeyValue(devices[j], k, v);
+                                }
+                            }
+                        }
+                    } 
+                }
+                return false;
+            }
+
+            else if (result.isArray()) {
+                for (size_t i = 0; i < result.getLength(); i++) {
+                    JSValue el = result.getValueAtIndex(i);
+                    if (el.isArray()) {
+                        if (el.getLength() == 2) {
+                            size_t k = el.getValueAtIndex(0).toInt();
+                            float v = el.getValueAtIndex(1).toFloat();
+                            std::cout << "trigger (" << _device << "," << k << "," << v << ")" << std::endl;
+                            mapKeyValue(_device, k, v);
+                        }
+                    }
+                }
+                return false;
+            }
+            
+            else if (result.isNumber()) {
                 *_value = result.toFloat();
-            else if (result.isBoolean())
+            }
+
+            else if (result.isBoolean()) {
                 return result.toBool();
+            }
         }
     }
 
@@ -150,14 +193,15 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
     if (!doKeyExist(_device, _key))
         return false;
 
-    std::string key = toString(_key);
+    // std::string key = toString(_key);
     std::string name = getKeyName(_device, _key);
+    YAML::Node keyNode = getKeyNode(_device, _key);
     DataType type = getKeyDataType(_device, _key);
 
     // BUTTON
     if (type == button_type) {
         bool value = _value > 0;
-        config["in"][_device][key]["value"] = value;
+        keyNode["value"] = value;
         return updateKey(_device, _key);
     }
     
@@ -166,10 +210,10 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
         if (_value > 0) {
             bool value = false;
                 
-            if (config["in"][_device][key]["value"])
-                value = config["in"][_device][key]["value"].as<bool>();
+            if (keyNode["value"])
+                value = keyNode["value"].as<bool>();
 
-            config["in"][_device][key]["value"] = !value;
+            keyNode["value"] = !value;
             return updateKey(_device, _key);
         }
     }
@@ -179,21 +223,21 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
         int value = (int)_value;
         std::string value_str = toString(value);
 
-        if ( config["in"][_device][key]["map"] ) {
-            if ( config["in"][_device][key]["map"].IsSequence() ) {
-                float total = config["in"][_device][key]["map"].size();
+        if ( keyNode["map"] ) {
+            if ( keyNode["map"].IsSequence() ) {
+                float total = keyNode["map"].size();
 
                 if (value == 127.0f) {
-                    value_str = config["in"][_device][key]["map"][total-1].as<std::string>();
+                    value_str = keyNode["map"][total-1].as<std::string>();
                 } 
                 else {
-                    size_t index = (value / 127.0f) * config["in"][_device][key]["map"].size();
-                    value_str = config["in"][_device][key]["map"][index].as<std::string>();
+                    size_t index = (value / 127.0f) * keyNode["map"].size();
+                    value_str = keyNode["map"][index].as<std::string>();
                 } 
             }
         }
             
-        config["in"][_device][key]["value"] = value_str;
+        keyNode["value"] = value_str;
         return updateKey(_device, _key);
     }
     
@@ -201,23 +245,23 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
     else if ( type == scalar_type ) {
         float value = _value;
 
-        if ( config["in"][_device][key]["map"] ) {
+        if ( keyNode["map"] ) {
             value /= 127.0f;
-            if ( config["in"][_device][key]["map"].IsSequence() ) {
-                if ( config["in"][_device][key]["map"].size() > 1 ) {
-                    float total = config["in"][_device][key]["map"].size() - 1;
+            if ( keyNode["map"].IsSequence() ) {
+                if ( keyNode["map"].size() > 1 ) {
+                    float total = keyNode["map"].size() - 1;
 
                     size_t i_low = value * total;
                     size_t i_high = std::min(i_low + 1, size_t(total));
                     float pct = (value * total) - (float)i_low;
-                    value = lerp(   config["in"][_device][key]["map"][i_low].as<float>(),
-                                    config["in"][_device][key]["map"][i_high].as<float>(),
+                    value = lerp(   keyNode["map"][i_low].as<float>(),
+                                    keyNode["map"][i_high].as<float>(),
                                     pct );
                 }
             }
         }
             
-        config["in"][_device][key]["value"] = value;
+        keyNode["value"] = value;
         return updateKey(_device, _key);
     }
     
@@ -226,22 +270,22 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
         float pct = _value / 127.0f;
         Vector value = Vector(0.0, 0.0, 0.0);
 
-        if ( config["in"][_device][key]["map"] ) {
-            if ( config["in"][_device][key]["map"].IsSequence() ) {
-                if ( config["in"][_device][key]["map"].size() > 1 ) {
-                    float total = config["in"][_device][key]["map"].size() - 1;
+        if ( keyNode["map"] ) {
+            if ( keyNode["map"].IsSequence() ) {
+                if ( keyNode["map"].size() > 1 ) {
+                    float total = keyNode["map"].size() - 1;
 
                     size_t i_low = pct * total;
                     size_t i_high = std::min(i_low + 1, size_t(total));
 
-                    value = lerp(   config["in"][_device][key]["map"][i_low].as<Vector>(),
-                                    config["in"][_device][key]["map"][i_high].as<Vector>(),
+                    value = lerp(   keyNode["map"][i_low].as<Vector>(),
+                                    keyNode["map"][i_high].as<Vector>(),
                                     (pct * total) - (float)i_low );
                 }
             }
         }
             
-        config["in"][_device][key]["value"] = value;
+        keyNode["value"] = value;
         return updateKey(_device, _key);
     }
 
@@ -250,22 +294,22 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
         float pct = _value / 127.0f;
         Color value = Color(0.0, 0.0, 0.0);
 
-        if ( config["in"][_device][key]["map"] ) {
-            if ( config["in"][_device][key]["map"].IsSequence() ) {
-                if ( config["in"][_device][key]["map"].size() > 1 ) {
-                    float total = config["in"][_device][key]["map"].size() - 1;
+        if ( keyNode["map"] ) {
+            if ( keyNode["map"].IsSequence() ) {
+                if ( keyNode["map"].size() > 1 ) {
+                    float total = keyNode["map"].size() - 1;
 
                     size_t i_low = pct * total;
                     size_t i_high = std::min(i_low + 1, size_t(total));
 
-                    value = lerp(   config["in"][_device][key]["map"][i_low].as<Color>(),
-                                    config["in"][_device][key]["map"][i_high].as<Color>(),
+                    value = lerp(   keyNode["map"][i_low].as<Color>(),
+                                    keyNode["map"][i_high].as<Color>(),
                                     (pct * total) - (float)i_low );
                 }
             }
         }
         
-        config["in"][_device][key]["value"] = value;
+        keyNode["value"] = value;
         return updateKey(_device, _key);
     }
 
@@ -273,13 +317,13 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
 }
 
 bool Context::updateKey(const std::string& _device, size_t _key) {
-    std::string key = toString(_key);
+    YAML::Node keyNode = getKeyNode(_device, _key);
 
-    if ( config["in"][_device][key]["value"].IsDefined() ) {
+    if ( keyNode["value"].IsDefined() ) {
         DataType type = getKeyDataType(_device, _key);
         // BUTTONs and TOGGLEs need to change state on the device
         if (type == button_type || type == toggle_type) {
-            bool value = config["in"][_device][key]["value"].as<bool>();
+            bool value = keyNode["value"].as<bool>();
 
             std::vector<unsigned char> msg;
             msg.push_back( 0xB0 );
@@ -294,19 +338,19 @@ bool Context::updateKey(const std::string& _device, size_t _key) {
 }
 
 bool Context::sendKeyValue(const std::string& _device, size_t _key) {
-    std::string key = toString(_key);
+    YAML::Node keyNode = getKeyNode(_device, _key);
 
-    if ( !config["in"][_device][key]["value"].IsDefined() )
+    if ( !keyNode["value"].IsDefined() )
         return false;
 
     // Define OSC out targets
     std::vector<std::string> keyTargets;
-    if (config["in"][_device][key]["out"].IsDefined() ) {
-        if (config["in"][_device][key]["out"].IsSequence()) 
-            for (size_t i = 0; i < config["in"][_device][key]["out"].size(); i++)
-                keyTargets.push_back(config["in"][_device][key]["out"][i].as<std::string>());
-        else if (config["in"][_device][key]["out"].IsScalar())
-            keyTargets.push_back(config["in"][_device][key]["out"].as<std::string>());
+    if (keyNode["out"].IsDefined() ) {
+        if (keyNode["out"].IsSequence()) 
+            for (size_t i = 0; i < keyNode["out"].size(); i++)
+                keyTargets.push_back(keyNode["out"][i].as<std::string>());
+        else if (keyNode["out"].IsScalar())
+            keyTargets.push_back(keyNode["out"].as<std::string>());
     }
     else
         keyTargets = targets;
@@ -314,23 +358,23 @@ bool Context::sendKeyValue(const std::string& _device, size_t _key) {
     // KEY
     std::string name = getKeyName(_device, _key);
     DataType type = getKeyDataType(_device, _key);
-    YAML::Node value = config["in"][_device][key]["value"];
+    YAML::Node value = keyNode["value"];
 
     // BUTTON and TOGGLE
     if ( type == toggle_type || type == button_type ) {
         std::string value_str = (value.as<bool>()) ? "on" : "off";
         
-        if (config["in"][_device][key]["map"]) {
+        if (keyNode["map"]) {
 
-            if (config["in"][_device][key]["map"][value_str]) {
+            if (keyNode["map"][value_str]) {
 
                 // If the end mapped string is a sequence
-                if (config["in"][_device][key]["map"][value_str].IsSequence()) {
-                    for (size_t i = 0; i < config["in"][_device][key]["map"][value_str].size(); i++) {
+                if (keyNode["map"][value_str].IsSequence()) {
+                    for (size_t i = 0; i < keyNode["map"][value_str].size(); i++) {
                         std::string prop = name;
                         std::string msg = "";
 
-                        if ( parseString(config["in"][_device][key]["map"][value_str][i], prop, msg) ) {
+                        if ( parseString(keyNode["map"][value_str][i], prop, msg) ) {
                             for (size_t t = 0; t < keyTargets.size(); t++) {
                                 if (keyTargets[t].rfind("osc://", 0) == 0)
                                     sendValue(parseOscTarget(keyTargets[t]), prop, msg );
@@ -345,7 +389,7 @@ bool Context::sendKeyValue(const std::string& _device, size_t _key) {
                     std::string prop = name;
                     std::string msg = "";
 
-                    if ( parseString(config["in"][_device][key]["map"][value_str], prop, msg) ) {
+                    if ( parseString(keyNode["map"][value_str], prop, msg) ) {
                         for (size_t t = 0; t < keyTargets.size(); t++) {
                             if (keyTargets[t].rfind("osc://", 0) == 0)
                                 sendValue(parseOscTarget(keyTargets[t]), prop, msg );

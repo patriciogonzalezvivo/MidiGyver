@@ -12,19 +12,20 @@ public:
     JSContext();
     ~JSContext();
 
-    void    setGlobalValue(const std::string& name, JSValue value);
-    bool    setFunction(JSFunctionIndex index, const std::string& source);
-
-// protected:
     JSValue newNull();
-
     JSValue newBoolean(bool value);
     JSValue newNumber(float value);
     JSValue newString(const std::string& value);
     JSValue newArray();
     JSValue newObject();
     JSValue newFunction(const std::string& value);
+
+    bool    setFunction(JSFunctionIndex index, const std::string& source);
     JSValue getFunctionResult(JSFunctionIndex index);
+
+    bool    addNativeFunction(const std::string& _name, duk_c_function func, size_t nargs);
+
+    void    setGlobalValue(const std::string& name, JSValue value);
 
     JSScopeMarker getScopeMarker();
     void    resetToScopeMarker(JSScopeMarker marker);

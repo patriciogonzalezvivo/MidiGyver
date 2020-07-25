@@ -31,7 +31,7 @@ public:
     bool load(const std::string& _filename);
     bool save(const std::string& _filename);
 
-    bool updateDevice(const std::string& _device);
+    bool        updateDevice(const std::string& _device);
 
     bool        doKeyExist(const std::string& _device, size_t _key);
     YAML::Node  getKeyNode(const std::string& _device, size_t _key);
@@ -48,6 +48,8 @@ public:
     std::map<std::string, RtMidiOut*>   devicesOut;
 
     YAML::Node                          config;
+
+protected:
 
     JSContext                           js;
     std::map<std::string, u_int32_t>    shapeFncs;
