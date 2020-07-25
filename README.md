@@ -28,16 +28,26 @@ Each YAML file can contain the configuration of multiple devices. The configurat
 
 In that node you set up the `out` protocols (`osc` and/or 'csv') and the `events`.
 
-Each event is compose by:
+Each key event happens in the following order:
+```
+[ MIDI Key IN ] -> [ shaping function (JS) ] -> [ map ] -> [ send key values to OUT ]
+```
+
+Each event node is compose by:
     * `name`: name of the event. This is use to construct the OSC path or the first column on the CSV output
     * `type`: could be: `button`, `toggle`, `states`, `scalar`, `vector` and `color`.
-    * `map`: depend on the type of the event
-    * `update`: update JS function 
-    * `value`: 
+    * `shape`: shaping function to modify the original key value (between `0` and `127` from the key) to any other number. After the mapping the range still will be between `0 ~ 127`. If the result is a `false` it doesn't map or send the key value.
+    * `map`: depend on the type of the event it can map:
+            - bottom or toggle booleans to **strings** (`on: <something>` and `off: <something>`) to string
+            - states linearly from any **array of strings** (ex; `[low, med, high]` )
+            - scalars linearly from any **array of numbers** (ex: `[0, 1, 100, 2, -10]`)  
+            - vectors linearly from any **array of vectors** (ex: `[ [0, 0], [0.5, 1.0]]`)
+            - colors linearly from any **array of colors** (ex: `[ [1, 0, 0], [0, 0, 1]]`)
+    * `value`: here is where the final values are store so next time this YAML is reload it can send all the previous states.
 
 ```yaml
 global:
-    counter: 0
+    track: 0
 
 out:
     -   csv
@@ -83,21 +93,29 @@ in:
                 on: define,DRAW_SHAPE
                 off: undefine,DRAW_SHAPE
 
-        43:
-            name: backward
-            type: button
-            update: |
+        58:
+            name: track_back
+            type: scalar
+            shape: |
                 function() {
-                    global.counter--;
-                    return global.counter;
+                    if (global.track == 0)
+                        return false;
+
+                    if (value == 127)
+                        return global.track--;
+                    
+                    return false;
                 }
-        44:
-            name: forward
-            type: button
-            update: |
+
+        59:
+            name: track_fwd
+            type: scalar
+            shape: |
                 function() {
-                    global.counter++;
-                    return global.counter;
+                    if (value == 127)
+                        return ++global.track;
+                    
+                    return false;
                 }
 ```
 
