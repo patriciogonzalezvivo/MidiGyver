@@ -1,0 +1,13 @@
+language: cpp
+compiler: clang
+sudo: false
+dist: trusty
+addons:
+  apt:
+    packages:
+      - ninja-build
+script:
+  - mkdir build
+  - cd build
+  - cmake .. -GNinja
+  - cmake --build .
