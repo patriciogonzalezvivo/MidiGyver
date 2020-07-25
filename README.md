@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/patriciogonzalezvivo/midiGyver.svg?branch=master)](https://travis-ci.org/patriciogonzalezvivo/midiGyver)
-
-Small app to convert Midi inputs into OSC and CSV 
+Small app to convert Midi inputs into OSC and CSV  [![Build Status](https://travis-ci.org/patriciogonzalezvivo/midiGyver.svg?branch=master)](https://travis-ci.org/patriciogonzalezvivo/midiGyver)
 
 ### Install dependencies
 
