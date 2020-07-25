@@ -26,7 +26,7 @@ midigyver config.yaml
 ### Config
 Each YAML file can contain the configuration of multiple devices. The configuration of a device is set under the node with it own name (**note**: empty spaces and other symbols are replaced with `_` ).
 
-In that node you set up the `out` protocols (`osc` and/or 'csv') and the `events`.
+In that node you set up the `out` protocols ( `csv` or as many `osc` clients you want).
 
 Each key event happens in the following order:
 ```
@@ -44,6 +44,7 @@ Each event node is compose by:
             - vectors linearly from any **array of vectors** (ex: `[ [0, 0], [0.5, 1.0]]`)
             - colors linearly from any **array of colors** (ex: `[ [1, 0, 0], [0, 0, 1]]`)
     * `value`: here is where the final values are store so next time this YAML is reload it can send all the previous states.
+    * `out`: you can specify special out puts that will over write the default one.
 
 ```yaml
 global:
@@ -60,7 +61,7 @@ in:
             value: 1
             out:
                 -   osc://localhost:8001
-
+-
         16:
             name: knob00
             type: scalar
@@ -84,14 +85,13 @@ in:
             type: states
             map: [low, med, high, ultra_high]
             value: ultra_high
-        
+
         32:
             name: sBtns0
             type: toggle
             value: true
             map:
                 on: define,DRAW_SHAPE
-                off: undefine,DRAW_SHAPE
 
         58:
             name: track_back
