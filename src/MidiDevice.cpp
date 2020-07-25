@@ -47,7 +47,7 @@ MidiDevice::MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _mi
     try {
         RtMidiOut* midiOut = new RtMidiOut();
         midiOut->openPort(_midiPort);
-        ctx->devicesOut[deviceName] = midiOut;
+        ctx->devicesData[deviceName].out = midiOut;
     }
     catch(RtMidiError &error) {
         error.printMessage();

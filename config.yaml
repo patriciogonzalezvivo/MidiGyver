@@ -7,25 +7,21 @@ out:
     - osc://localhost:8000
 
 aliases: 
-    - &defaultScalar
-        name: defaultName
-        type: scalar
-        map: [0, 1]
-        value: 0.5
-        shape: |
-            function() {
-                if (Math.abs((value/127.0) - parseFloat(data.value)) < 0.1) {
-                    return value;
-                }
-                
-                return false;
+    - &defaultScalarFunction |
+        function() {
+            if (Math.abs((value/127.0) - parseFloat(data.value)) < 0.1) {
+                return value;
             }
+            
+            return false;
+        }
 
 in:
     nanoKONTROL2*:
         -   key: 0
             name: fader00
             type: scalar
+            shape: *defaultScalarFunction
             map: [0, 1]
             value: 0.5
 
@@ -91,108 +87,133 @@ in:
             name: knob03
             type: scalar
             map: [0, 1]
-        20:
+        
+        -   key: 20
             name: knob04
             type: scalar
             map: [0, 1]
-        21:
+        
+        -   key: 21
             name: knob05
             type: scalar
             map: [0, 1]
-        22:
+        
+        -   key: 22
             name: knob06
             type: scalar
             map: [0, 1]
-        23:
+        
+        -   key: 23
             name: knob07
             type: scalar
             map: [0, 1]
-        32:
+        
+        -   key: 32
             name: sBtns0
             type: toggle
             value: false
-        33:
+        
+        -   key: 33
             name: sBtns1
             type: toggle
             value: off
-        34:
+        
+        -   key: 34
             name: sBtns2
             type: toggle
             value: off
-        35:
+        
+        -   key: 35
             name: sBtns3
             type: toggle
             value: off
-        36:
+
+        -   key: 36
             name: sBtns4
             type: toggle
             value: off
-        37:
+
+        -   key: 37
             name: sBtns5
             type: toggle
             value: off
-        38:
+        
+        -   key: 38
             name: sBtns6
             type: toggle
             value: off
-        39:
+        
+        -   key: 39
             name: sBtns7
             type: toggle
             value: off
-        41:
+        
+        -   key: 41
             name: play
             type: toggle
             value: false
-        42:
+        
+        -   key: 42
             name: stop
             type: button
-        43:
+        
+        -   key: 43
             name: backward
             type: button
-        44:
+        
+        -   key: 44
             name: forward
             type: button
-        45:
+
+        -   key: 45
             name: rec
             type: toggle
-        46:
+
+        -   key: 46
             name: cycle
             type: button
 
-        48:
+        -   key: 48
             name: mBtns0
             type: toggle
             value: false
-        49:
+        
+        -   key: 49
             name: mBtns1
             type: toggle
             value: off
-        50:
+
+        -   key: 50
             name: mBtns2
             type: toggle
             value: off
-        51:
+        
+        -   key: 51
             name: mBtns3
             type: toggle
             value: off
-        52:
+        
+        -   key: 52
             name: mBtns4
             type: toggle
             value: off
-        53:
+        
+        -   key: 53
             name: mBtns5
             type: toggle
             value: off
-        54:
+        
+        -   key: 54
             name: mBtns6
             type: toggle
             value: off
-        55:
+        
+        -   key: 55
             name: mBtns7
             type: toggle
             value: off
 
-        58:
+        -   key: 58
             name: track_back
             type: scalar
             shape: |
@@ -206,7 +227,7 @@ in:
                     return false;
                 }
 
-        59:
+        -   key: 59
             name: track_fwd
             type: scalar
             shape: |
@@ -217,11 +238,11 @@ in:
                     return false;
                 }
 
-        60:
+        -   key: 60
             name: marker_set
             type: toggle
 
-        61:
+        -   key: 61
             name: marker_fwd
             type: scalar
             shape: |
@@ -235,7 +256,7 @@ in:
                     return false;
                 }
 
-        62:
+        -   key: 62
             name: marker_fwd
             type: scalar
             shape: |
@@ -246,35 +267,42 @@ in:
                     return false;
                 }
 
-        64:
+        -   key: 64
             name: rBtns0
             type: toggle
             value: false
-        65:
+
+        -   key: 65
             name: rBtns1
             type: toggle
             value: off
-        66:
+        
+        -   key: 66
             name: rBtns2
             type: toggle
             value: off
-        67:
+        
+        -   key: 67
             name: rBtns3
             type: toggle
             value: off
-        68:
+        
+        -   key: 68
             name: rBtns4
             type: toggle
             value: off
-        69:
+        
+        -   key: 69
             name: rBtns5
             type: toggle
             value: off
-        70:
+
+        -   key: 70
             name: rBtns6
             type: toggle
             value: off
-        71:
+
+        -   key: 71
             name: rBtns7
             type: toggle
             value: off

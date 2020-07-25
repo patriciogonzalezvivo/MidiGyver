@@ -24,14 +24,36 @@ bool Context::load(const std::string& _filename) {
     uint32_t id = 0;
     if (config["in"].IsMap()) {
         for (YAML::const_iterator dev = config["in"].begin(); dev != config["in"].end(); ++dev) {
-            std::string dev_key = dev->first.as<std::string>();
-            for (YAML::const_iterator it = config["in"][dev_key].begin(); it != config["in"][dev_key].end(); ++it) {
-                std::string key = it->first.as<std::string>();
-                if (config["in"][dev_key][key]["shape"].IsDefined()) {
-                    std::string function = config["in"][dev_key][key]["shape"].as<std::string>();
-                    if ( js.setFunction(id, function) ) {
-                        shapeFncs[dev_key + "_" + key] = id;
-                        id++;
+            std::string device = dev->first.as<std::string>();
+
+            if (config["in"][device].IsMap()) {
+                for (YAML::const_iterator it = config["in"][device].begin(); it != config["in"][device].end(); ++it) {
+                    std::string key = it->first.as<std::string>();
+                    if (config["in"][device][key]["shape"].IsDefined()) {
+                        std::string function = config["in"][device][key]["shape"].as<std::string>();
+                        if ( js.setFunction(id, function) ) {
+                            shapeFncs[device + "_" + key] = id;
+                            id++;
+                        }
+                    }
+                }
+            }
+
+            else if (config["in"][device].IsSequence()) {
+                for (size_t i = 0; i < config["in"][device].size(); i++) {
+                    size_t key = i;
+
+                    if (config["in"][device][i]["key"].IsDefined())
+                        key = config["in"][device][i]["key"].as<size_t>();
+
+                    devicesData[device].keyMap[key] = i;
+
+                    if (config["in"][device][i]["shape"].IsDefined()) {
+                        std::string function = config["in"][device][i]["shape"].as<std::string>();
+                        if ( js.setFunction(id, function) ) {
+                            shapeFncs[device + "_" + toString(key)] = id;
+                            id++;
+                        }
                     }
                 }
             }
@@ -68,21 +90,47 @@ bool Context::updateDevice(const std::string& _device) {
                 updateKey(_device, toInt(key));
         }
     }
+
+    else if (config["in"][_device].IsSequence()) {
+        for (size_t i = 0; i < config["in"][_device].size(); i++) {
+            size_t key = i;
+            if (config["in"][_device][i]["key"].IsDefined())
+                key = config["in"][_device][i]["key"].as<size_t>();
+            updateKey(_device, key);
+        }
+    }
+
     return true;
 }
 
 bool Context::doKeyExist(const std::string& _device, size_t _key) {
      if ( !config["in"][_device].IsNull() ) {
-        std::string key = toString(_key);
-        if (config["in"][_device][key].IsDefined())
-            return true;
+
+        if (config["in"][_device].IsMap()) {
+            std::string key = toString(_key);
+            if (config["in"][_device][key].IsDefined())
+                return true;
+        }
+
+        else if (config["in"][_device].IsSequence()) {
+            return devicesData[_device].keyMap.find(_key) != devicesData[_device].keyMap.end(); 
+        }
     }
     return false;
 }
 
 YAML::Node  Context::getKeyNode(const std::string& _device, size_t _key) {
-    std::string key = toString(_key);
-    return config["in"][_device][key];
+    if (config["in"][_device].IsMap()) {
+        std::string key = toString(_key);
+        return config["in"][_device][key];
+    }
+
+    else if (config["in"][_device].IsSequence()) {
+        size_t key = devicesData[_device].keyMap[_key];
+        return config["in"][_device][key];
+    }
+
+    return YAML::Node();
 }
 
 DataType Context::getKeyDataType(const std::string& _device, size_t _key) {
@@ -329,7 +377,7 @@ bool Context::updateKey(const std::string& _device, size_t _key) {
             msg.push_back( 0xB0 );
             msg.push_back( _key );
             msg.push_back( value ? 127 : 0 );
-            devicesOut[_device]->sendMessage( &msg );   
+            devicesData[_device].out->sendMessage( &msg );   
         }
         return sendKeyValue(_device, _key);
     }

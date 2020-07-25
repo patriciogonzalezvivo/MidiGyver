@@ -22,6 +22,11 @@ enum DataType {
     color_type
 };
 
+struct DeviceData {
+    RtMidiOut*                  out;
+    std::map<size_t, size_t>    keyMap;
+};
+
 class Context {
 public:
 
@@ -45,7 +50,7 @@ public:
 
     std::vector<std::string>            targets;
     std::vector<std::string>            devices;
-    std::map<std::string, RtMidiOut*>   devicesOut;
+    std::map<std::string, DeviceData>   devicesData;
 
     YAML::Node                          config;
 
