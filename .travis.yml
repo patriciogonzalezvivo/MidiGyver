@@ -6,6 +6,7 @@ addons:
   apt:
     packages:
       - ninja-build
+      - libasound2-dev
       - libjack-jackd2-dev
 script:
   - mkdir build
