@@ -1,4 +1,6 @@
-Small app to convert Midi inputs into OSC and CSV  [![Build Status](https://travis-ci.org/patriciogonzalezvivo/midiGyver.svg?branch=master)](https://travis-ci.org/patriciogonzalezvivo/midiGyver)
+# MidiGyver [![Build Status](https://travis-ci.org/patriciogonzalezvivo/midiGyver.svg?branch=master)](https://travis-ci.org/patriciogonzalezvivo/midiGyver)
+
+Flexible console program to convert MIDI inputs into OSC using a YAML config file
 
 ### Install dependencies
 
