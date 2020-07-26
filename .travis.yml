@@ -6,6 +6,7 @@ addons:
   apt:
     packages:
       - ninja-build
+      - libjack-jackd2-dev
 script:
   - mkdir build
   - cd build
