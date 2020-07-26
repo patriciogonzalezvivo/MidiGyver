@@ -12,6 +12,7 @@ aliases:
             if (Math.abs((value/127.0) - parseFloat(data.value)) < 0.1) {
                 return value;
             }
+            
             return false;
         }
 

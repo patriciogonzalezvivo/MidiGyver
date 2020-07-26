@@ -216,7 +216,7 @@ bool Context::shapeKeyValue(const std::string& _device, size_t _key, float* _val
                         if (el.getLength() == 2) {
                             size_t k = el.getValueAtIndex(0).toInt();
                             float v = el.getValueAtIndex(1).toFloat();
-                            std::cout << "trigger (" << _device << "," << k << "," << v << ")" << std::endl;
+                            // std::cout << "trigger (" << _device << "," << k << "," << v << ")" << std::endl;
                             mapKeyValue(_device, k, v);
                         }
                     }
@@ -245,6 +245,7 @@ bool Context::mapKeyValue(const std::string& _device, size_t _key, float _value)
     std::string name = getKeyName(_device, _key);
     YAML::Node keyNode = getKeyNode(_device, _key);
     DataType type = getKeyDataType(_device, _key);
+    keyNode["value_raw"] = _value;
 
     // BUTTON
     if (type == button_type) {

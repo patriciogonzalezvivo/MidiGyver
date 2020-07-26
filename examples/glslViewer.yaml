@@ -1,72 +1,122 @@
+global:
+    track: 0
+    marker: 0
 out:
     -   osc://localhost:8000
+aliases:
+    -   &defaultShapeFnc |
+            function() {
+                if (Math.abs(value - parseFloat(data.value_raw)) < 5.0) {
+                    return value;
+                }
+                return false;
+            }
 in:
     nanoKONTROL2*:
         0:
             name: u_fader00
-            type: scalar
-            map: [0, 1]
-            value: 0
-        1:
-            name: u_fader01
-            type: scalar
-            map: [0, 1]
-            value: 0
-        2:
-            name: u_fader02
+            shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
             value: 1
+            value_raw: 127
+        1:
+            name: u_fader01
+            shape: *defaultShapeFnc
+            type: scalar
+            map: [0, 1]
+            value: 0
+            value_raw: 0
+        2:
+            name: u_fader02
+            shape: *defaultShapeFnc
+            type: scalar
+            map: [0, 1]
+            value: 1
+            value_raw: 127
         3:
             name: u_fader03
+            shape: *defaultShapeFnc
             type: color
             map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
             value: [1, 1, 1, 1]
+            value_raw: 127
         4:
             name: u_fader04
+            shape: *defaultShapeFnc
             type: vector
             map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
             value: [0, 0, 0]
+            value_raw: 127
         5:
             name: u_fader05
+            shape: *defaultShapeFnc
             type: color
             map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 0, 0]]
             value: [1, 0, 0, 1]
+            value_raw: 127
         6:
             name: u_fader06
+            shape: *defaultShapeFnc
             type: states
             map: [low, med, high, ultra_high]
+            value_raw: 0
         7:
             name: u_fader07
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         16:
             name: u_knob00
+            shape: *defaultShapeFnc
             type: scalar
             map: [-3.1415, 3.1415]
             value: -3.1415
+            value_raw: 0
         17:
             name: u_knob01
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         18:
             name: u_knob02
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         19:
             name: u_knob03
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         20:
             name: u_knob04
+            shape: *defaultShapeFnc
             type: scalar
             map: [-3.1415, 3.1415]
-            value: 3.1415
+            value: -3.1415
+            value_raw: 0
         21:
             name: u_knob05
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         22:
             name: u_knob06
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         23:
             name: u_knob07
+            shape: *defaultShapeFnc
             type: scalar
+            value_raw: 0
+            value: 0
         32:
             name: sBtns0
             type: toggle
@@ -156,6 +206,49 @@ in:
             name: mBtns7
             type: toggle
             value: off
+        58:
+            name: track_back
+            type: scalar
+            shape: |
+                function() {
+                    if (global.track == 0)
+                        return false;
+                    if (value == 127)
+                        return global.track--;
+                    return false;
+                }
+        59:
+            name: track_fwd
+            type: scalar
+            shape: |
+                function() {
+                    if (value == 127)
+                        return ++global.track;
+                    return false;
+                }
+        60:
+            name: marker_set
+            type: toggle
+        61:
+            name: marker_fwd
+            type: scalar
+            shape: |
+                function() {
+                    if (global.marker == 0)
+                        return false;
+                    if (value == 127)
+                        return --global.marker;
+                    return false;
+                }
+        62:
+            name: marker_fwd
+            type: scalar
+            shape: |
+                function() {
+                    if (value == 127)
+                        return global.marker++;
+                    return false;
+                }
         64:
             name: rBtns0
             type: toggle
