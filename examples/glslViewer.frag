@@ -7,8 +7,11 @@ precision mediump float;
 uniform vec2    u_resolution;
 uniform float   u_time;
 
+uniform float   u_pulse;    // pulse 
+uniform float   u_polygon;  // number of coorners on the polygon
+
 uniform float   u_knob00;   // Angle
-uniform float   u_fader00;  // Shape
+uniform float   u_fader00;  // Shape (between circel and polygon)
 uniform float   u_fader01;  // Size
 uniform float   u_fader02;  // Width
 uniform vec4    u_fader03;  // Color
@@ -16,6 +19,9 @@ uniform vec4    u_fader03;  // Color
 uniform float   u_knob04;   // Angle
 uniform vec3    u_fader04;  // Position
 uniform vec4    u_fader05;  // Color
+
+#define TAU 6.2831853071795864769252867665590
+#define PI 3.1415926535897932384626433832795
 
 vec2 ratio(in vec2 st, in vec2 s) {
     return mix( vec2((st.x*s.x/s.y)-(s.x*.5-s.y*.5)/s.y,st.y),
@@ -50,16 +56,12 @@ float circleSDF(vec2 st) {
     return length(st-.5)*2.;
 }
 
-float rectSDF(vec2 st, vec2 s) {
+float polySDF(vec2 st, float V) {
     st = st*2.-1.;
-    return max( abs(st.x/s.x),
-                abs(st.y/s.y) );
-}
-
-float crossSDF(vec2 st, float s) {
-    vec2 size = vec2(.25, s);
-    return min( rectSDF(st.xy,size.xy),
-                rectSDF(st.xy,size.yx));
+    float a = atan(st.x,st.y)+PI;
+    float r = length(st);
+    float v = TAU/V;
+    return cos(floor(.5+a/v)*v-a)*r;
 }
 
 void main(void) {
@@ -69,8 +71,8 @@ void main(void) {
 
 #ifdef DRAW_SHAPE
     float circle = circleSDF(st);
-    float square = rectSDF(rotate(st, u_knob00), vec2(1.0));
-    float sdf = mix(circle, square, u_fader00);
+    float poly = polySDF(rotate(st, u_knob00), u_polygon);
+    float sdf = fract( mix(circle, poly, u_fader00) - u_pulse * 0.5);
 
     color.rgb += u_fader03.rgb * stroke( sdf, u_fader01, u_fader02); 
 #endif

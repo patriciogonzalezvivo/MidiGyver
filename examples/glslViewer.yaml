@@ -1,8 +1,13 @@
 global:
     track: 0
-    marker: 0
+    marker: 4
+    timer: false
+    time: 0
+    time_dir: 0.02
+
 out:
     -   osc://localhost:8000
+
 aliases:
     -   &defaultShapeFnc |
             function() {
@@ -11,202 +16,278 @@ aliases:
                 }
                 return false;
             }
+
+pulse:
+    -   name: u_pulse
+        interval: 10
+        type: scalar
+        shape: |
+            function() {
+                if (global.timer) {
+                    global.time = parseFloat(global.time) + global.time_dir
+                    return global.time;
+                }
+                else
+                    return false;
+            }
+
 in:
     nanoKONTROL2*:
-        0:
+        -   key: 0
             name: u_fader00
             shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
             value: 1
             value_raw: 127
-        1:
+
+        -   key: 1
             name: u_fader01
             shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
             value: 0
             value_raw: 0
-        2:
+        
+        -   key: 2
             name: u_fader02
             shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
-            value: 1
-            value_raw: 127
-        3:
+            value: 0.25
+            value_raw: 32
+        
+        -   key: 3
             name: u_fader03
             shape: *defaultShapeFnc
             type: color
             map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
             value: [1, 1, 1, 1]
             value_raw: 127
-        4:
+        
+        -   key: 4
             name: u_fader04
             shape: *defaultShapeFnc
             type: vector
             map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
             value: [0, 0, 0]
             value_raw: 127
-        5:
+        
+        -   key: 5
             name: u_fader05
             shape: *defaultShapeFnc
             type: color
             map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 0, 0]]
             value: [1, 0, 0, 1]
             value_raw: 127
-        6:
+        
+        -   key: 6
             name: u_fader06
             shape: *defaultShapeFnc
             type: states
             map: [low, med, high, ultra_high]
             value_raw: 0
-        7:
+        
+        -   key: 7
             name: u_fader07
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        16:
+        
+        -   key: 16
             name: u_knob00
             shape: *defaultShapeFnc
             type: scalar
             map: [-3.1415, 3.1415]
             value: -3.1415
             value_raw: 0
-        17:
+        
+        -   key: 17
             name: u_knob01
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        18:
+        
+        -   key: 18
             name: u_knob02
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        19:
+        
+        -   key: 19
             name: u_knob03
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        20:
+        
+        -   key: 20
             name: u_knob04
             shape: *defaultShapeFnc
             type: scalar
             map: [-3.1415, 3.1415]
             value: -3.1415
             value_raw: 0
-        21:
+        
+        -   key: 21
             name: u_knob05
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        22:
+        
+        -   key: 22
             name: u_knob06
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        23:
+        
+        -   key: 23
             name: u_knob07
             shape: *defaultShapeFnc
             type: scalar
             value_raw: 0
             value: 0
-        32:
+        
+        -   key: 32
             name: sBtns0
             type: toggle
             value: true
             map:
                 on: define,DRAW_SHAPE
                 off: undefine,DRAW_SHAPE
-        33:
+        
+        -   key: 33
             name: sBtns1
             type: toggle
             value: off
-        34:
+        
+        -   key: 34
             name: sBtns2
             type: toggle
             value: off
-        35:
+        
+        -   key: 35
             name: sBtns3
             type: toggle
             value: off
-        36:
+        
+        -   key: 36
             name: sBtns4
             type: toggle
             value: true
             map:
                 on: define,DRAW_AXIS
                 off: undefine,DRAW_AXIS
-        37:
+        
+        -   key: 37
             name: sBtns5
             type: toggle
             value: off
-        38:
+        
+        -   key: 38
             name: sBtns6
             type: toggle
             value: off
-        39:
+        
+        -   key: 39
             name: sBtns7
             type: toggle
             value: off
-        41:
+
+        -   key: 41
             name: play
             type: toggle
+            shape: |
+                function() {
+                    if (data.value)
+                        global.timer = true;
+                    else
+                        global.timer = false;
+
+                    return value;
+                }
             value: false
-        42:
+        
+        -   key: 42
             name: stop
             type: button
-        43:
+        
+        -   key: 43
             name: backward
             type: button
-        44:
+            shape: |
+                function() {
+                    if (value == 127)
+                        global.time_dir -= 0.01;
+
+                    return false;
+                }
+
+        -   key: 44
             name: forward
             type: button
-        45:
+            shape: |
+                function() {
+                    if (value == 127)
+                        global.time_dir += 0.01;
+
+                    return false;
+                }
+
+        -   key: 45
             name: rec
             type: button
-        46:
+        
+        -   key: 46
             name: cycle
             type: button
-        48:
+        
+        -   key: 48
             name: mBtns0
             type: toggle
             value: false
-        49:
+        
+        -   key: 49
             name: mBtns1
             type: toggle
             value: off
-        50:
+        
+        -   key: 50
             name: mBtns2
             type: toggle
             value: off
-        51:
+        
+        -   key: 51
             name: mBtns3
             type: toggle
             value: off
-        52:
+        
+        -   key: 52
             name: mBtns4
             type: toggle
             value: off
-        53:
+        
+        -   key: 53
             name: mBtns5
             type: toggle
             value: off
-        54:
+        
+        -   key: 54
             name: mBtns6
             type: toggle
             value: off
-        55:
+        
+        -   key: 55
             name: mBtns7
             type: toggle
             value: off
-        58:
+        
+        -   key: 58
             name: track_back
             type: scalar
             shape: |
@@ -217,7 +298,8 @@ in:
                         return global.track--;
                     return false;
                 }
-        59:
+
+        -   key: 59
             name: track_fwd
             type: scalar
             shape: |
@@ -226,11 +308,13 @@ in:
                         return ++global.track;
                     return false;
                 }
-        60:
+
+        -   key: 60
             name: marker_set
             type: toggle
-        61:
-            name: marker_fwd
+        
+        -   key: 61
+            name: u_polygon
             type: scalar
             shape: |
                 function() {
@@ -240,8 +324,10 @@ in:
                         return --global.marker;
                     return false;
                 }
-        62:
-            name: marker_fwd
+            value: 4
+        
+        -   key: 62
+            name: u_polygon
             type: scalar
             shape: |
                 function() {
@@ -249,35 +335,43 @@ in:
                         return global.marker++;
                     return false;
                 }
-        64:
+        
+        -   key: 64
             name: rBtns0
             type: toggle
             value: false
-        65:
+        
+        -   key: 65
             name: rBtns1
             type: toggle
             value: off
-        66:
+        
+        -   key: 66
             name: rBtns2
             type: toggle
             value: off
-        67:
+        
+        -   key: 67
             name: rBtns3
             type: toggle
             value: off
-        68:
+        
+        -   key: 68
             name: rBtns4
             type: toggle
             value: off
-        69:
+        
+        -   key: 69
             name: rBtns5
             type: toggle
             value: off
-        70:
+        
+        -   key: 70
             name: rBtns6
             type: toggle
             value: off
-        71:
+        
+        -   key: 71
             name: rBtns7
             type: toggle
             value: off
