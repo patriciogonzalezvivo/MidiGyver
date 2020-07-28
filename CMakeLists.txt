@@ -16,8 +16,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(deps)
 
-find_package(Threads)
-find_package(ALSA)
+# find_package(Threads)
+# find_package(ALSA)
 
 file(GLOB ROOT_SOURCE "${PROJECT_SOURCE_DIR}/src/*.cpp")
 file(GLOB OPS_SOURCE "${PROJECT_SOURCE_DIR}/src/ops/*.cpp")
@@ -33,11 +33,11 @@ target_include_directories(midigyver
 )
 
 target_link_libraries(midigyver 
-    Threads::Threads
+    # Threads::Threads
     yaml-cpp
     duktape
     rtmidi
-    lo_shared
+    lo_static
 )
 
 install(TARGETS midigyver

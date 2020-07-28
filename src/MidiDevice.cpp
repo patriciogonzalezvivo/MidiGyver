@@ -52,16 +52,6 @@ MidiDevice::MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _mi
     catch(RtMidiError &error) {
         error.printMessage();
     }
-
-    // // Load default values for toggles
-    // if ( ctx->config["in"][deviceName].IsMap() ) {
-    //     for (YAML::const_iterator it = ctx->config["in"][deviceName].begin(); it != ctx->config["in"][deviceName].end(); ++it) {
-    //         std::string key = it->first.as<std::string>();       // <- key
-    //         if (it->second["value"] && it->second["type"])
-    //             if (it->second["type"].as<std::string>() == "toggle")
-    //                 setLED(toInt(key), it->second["value"].as<bool>());
-    //     }
-    // }
 }
 
 MidiDevice::~MidiDevice() {
@@ -202,8 +192,12 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     size_t key = _message->at(1);
     float value = (float)_message->at(2);
 
-    if (device->ctx->shapeKeyValue(device->deviceName, key, &value))
-        device->ctx->mapKeyValue(device->deviceName, key, value);
+    if (device->ctx->doKeyExist(device->deviceName, key)) {
+        YAML::Node node = device->ctx->getKeyNode(device->deviceName, key);
+
+        if (device->ctx->shapeKeyValue(node, device->deviceName, key, &value))
+            device->ctx->mapKeyValue(node, device->deviceName, key, value);
+    }
 
 }
 
