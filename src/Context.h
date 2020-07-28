@@ -7,9 +7,11 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "rtmidi/RtMidi.h"
 
+#include "Pulse.h"
 #include "ops/nodes.h"
 
 enum DataType {
@@ -51,8 +53,10 @@ public:
     std::vector<std::string>            targets;
     std::vector<std::string>            devices;
     std::map<std::string, DeviceData>   devicesData;
+    std::vector<Pulse*>                 pulses;
 
     YAML::Node                          config;
+    std::mutex                          configMutex;
 
 protected:
 

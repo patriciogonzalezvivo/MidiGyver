@@ -1,6 +1,9 @@
 global:
     track: 0
     marker: 0
+    timer: false
+    time: 0
+    time_dir: 0.1
 
 out:
     - csv
@@ -8,13 +11,27 @@ out:
 
 aliases: 
     - &defaultScalarFunction |
-        function() {
-            if (Math.abs((value/127.0) - parseFloat(data.value)) < 0.1) {
-                return value;
+            function() {
+                if (Math.abs(value - parseFloat(data.value_raw)) < 5.0) {
+                    return value;
+                }
+                return false;
             }
-            
-            return false;
-        }
+
+pulse:
+    -   name: main
+        interval: 100
+        type: scalar
+        shape: |
+            function() {
+                if (global.timer) {
+                    global.time = parseFloat(global.time) + global.time_dir
+                    return global.time;
+                }
+                else
+                    return false;
+            }
+
 
 in:
     nanoKONTROL2*:
@@ -166,6 +183,15 @@ in:
         -   key: 41
             name: play
             type: toggle
+            shape: |
+                function() {
+                    if (data.value)
+                        global.timer = true;
+                    else
+                        global.timer = false;
+
+                    return value;
+                }
             value: false
         
         -   key: 42
@@ -175,10 +201,24 @@ in:
         -   key: 43
             name: backward
             type: button
-        
+            shape: |
+                function() {
+                    if (value == 127)
+                        global.time_dir -= 0.01;
+
+                    return false;
+                }
+
         -   key: 44
             name: forward
             type: button
+            shape: |
+                function() {
+                    if (value == 127)
+                        global.time_dir += 0.01;
+
+                    return false;
+                }
 
         -   key: 45
             name: rec
@@ -237,7 +277,7 @@ in:
                         return false;
 
                     if (value == 127)
-                        return global.track--;
+                        return --global.track;
                     
                     return false;
                 }

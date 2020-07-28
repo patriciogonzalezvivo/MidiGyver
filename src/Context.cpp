@@ -22,6 +22,50 @@ bool Context::load(const std::string& _filename) {
 
     // JS Functions
     uint32_t id = 0;
+
+    if (config["pulse"].IsSequence()) {
+        for (size_t i = 0; i < config["pulse"].size(); i++) {
+            YAML::Node n = config["pulse"][i];
+            std::string pulseName = n["name"].as<std::string>();
+
+            std::cout << "Adding pulse: " << pulseName << std::endl;
+            devicesData[pulseName].keyMap[i] = i;
+
+            if (n["shape"].IsDefined()) {
+                std::string function = n["shape"].as<std::string>();
+                if ( js.setFunction(id, function) ) {
+                    shapeFncs[pulseName + "_0"] = id;
+                    id++;
+                }
+            }
+
+            Pulse* p = new Pulse(this, i);
+            if (n["interval"].IsDefined()) 
+                p->start(n["interval"].as<int>());
+            // // std::string pulseName = n["name"].as<std::string>();
+            // size_t index = i;
+
+            // float counter = 0;
+            // p->setInterval([&]() {
+            //     // if (counter >= 1) {
+            //         configMutex.lock();
+            //         // Context *ctx = static_cast<Context*>(this);
+            //         std::cout << " + " << pulseName << " : " << counter << std::endl;
+            //         // if (ctx->shapeKeyValue(ctx->config["pulse"][index], pulseName, 0, &counter)) {
+            //             std::cout << " > " << counter << std::endl;
+            //         //     ctx->mapKeyValue(ctx->config["pulse"][index], pulseName, 0, counter);
+            //         // }
+            //         configMutex.unlock();
+            //     // }
+
+
+
+            // }, interval);
+
+            pulses.push_back(p);
+        }
+    }
+
     if (config["in"].IsMap()) {
         for (YAML::const_iterator dev = config["in"].begin(); dev != config["in"].end(); ++dev) {
             std::string device = dev->first.as<std::string>();
