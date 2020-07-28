@@ -294,8 +294,8 @@ in:
                 function() {
                     if (global.track == 0)
                         return false;
-                    if (value == 127)
-                        return global.track--;
+                    if (value === 127)
+                        return --global.track;
                     return false;
                 }
 
@@ -304,7 +304,7 @@ in:
             type: scalar
             shape: |
                 function() {
-                    if (value == 127)
+                    if (value === 127)
                         return ++global.track;
                     return false;
                 }
@@ -332,7 +332,7 @@ in:
             shape: |
                 function() {
                     if (value == 127)
-                        return global.marker++;
+                        return ++global.marker;
                     return false;
                 }
         
