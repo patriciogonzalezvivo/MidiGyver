@@ -121,7 +121,7 @@ in:
                 }
 ```
 
-# Aknowladgements 
+# Acknowledgements 
 
 - Based on [MidiOSC](https://github.com/jstutters/MidiOSC/) by [Jon Stutters](https://github.com/jstutters) and [Christian Ashby](https://github.com/cscashby)
 - Using [liblo]((http://liblo.sourceforge.net)) library from Steve Harris and Stephen Sinclair 
