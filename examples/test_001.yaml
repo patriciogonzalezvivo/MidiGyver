@@ -1,0 +1,26 @@
+in:
+    nanoKONTROL2*:
+        -   key: 0
+            name: u_fader
+            type: scalar
+            map: [0, 1]
+            
+        -   key: 1
+            name: u_vec
+            type: vector
+            map: [[0, 0], [1, 0], [0, 1], [1, 1]]
+            
+        -   key: 2
+            name: u_color
+            type: color
+            map: [ [0,0,0], [1,0,0], [0,1,0], [0,0,1] ]
+
+        -   key: 32
+            name: myButton
+            type: toggle
+            map:
+                on: define,MAGENTA
+                off: undefine,MAGENTA
+out:
+    -   csv
+    -   osc://localhost:8000
