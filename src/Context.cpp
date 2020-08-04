@@ -28,7 +28,7 @@ bool Context::load(const std::string& _filename) {
             YAML::Node n = config["pulse"][i];
             std::string pulseName = n["name"].as<std::string>();
 
-            std::cout << "Adding pulse: " << pulseName << std::endl;
+            // std::cout << "Adding pulse: " << pulseName << std::endl;
             devicesData[pulseName].keyMap[i] = i;
 
             if (n["shape"].IsDefined()) {
@@ -182,20 +182,28 @@ DataType Context::getKeyDataType(YAML::Node _keynode) {
         if ( _keynode["type"].IsDefined() ) {
             std::string typeString =  _keynode["type"].as<std::string>();
             if (typeString == "button")
-                return button_type;
+                return TYPE_BUTTON;
             else if (typeString == "toggle")
-                return toggle_type;
-            else if (typeString == "state")
-                return state_type;
-            else if (typeString == "scalar")
-                return scalar_type;
-            else if (typeString == "vector")
-                return vector_type;
-            else if (typeString == "color")
-                return color_type;
+                return TYPE_TOGGLE;
+            else if (   typeString == "state" ||
+                        typeString == "enum" ||
+                        typeString == "strings" )
+                return TYPE_STRING;
+            else if (   typeString == "scalar" ||
+                        typeString == "number" ||
+                        typeString == "float" ||
+                        typeString == "int" )
+                return TYPE_NUMBER;
+            else if (   typeString == "vec2" ||
+                        typeString == "vec3" ||
+                        typeString == "vector" )
+                return TYPE_VECTOR;
+            else if (   typeString == "vec4" ||
+                        typeString == "color" )
+                return TYPE_COLOR;
         }
     }
-    return unknown_type;
+    return TYPE_UNKNOWN;
 }
 
 std::string Context::getKeyName(YAML::Node _keynode) {
@@ -207,14 +215,16 @@ std::string Context::getKeyName(YAML::Node _keynode) {
     return "unknownName";
 }
 
-bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key, float* _value) {
+bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, const std::string& _type, size_t _key, float* _value) {
     if ( _keynode["shape"].IsDefined() ) {
 
         js.setGlobalValue("device", js.newString(_device));
+        js.setGlobalValue("type", js.newString(_type));
         js.setGlobalValue("key", js.newNumber(_key));
+        js.setGlobalValue("value", js.newNumber(*_value));
+
         JSValue keyData = parseNode(js, _keynode);
         js.setGlobalValue("data", std::move(keyData));
-        js.setGlobalValue("value", js.newNumber(*_value));
         
         std::string key = toString(_key);
         JSValue result = js.getFunctionResult( shapeFncs[_device + "_" + key] );
@@ -280,14 +290,14 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
     _keynode["value_raw"] = _value;
 
     // BUTTON
-    if (type == button_type) {
+    if (type == TYPE_BUTTON) {
         bool value = _value > 0;
         _keynode["value"] = value;
         return updateKey(_keynode, _device, _key);
     }
     
     // TOGGLE
-    else if ( type == toggle_type ) {
+    else if ( type == TYPE_TOGGLE ) {
         if (_value > 0) {
             bool value = false;
                 
@@ -300,7 +310,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
     }
 
     // STATE
-    else if ( type == state_type ) {
+    else if ( type == TYPE_STRING ) {
         int value = (int)_value;
         std::string value_str = toString(value);
 
@@ -323,7 +333,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
     }
     
     // SCALAR
-    else if ( type == scalar_type ) {
+    else if ( type == TYPE_NUMBER ) {
         float value = _value;
 
         if ( _keynode["map"] ) {
@@ -347,7 +357,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
     }
     
     // VECTOR
-    else if ( type == vector_type ) {
+    else if ( type == TYPE_VECTOR ) {
         float pct = _value / 127.0f;
         Vector value = Vector(0.0, 0.0, 0.0);
 
@@ -371,7 +381,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
     }
 
     // COLOR
-    else if ( type == color_type ) {
+    else if ( type == TYPE_COLOR ) {
         float pct = _value / 127.0f;
         Color value = Color(0.0, 0.0, 0.0);
 
@@ -402,7 +412,7 @@ bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t 
     if ( _keynode["value"].IsDefined() ) {
         DataType type = getKeyDataType(_keynode);
         // BUTTONs and TOGGLEs need to change state on the device
-        if (type == button_type || type == toggle_type) {
+        if (type == TYPE_BUTTON || type == TYPE_TOGGLE) {
             bool value = _keynode["value"].as<bool>();
 
             std::vector<unsigned char> msg;
@@ -439,7 +449,7 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
     YAML::Node value = _keynode["value"];
 
     // BUTTON and TOGGLE
-    if ( type == toggle_type || type == button_type ) {
+    if ( type == TYPE_TOGGLE || type == TYPE_BUTTON ) {
         std::string value_str = (value.as<bool>()) ? "on" : "off";
         
         if (_keynode["map"]) {
@@ -493,7 +503,7 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
     }
 
     // STATE
-    else if ( type == state_type ) {
+    else if ( type == TYPE_STRING ) {
         for (size_t t = 0; t < keyTargets.size(); t++) {
             if (keyTargets[t].rfind("osc://", 0) == 0)
                 sendValue(parseOscTarget(keyTargets[t]), name, value.as<std::string>());
@@ -505,7 +515,7 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
     }
 
     // SCALAR
-    else if ( type == scalar_type ) {
+    else if ( type == TYPE_NUMBER ) {
         for (size_t t = 0; t < keyTargets.size(); t++) {
             if (keyTargets[t].rfind("osc://", 0) == 0)
                 sendValue(parseOscTarget(keyTargets[t]), name, value.as<float>());
@@ -516,7 +526,7 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
     }
 
     // VECTOR
-    else if ( type == vector_type ) {
+    else if ( type == TYPE_VECTOR ) {
         for (size_t t = 0; t < keyTargets.size(); t++) {
             if (keyTargets[t].rfind("osc://", 0) == 0)
                 sendValue(parseOscTarget(keyTargets[t]), name, value.as<Vector>());
@@ -528,7 +538,7 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
     }
 
     // COLOR
-    else if ( type == color_type ) {
+    else if ( type == TYPE_COLOR ) {
         for (size_t t = 0; t < keyTargets.size(); t++) {
             if (keyTargets[t].rfind("osc://", 0) == 0)
                 sendValue(parseOscTarget(keyTargets[t]), name, value.as<Color>());

@@ -15,13 +15,13 @@
 #include "ops/nodes.h"
 
 enum DataType {
-    unknown_type,
-    button_type,
-    toggle_type,
-    state_type,
-    scalar_type,
-    vector_type,
-    color_type
+    TYPE_UNKNOWN,
+    TYPE_BUTTON,
+    TYPE_TOGGLE,
+    TYPE_NUMBER,
+    TYPE_VECTOR,
+    TYPE_COLOR,
+    TYPE_STRING
 };
 
 struct DeviceData {
@@ -45,7 +45,7 @@ public:
     std::string getKeyName(YAML::Node _keynode);
     DataType    getKeyDataType(YAML::Node _keynode);
 
-    bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key, float* _value);
+    bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, const std::string& _type, size_t _key, float* _value);
     bool        mapKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key, float _value);
     bool        updateKey(YAML::Node _keynode, const std::string& _device, size_t _key);
     bool        sendKeyValue(YAML::Node _keynode);

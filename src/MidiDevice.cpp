@@ -195,7 +195,7 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     device->ctx->configMutex.lock();
     if (device->ctx->doKeyExist(device->deviceName, key)) {
         YAML::Node node = device->ctx->getKeyNode(device->deviceName, key);
-        if (device->ctx->shapeKeyValue(node, device->deviceName, key, &value))
+        if (device->ctx->shapeKeyValue(node, device->deviceName, type, key, &value))
             device->ctx->mapKeyValue(node, device->deviceName, key, value);
     }
     device->ctx->configMutex.unlock();
