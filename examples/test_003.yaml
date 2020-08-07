@@ -1,0 +1,63 @@
+global:
+    play: false
+    time: 0.01
+    step: 0.01
+
+pulse:
+    - name: u_timeline
+      type: scalar
+      interval: 10
+      shape: |
+          function () {
+              if (global.play) {
+                  global.time += global.step;
+                  return global.time;
+              }
+              else {
+                  return false;
+              }
+          }
+
+
+in:
+    ortho_remote*:
+        -   key: 0
+            name: playButton
+            type: toggle
+            shape: |
+                function() {
+                    if (value === 100) {
+                        global.play = !global.play;
+                    }
+                    return false;
+                }
+
+        -   key: 1
+            name: u_timeline
+            type: scalar
+            shape: |
+                function() {
+                    if (global.play) {
+                        if (value === 127) {
+                            global.step -= 0.0001;
+                        }
+                        else {
+                            global.step += 0.0001;
+                        }
+                        return false;
+                    }
+                    else {
+
+                        if (value === 127) {
+                            global.time -= 0.01;
+                        }
+                        else {
+                            global.time += 0.01;
+                        }
+                        return global.time;
+                    }
+                }
+
+out:
+    -   csv
+    -   osc://localhost:8000
