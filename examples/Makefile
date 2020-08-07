@@ -6,10 +6,14 @@ test_001:
 	glslViewer test_001.frag -p 8000 -l -e cursor,off &
 	sleep 1 && midigyver test_001.yaml
 
-nanoKontrol2:
-	glslViewer nanoKontrol2.frag -p 8000 -l -e cursor,off &
-	sleep 1 && midigyver nanoKontrol2.yaml
+test_002:
+	glslViewer test_002.frag -p 8000 -l -e cursor,off &
+	sleep 1 && midigyver test_002.yaml
 
-orthoRemote:
-	glslViewer orthoRemote.frag -p 8000 -l -e cursor,off &
-	sleep 1 && midigyver orthoRemote.yaml
+test_003:
+	glslViewer test_003.frag -p 8000 -l -e cursor,off &
+	sleep 1 && midigyver test_003.yaml
+
+blender_frames:
+	blender blender_frames.blend &
+	sleep 1 && midigyver blender_frames.yaml

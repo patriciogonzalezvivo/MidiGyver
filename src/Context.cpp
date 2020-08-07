@@ -41,7 +41,7 @@ bool Context::load(const std::string& _filename) {
 
             Pulse* p = new Pulse(this, i);
             if (n["interval"].IsDefined()) 
-                p->start(n["interval"].as<int>());
+                p->start(int(n["interval"].as<float>()));
             // // std::string pulseName = n["name"].as<std::string>();
             // size_t index = i;
 

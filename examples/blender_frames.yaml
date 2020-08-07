@@ -1,0 +1,40 @@
+global:
+    play: false
+    frame: 1.0
+pulse:
+    -   name: frame
+        type: scalar
+        interval: 41.14
+        shape: |
+            function () {
+                if (global.play)
+                    return ++global.frame;
+                return false;
+            }
+in:
+    ortho_remote*:
+        -   key: 0
+            name: playButton
+            type: toggle
+            shape: |
+                function() {
+                    if (value === 100)
+                        global.play = !global.play;
+                    return false;
+                }
+
+        -   key: 1
+            name: frame
+            type: scalar
+            shape: |
+                function() {
+                    if (value === 127)
+                        global.frame -= 0.5;
+                    else
+                        global.frame += 0.5;
+                    return global.frame;
+                }
+
+out:
+    -   csv
+    -   osc://:9001

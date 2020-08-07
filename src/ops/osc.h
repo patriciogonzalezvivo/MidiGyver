@@ -21,18 +21,19 @@ inline OscTarget parseOscTarget(const std::string _address) {
     std::size_t portEnd = address.find("/"); 
     size_t total = address.size();
 
-    if (portEnd == std::string::npos) {
+    if (addressEnd == std::string::npos) {
+        addressEnd = total;
         portStart = total;
         portEnd = total;
     }
-
-    if (addressEnd == std::string::npos)
-        addressEnd = portStart;
+    else if (portEnd == std::string::npos) {
+        portEnd = total;
+    }
 
     if (addressEnd != 0)
         target.address = address.substr(0, addressEnd);
 
-    if (portEnd != total)
+    if (portStart != portEnd)
         target.port = address.substr(portStart, portEnd - portStart);
 
     if (portEnd != total)
