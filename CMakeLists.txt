@@ -7,7 +7,7 @@ else()
 endif()
 
 project(midigyver VERSION 0.1
-                  DESCRIPTION "midigyver"
+                  DESCRIPTION "Flexible console program to convert MIDI inputs into OSC using a YAML config file"
                   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -42,3 +42,11 @@ target_link_libraries(midigyver
 
 install(TARGETS midigyver
         RUNTIME DESTINATION bin)
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_DISPALY_NAME "midigyver")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/patriciogonzalezvivo/midigyver")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SECTION "multimedia")
+INCLUDE(CPack)
