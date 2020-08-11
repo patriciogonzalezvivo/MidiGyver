@@ -1,11 +1,7 @@
 #!/usr/bin/make -f
-# -*- makefile -*-
-
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
-# Disable optimization to prevent segfault
-export DEB_BUILD_OPTIONS=noopt
 
 %:
-	dh $@
+	dh $@ --with autotools-dev
+
+override_dh_auto_install:
+	install -D -m 0755 build/midigyver $$(pwd)/debian/midigyver/usr/bin/midigyver
