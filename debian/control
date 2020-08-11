@@ -1,0 +1,12 @@
+Source: midigyver
+Section: multimedia
+Priority: optional
+Maintainer: Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>
+Build-Depends: debhelper (>=9), cmake
+Standards-Version: 0.1
+Homepage: https://github.com/patriciogonzalezvivo/midigyver
+
+Package: midigyver
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Flexible console program to convert MIDI inputs into OSC using a YAML config file

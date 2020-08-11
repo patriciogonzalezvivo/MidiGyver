@@ -1,1 +1,0 @@
-Flexible console program to convert MIDI inputs into OSC using a YAML config file
