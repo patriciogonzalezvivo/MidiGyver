@@ -10,7 +10,7 @@ global:
             [64,0], [65,0], [66,0], [67,0], [68,0], [69,0], [70,0], [71,0] ]
 
 out:
-    -   osc://localhost:8000
+    -   osc://localhost:4560
     -   csv
 
 pulse:
