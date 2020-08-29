@@ -33,8 +33,8 @@ void Pulse::start(size_t _interval) {
             ((Context*)ctx)->configMutex.unlock();
 
             counter++;
-                if (counter > 127.0)
-                    counter = 0.0;
+            if (counter > 127.0)
+                counter = 0.0;
         }
     });
     t.detach();

@@ -94,6 +94,7 @@ bool Context::load(const std::string& _filename) {
 
             // std::cout << "Adding pulse: " << name << std::endl;
             Pulse* p = new Pulse(this, i);
+            
             if (n["interval"].IsDefined()) 
                 p->start(int(n["interval"].as<float>()));
 
@@ -430,22 +431,20 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
 
 bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t _key) {
 
-    if (devices[_device]->type == DEVICE_MIDI) {
+    if ( _keynode["value"].IsDefined() ) {
+        DataType type = getKeyDataType(_keynode);
 
-        if ( _keynode["value"].IsDefined() ) {
-            DataType type = getKeyDataType(_keynode);
+        // BUTTONs and TOGGLEs need to change state on the device
+        if (devices[_device]->type == DEVICE_MIDI && 
+            (type == TYPE_BUTTON || type == TYPE_TOGGLE)) {
+            bool value = _keynode["value"].as<bool>();
 
-            // BUTTONs and TOGGLEs need to change state on the device
-            if (type == TYPE_BUTTON || type == TYPE_TOGGLE) {
-                bool value = _keynode["value"].as<bool>();
-
-                MidiDevice* midi = static_cast<MidiDevice*>(devices[_device]);
-                midi->send_CC(_key,  value ? 127 : 0 );
-            }
-            return sendKeyValue(_keynode);
+            MidiDevice* midi = static_cast<MidiDevice*>(devices[_device]);
+            midi->send_CC(_key,  value ? 127 : 0 );
         }
+        return sendKeyValue(_keynode);
     }
-
+    
     return false;
 }
 
