@@ -20,96 +20,95 @@ bool Context::load(const std::string& _filename) {
     JSValue global = parseNode(js, config["global"]);
     js.setGlobalValue("global", std::move(global));
 
-    // JS Functions
-    uint32_t id = 0;
-
-    if (config["pulse"].IsSequence()) {
-        for (size_t i = 0; i < config["pulse"].size(); i++) {
-            YAML::Node n = config["pulse"][i];
-            std::string pulseName = n["name"].as<std::string>();
-
-            // std::cout << "Adding pulse: " << pulseName << std::endl;
-            devicesData[pulseName].keyMap[i] = i;
-
-            if (n["shape"].IsDefined()) {
-                std::string function = n["shape"].as<std::string>();
-                if ( js.setFunction(id, function) ) {
-                    shapeFncs[pulseName + "_0"] = id;
-                    id++;
-                }
-            }
-
-            Pulse* p = new Pulse(this, i);
-            if (n["interval"].IsDefined()) 
-                p->start(int(n["interval"].as<float>()));
-            // // std::string pulseName = n["name"].as<std::string>();
-            // size_t index = i;
-
-            // float counter = 0;
-            // p->setInterval([&]() {
-            //     // if (counter >= 1) {
-            //         configMutex.lock();
-            //         // Context *ctx = static_cast<Context*>(this);
-            //         std::cout << " + " << pulseName << " : " << counter << std::endl;
-            //         // if (ctx->shapeKeyValue(ctx->config["pulse"][index], pulseName, 0, &counter)) {
-            //             std::cout << " > " << counter << std::endl;
-            //         //     ctx->mapKeyValue(ctx->config["pulse"][index], pulseName, 0, counter);
-            //         // }
-            //         configMutex.unlock();
-            //     // }
-
-
-
-            // }, interval);
-
-            pulses.push_back(p);
-        }
-    }
-
-    if (config["in"].IsMap()) {
-        for (YAML::const_iterator dev = config["in"].begin(); dev != config["in"].end(); ++dev) {
-            std::string device = dev->first.as<std::string>();
-
-            if (config["in"][device].IsMap()) {
-                for (YAML::const_iterator it = config["in"][device].begin(); it != config["in"][device].end(); ++it) {
-                    std::string key = it->first.as<std::string>();
-                    if (config["in"][device][key]["shape"].IsDefined()) {
-                        std::string function = config["in"][device][key]["shape"].as<std::string>();
-                        if ( js.setFunction(id, function) ) {
-                            shapeFncs[device + "_" + key] = id;
-                            id++;
-                        }
-                    }
-                }
-            }
-
-            else if (config["in"][device].IsSequence()) {
-                for (size_t i = 0; i < config["in"][device].size(); i++) {
-                    size_t key = i;
-
-                    if (config["in"][device][i]["key"].IsDefined())
-                        key = config["in"][device][i]["key"].as<size_t>();
-
-                    devicesData[device].keyMap[key] = i;
-
-                    if (config["in"][device][i]["shape"].IsDefined()) {
-                        std::string function = config["in"][device][i]["shape"].as<std::string>();
-                        if ( js.setFunction(id, function) ) {
-                            shapeFncs[device + "_" + toString(key)] = id;
-                            id++;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // Define OSC out targets
     if (config["out"].IsSequence())
         for (size_t i = 0; i < config["out"].size(); i++)
             targets.push_back(config["out"][i].as<std::string>());
     else if (config["out"].IsScalar())
         targets.push_back(config["out"].as<std::string>());
+
+    // JS Functions
+    uint32_t id = 0;
+
+    // Load MidiDevices
+    std::vector<std::string> availableDevices = MidiDevice::getInputPorts();
+
+    if (config["in"].IsMap()) {
+        for (YAML::const_iterator dev = config["in"].begin(); dev != config["in"].end(); ++dev) {
+            std::string inName = dev->first.as<std::string>();
+            int deviceID = getMatchingKey(availableDevices, inName);
+
+            if (deviceID >= 0) {
+                MidiDevice* m = new MidiDevice(this, inName, deviceID);
+                devicesNames.push_back(inName);
+                devices[inName] = (Device*)m;
+
+                if (config["in"][inName].IsMap()) {
+                    for (YAML::const_iterator it = config["in"][inName].begin(); it != config["in"][inName].end(); ++it) {
+                        std::string key = it->first.as<std::string>();
+                        if (config["in"][inName][key]["shape"].IsDefined()) {
+                            std::string function = config["in"][inName][key]["shape"].as<std::string>();
+                            if ( js.setFunction(id, function) ) {
+                                shapeFncs[inName + "_" + key] = id;
+                                id++;
+                            }
+                        }
+                    }
+                }
+
+                else if (config["in"][inName].IsSequence()) {
+                    for (size_t i = 0; i < config["in"][inName].size(); i++) {
+                        size_t key = i;
+
+                        if (config["in"][inName][i]["key"].IsDefined())
+                            key = config["in"][inName][i]["key"].as<size_t>();
+
+                        devices[inName]->keyMap[key] = i;
+
+                        if (config["in"][inName][i]["shape"].IsDefined()) {
+                            std::string function = config["in"][inName][i]["shape"].as<std::string>();
+                            if ( js.setFunction(id, function) ) {
+                                shapeFncs[inName + "_" + toString(key)] = id;
+                                id++;
+                            }
+                        }
+                    }
+                }
+
+                updateDevice(inName);
+            }
+        }
+    }
+
+    if (devices.size() == 0) {
+        std::cout << "Listening to no midi device. Please setup one of the following one in your config YAML file: " << std::endl;
+        for (size_t i = 0; i < availableDevices.size(); i++)
+            std::cout << "  - " << availableDevices[i] << std::endl;
+    }
+
+    // Load Pulses
+    if (config["pulse"].IsSequence()) {
+        for (size_t i = 0; i < config["pulse"].size(); i++) {
+            YAML::Node n = config["pulse"][i];
+            std::string name = n["name"].as<std::string>();
+
+            // std::cout << "Adding pulse: " << name << std::endl;
+            Pulse* p = new Pulse(this, i);
+            if (n["interval"].IsDefined()) 
+                p->start(int(n["interval"].as<float>()));
+
+            if (n["shape"].IsDefined()) {
+                std::string function = n["shape"].as<std::string>();
+                if ( js.setFunction(id, function) ) {
+                    shapeFncs[name + "_0"] = id;
+                    id++;
+                }
+            }
+
+            devicesNames.push_back(name);
+            devices[name] = (Device*)p;
+        }
+    }
 
     return true;
 }
@@ -122,6 +121,28 @@ bool Context::save(const std::string& _filename) {
 
     std::ofstream fout(_filename);
     fout << out.c_str();
+
+    return true;
+}
+
+bool Context::close() {
+    for (std::map<std::string, Device*>::iterator it = devices.begin(); it != devices.end(); it++) {
+        if (it->second->type == DEVICE_MIDI) {
+            delete ((MidiDevice*)it->second);
+        }
+        else if (it->second->type == DEVICE_PULSE) {
+            ((Pulse*)it->second)->stop();
+            delete ((Pulse*)it->second);
+        }
+    }
+    
+    devices.clear();
+    devicesNames.clear();
+    targets.clear();
+    
+    shapeFncs.clear();
+
+    config = YAML::Node();
 
     return true;
 }
@@ -157,7 +178,7 @@ bool Context::doKeyExist(const std::string& _device, size_t _key) {
         }
 
         else if (config["in"][_device].IsSequence()) {
-            return devicesData[_device].keyMap.find(_key) != devicesData[_device].keyMap.end(); 
+            return devices[_device]->keyMap.find(_key) != devices[_device]->keyMap.end(); 
         }
     }
     return false;
@@ -170,7 +191,7 @@ YAML::Node  Context::getKeyNode(const std::string& _device, size_t _key) {
     }
 
     else if (config["in"][_device].IsSequence()) {
-        size_t key = devicesData[_device].keyMap[_key];
+        size_t key = devices[_device]->keyMap[_key];
         return config["in"][_device][key];
     }
 
@@ -236,8 +257,8 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
             }
 
             else if (result.isObject()) {
-                for (size_t j = 0; j < devices.size(); j++) {
-                    JSValue d = result.getValueForProperty(devices[j]);
+                for (size_t j = 0; j < devicesNames.size(); j++) {
+                    JSValue d = result.getValueForProperty(devicesNames[j]);
                     if (!d.isUndefined()) {
                         for (size_t i = 0; i < d.getLength(); i++) {
                             JSValue el = d.getValueAtIndex(i);
@@ -245,8 +266,8 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                                 if (el.getLength() == 2) {
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     float v = el.getValueAtIndex(1).toFloat();
-                                    // std::cout << "trigger(" << devices[j] << "," << k << "," << v << ")" << std::endl;
-                                    mapKeyValue(_keynode, devices[j], k, v);
+                                    // std::cout << "trigger(" << devicesNames[j] << "," << k << "," << v << ")" << std::endl;
+                                    mapKeyValue(_keynode, devicesNames[j], k, v);
                                 }
                             }
                         }
@@ -409,19 +430,20 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
 
 bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t _key) {
 
-    if ( _keynode["value"].IsDefined() ) {
-        DataType type = getKeyDataType(_keynode);
-        // BUTTONs and TOGGLEs need to change state on the device
-        if (type == TYPE_BUTTON || type == TYPE_TOGGLE) {
-            bool value = _keynode["value"].as<bool>();
+    if (devices[_device]->type == DEVICE_MIDI) {
 
-            std::vector<unsigned char> msg;
-            msg.push_back( 0xB0 );
-            msg.push_back( _key );
-            msg.push_back( value ? 127 : 0 );
-            devicesData[_device].out->sendMessage( &msg );   
+        if ( _keynode["value"].IsDefined() ) {
+            DataType type = getKeyDataType(_keynode);
+
+            // BUTTONs and TOGGLEs need to change state on the device
+            if (type == TYPE_BUTTON || type == TYPE_TOGGLE) {
+                bool value = _keynode["value"].as<bool>();
+
+                MidiDevice* midi = static_cast<MidiDevice*>(devices[_device]);
+                midi->send_CC(_key,  value ? 127 : 0 );
+            }
+            return sendKeyValue(_keynode);
         }
-        return sendKeyValue(_keynode);
     }
 
     return false;
@@ -550,4 +572,5 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
 
     return false;
 }
+
 

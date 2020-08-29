@@ -7,16 +7,17 @@
 #include "Context.h"
 
 Pulse::Pulse(void* _ctx, size_t _index) {
+    type = DEVICE_PULSE;
     ctx = _ctx;
-    index = _index;
     name = ((Context*)ctx)->config["pulse"][_index]["name"].as<std::string>();
+    keyMap[_index] = _index;
+    index = _index;
 }   
 
 Pulse::~Pulse() {
 }
 
 void Pulse::start(size_t _interval) {
-
     this->clear = false;
 
     std::thread t([=]() {

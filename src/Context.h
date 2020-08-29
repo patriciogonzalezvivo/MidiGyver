@@ -12,6 +12,7 @@
 #include "rtmidi/RtMidi.h"
 
 #include "Pulse.h"
+#include "MidiDevice.h"
 #include "ops/nodes.h"
 
 enum DataType {
@@ -24,11 +25,6 @@ enum DataType {
     TYPE_STRING
 };
 
-struct DeviceData {
-    RtMidiOut*                  out;
-    std::map<size_t, size_t>    keyMap;
-};
-
 class Context {
 public:
 
@@ -37,6 +33,7 @@ public:
 
     bool load(const std::string& _filename);
     bool save(const std::string& _filename);
+    bool close();
 
     bool        updateDevice(const std::string& _device);
 
@@ -51,9 +48,9 @@ public:
     bool        sendKeyValue(YAML::Node _keynode);
 
     std::vector<std::string>            targets;
-    std::vector<std::string>            devices;
-    std::map<std::string, DeviceData>   devicesData;
-    std::vector<Pulse*>                 pulses;
+    
+    std::vector<std::string>            devicesNames;
+    std::map<std::string, Device*>      devices;
 
     YAML::Node                          config;
     std::mutex                          configMutex;

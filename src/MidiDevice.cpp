@@ -6,6 +6,8 @@
 #include "types/Color.h"
 #include "types/Vector.h"
 
+#include "Context.h"
+
 //status bytes
 const unsigned char NOTE_OFF = 0x80;
 const unsigned char NOTE_ON = 0x90;
@@ -26,10 +28,11 @@ const unsigned char STOP_SONG = 0xFC;
 const unsigned char ACTIVE_SENSING = 0xFE;
 const unsigned char SYSTEM_RESET = 0xFF;
 
-MidiDevice::MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _midiPort) {
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) {
+    type = DEVICE_MIDI;
     ctx = _ctx;
+    name = _name;
     midiPort = _midiPort;
-    deviceName = _deviceName;
 
     try {
         midiIn = new RtMidiIn();
@@ -45,9 +48,8 @@ MidiDevice::MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _mi
     // stringReplace(midiName, '_');
 
     try {
-        RtMidiOut* midiOut = new RtMidiOut();
+        midiOut = new RtMidiOut();
         midiOut->openPort(_midiPort);
-        ctx->devicesData[deviceName].out = midiOut;
     }
     catch(RtMidiError &error) {
         error.printMessage();
@@ -56,6 +58,14 @@ MidiDevice::MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _mi
 
 MidiDevice::~MidiDevice() {
     delete this->midiIn;
+}
+
+void MidiDevice::send_CC(size_t _key, size_t _value) {
+    std::vector<unsigned char> msg;
+    msg.push_back( CONTROLLER_CHANGE );
+    msg.push_back( _key );
+    msg.push_back( _value );
+    midiOut->sendMessage( &msg );   
 }
 
 void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int& _bytes, unsigned char& _channel) {
@@ -172,6 +182,23 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
     }
 }
 
+std::vector<std::string> MidiDevice::getInputPorts() {
+    std::vector<std::string> devices;
+
+    RtMidiIn* midiIn = new RtMidiIn();
+    unsigned int nPorts = midiIn->getPortCount();
+
+    for(unsigned int i = 0; i < nPorts; i++) {
+        std::string name = midiIn->getPortName(i);
+        stringReplace(name, '_');
+        devices.push_back( name );
+    }
+
+    delete midiIn;
+
+    return devices;
+}
+
 void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message, void* _userData) {
     unsigned int nBytes = 0;
     try {
@@ -183,6 +210,7 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     }
 
     MidiDevice *device = static_cast<MidiDevice*>(_userData);
+    Context *context = static_cast<Context*>(device->ctx);
 
     std::string type;
     int bytes;
@@ -192,13 +220,13 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     size_t key = _message->at(1);
     float value = (float)_message->at(2);
 
-    device->ctx->configMutex.lock();
-    if (device->ctx->doKeyExist(device->deviceName, key)) {
-        YAML::Node node = device->ctx->getKeyNode(device->deviceName, key);
-        if (device->ctx->shapeKeyValue(node, device->deviceName, type, key, &value))
-            device->ctx->mapKeyValue(node, device->deviceName, key, value);
+    context->configMutex.lock();
+    if (context->doKeyExist(device->name, key)) {
+        YAML::Node node = context->getKeyNode(device->name, key);
+        if (context->shapeKeyValue(node, device->name, type, key, &value))
+            context->mapKeyValue(node, device->name, key, value);
     }
-    device->ctx->configMutex.unlock();
+    context->configMutex.unlock();
 
 }
 

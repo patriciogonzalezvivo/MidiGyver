@@ -36,6 +36,15 @@ inline std::string getMatchingKey(const YAML::Node& _node, const std::string& _t
     return "";
 }
 
+inline int getMatchingKey(const std::vector<std::string>& _list, const std::string& _pattern) {
+    for (size_t i = 0; i < _list.size(); i++ ) {
+        if (match( _pattern.c_str(),_list[i].c_str()))
+            return i;
+    }
+
+    return -1;
+}
+
 inline bool getFloat(const YAML::Node& node, float& result, bool allowTrailingJunk = false) {
     if (node.IsScalar()) {
         const std::string& scalar = node.Scalar();

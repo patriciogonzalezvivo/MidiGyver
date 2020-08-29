@@ -1,22 +1,30 @@
+#include <sys/stat.h>
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <iostream>
+#include <fstream>
+
 #include "Context.h"
+#include "Command.h"
+#include "ops/strings.h"
 
-#include "MidiDevice.h"
-#include "rtmidi/RtMidi.h"
-#include "ops/nodes.h"
+CommandList commands;
+Context*    ctx; 
+std::string version = "0.2";
+std::string name = "midigyver";
+std::string header = name + " " + version + " by Patricio Gonzalez Vivo ( patriciogonzalezvivo.com )"; 
+std::string configfile = "";
+std::atomic<bool> bRun(true);
+std::mutex  contextMutex;
 
-std::vector<std::string> getInputPorts() {
-    std::vector<std::string> devices;
-
-    RtMidiIn* midiIn = new RtMidiIn();
-    unsigned int nPorts = midiIn->getPortCount();
-
-    for(unsigned int i = 0; i < nPorts; i++)
-        devices.push_back( midiIn->getPortName(i) );
-
-    delete midiIn;
-
-    return devices;
-}
+// CONSOLE IN watcher
+void cinWatcherThread();
 
 int main(int argc, char** argv) {
     if (argc == 1) {
@@ -24,39 +32,135 @@ int main(int argc, char** argv) {
         return 0;
     }
     
-    std::string configfile = std::string(argv[1]);
+    configfile = std::string(argv[1]);
 
-    Context ctx;    
-    if (ctx.load(configfile)) {
+        commands.push_back(Command("help", [&](const std::string& _line){
+        if (_line == "help") {
+            std::cout << "// " << header << std::endl;
+            std::cout << "// " << std::endl;
+            for (unsigned int i = 0; i < commands.size(); i++) {
+                std::cout << "// " << commands[i].description << std::endl;
+            }
+            return true;
+        }
+        else {
+            std::vector<std::string> values = split(_line,',', true);
+            if (values.size() == 2) {
+                for (unsigned int i = 0; i < commands.size(); i++) {
+                    if (commands[i].begins_with == values[1]) {
+                        std::cout << "// " << commands[i].description << std::endl;
+                    }
+                }
+            }
+        }
+        return false;
+    },
+    "help[,<command>]               print help for one or all command"));
 
-        std::vector<MidiDevice*> inputs;
-        std::vector<std::string> devices_in = getInputPorts();
-        for (size_t i = 0; i < devices_in.size(); i++) {
-            stringReplace(devices_in[i], '_');
-            std::string deviceKeyName = getMatchingKey(ctx.config["in"], devices_in[i]);
+    commands.push_back(Command("version", [&](const std::string& _line){ 
+        if (_line == "version") {
+            std::cout << version << std::endl;
+            return true;
+        }
+        return false;
+    },
+    "version                        return version."));
 
-            if (deviceKeyName.size() > 0) {
-                ctx.devices.push_back(deviceKeyName);
-                inputs.push_back(new MidiDevice(&ctx, deviceKeyName, i));
-                ctx.updateDevice(deviceKeyName);
+    commands.push_back(Command("q", [&](const std::string& _line){ 
+        if (_line == "q") {
+            bRun.store(false);
+            return true;
+        }
+        return false;
+    },
+    "q                              close"));
+
+    commands.push_back(Command("quit", [&](const std::string& _line){ 
+        bRun.store(false);
+        return true;
+    },
+    "quit                           close"));
+
+    commands.push_back(Command("exit", [&](const std::string& _line){ 
+        bRun.store(false);
+        return true;
+    },
+    "exit                           close"));
+
+    commands.push_back(Command("save", [&](const std::string& _line){
+        if (_line == "save") {
+            ctx->save(configfile);
+            return true;
+        }
+        else {
+            std::vector<std::string> values = split(_line,',',true);
+            if (values.size() == 2) {
+                ctx->save(values[1]);
+            }
+        }
+        return false;
+    },
+    "save                           save values"));
+
+    struct stat st;
+    int lastChange;
+    bool fileChanged = false;
+
+    ctx = new Context();    
+    if (ctx->load(configfile)) {
+        stat( configfile.c_str(), &st );
+        lastChange = st.st_mtime;
+    }
+
+    std::thread cinWatcher( &cinWatcherThread );
+
+    // Commands comming from the console IN
+    while (bRun) {
+
+        stat( configfile.c_str(), &st );
+        int date = st.st_mtime;
+        if ( date != lastChange ) {
+            contextMutex.lock();
+            lastChange = date;
+            ctx->close();
+            ctx->load(configfile);
+            contextMutex.unlock();
+        }
+
+        #if defined(_WIN32)
+        std::this_thread::sleep_for(std::chrono::microseconds(500000));
+        #else
+        usleep(500000);
+        #endif 
+
+    }
+
+    ctx->close();
+
+#ifndef _WIN32
+    pthread_t cinHandler = cinWatcher.native_handle();
+    pthread_cancel( cinHandler );
+#endif
+
+    exit(0);
+}
+
+void cinWatcherThread() {// Commands comming from the console IN
+    std::cout << "// > ";
+    std::string console_line;
+    while (std::getline(std::cin, console_line)) {
+
+        for (size_t i = 0; i < commands.size(); i++) {
+            if (beginsWith(console_line, commands[i].begins_with)) {
+                // If got resolved stop 
+                contextMutex.lock();
+                bool resolve = commands[i].exec(console_line);
+                contextMutex.unlock();
+                if (resolve)
+                    break;
             }
         }
 
-        if (inputs.size() == 0) {
-            std::cout << "Listening to no device. Please load the config.yaml for: " << std::endl;
-            for (size_t i = 0; i < devices_in.size(); i++)
-                std::cout << "  - " << devices_in[i] << std::endl;
-
-            return false;
-        }
-
-        char input;
-        std::cin.get(input);
-        ctx.save(configfile);
-
-        for (std::vector<MidiDevice*>::iterator inputIterator = inputs.begin(); inputIterator < inputs.end(); inputIterator++)
-            delete *inputIterator;
+        std::cout << "// > ";
     }
-
-    return 1;
 }

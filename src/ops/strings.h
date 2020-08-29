@@ -56,6 +56,15 @@ inline bool match(const char* _pattern, const char* _target) {
     return false; 
 } 
 
+inline bool beginsWith(const std::string& _stringA, const std::string& _stringB) {
+    for (size_t i = 0; i < _stringB.size(); i++) {
+        if (_stringB[i] != _stringA[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 inline void stringReplace(std::string& str, char rep) {
     replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ' '), rep);
     replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ':'), rep);

@@ -8,21 +8,23 @@
 #include <string>
 #include <vector>
 
-#include "Context.h"
+#include "rtmidi/RtMidi.h"
 
+#include "Device.h"
 
-
-class MidiDevice {
+class MidiDevice : public Device {
 public:
-    MidiDevice(Context* _ctx, const std::string& _deviceName, size_t _midiPort);
+    MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort);
     virtual ~MidiDevice();
 
+    static std::vector<std::string> getInputPorts();
     static void onMidi(double, std::vector<unsigned char>*, void*);
 
-    std::string deviceName;
+    void        send_CC(size_t _key, size_t _value);
+
     size_t      midiPort;
 
-private:
-    Context*    ctx;
+protected:
     RtMidiIn*   midiIn;
+    RtMidiOut*  midiOut;
 };
