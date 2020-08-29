@@ -260,24 +260,27 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
             else if (result.isObject()) {
                 for (size_t j = 0; j < devicesNames.size(); j++) {
                     JSValue d = result.getValueForProperty(devicesNames[j]);
+
                     if (!d.isUndefined()) {
                         for (size_t i = 0; i < d.getLength(); i++) {
                             JSValue el = d.getValueAtIndex(i);
                             if (el.isArray()) {
-                                if (el.getLength() == 2) {
+                                if (el.getLength() > 1) {
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     float v = el.getValueAtIndex(1).toFloat();
+                                    YAML::Node n = getKeyNode(devicesNames[j], k);
                                     // std::cout << "trigger(" << devicesNames[j] << "," << k << "," << v << ")" << std::endl;
-                                    mapKeyValue(_keynode, devicesNames[j], k, v);
+                                    mapKeyValue(n, devicesNames[j], k, v);
                                 }
                             }
                         }
-                    } 
+                    }
                 }
                 return false;
             }
 
             else if (result.isArray()) {
+                std::cout << "shapeKey is an Array" << std::endl;
                 for (size_t i = 0; i < result.getLength(); i++) {
                     JSValue el = result.getValueAtIndex(i);
                     if (el.isArray()) {

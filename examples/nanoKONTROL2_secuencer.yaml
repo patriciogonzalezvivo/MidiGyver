@@ -1,0 +1,204 @@
+global:
+    track: 0
+    marker: 4
+    timer: false
+    time: -1
+    time_dir: 1.0
+    stops: [ [32,0], [33,0], [34,0], [35,0], [36,0], [37,0], [38,0], [39,0] ]
+    keys: [ [32,0], [33,0], [34,0], [35,0], [36,0], [37,0], [38,0], [39,0],
+            [48,0], [49,0], [50,0], [51,0], [52,0], [53,0], [54,0], [55,0],
+            [64,0], [65,0], [66,0], [67,0], [68,0], [69,0], [70,0], [71,0] ]
+
+out:
+    -   osc://localhost:8000
+    -   csv
+
+pulse:
+    -   name: pulse
+        interval: 1000
+        type: scalar
+        shape: |
+            function() {
+                if (global.timer) {
+                    global.time += 1
+
+                    var head = global.time % global.stops.length;
+                    var rta = [];
+                    for (i = 0; i < global.stops.length; i++) { 
+                        rta.push( [global.stops[i][0], (i === head) ? 127 : 0 ]);
+                    }
+
+                    for (i = 0; i < global.keys.length; i++) { 
+                        if (i % 8 === head) {
+                            if (global.keys[i][1] > 0) {
+                                rta.push( global.keys[i] );
+                            }
+                        }
+                    }
+
+                    return { 
+                        'nanoKONTROL2*': rta
+                    };
+                }
+                else
+                    return false;
+            }
+
+aliases:
+    -   &defaultToggleFnc |
+            function() {
+                if (value > 0) {
+
+                    for (i = 0; i < global.keys.length; i++) {
+                        if (global.keys[i][0] == key) {
+                            if (global.keys[i][1] === 0) {
+                                global.keys[i][1] = 127;
+                                return global.keys[i][1];
+                            }
+                            else {
+                                global.keys[i][1] = 0;
+                                return global.keys[i][1];
+                            }
+                        }
+                    }
+
+                }
+
+                return false;
+            }
+
+in:
+    nanoKONTROL2*:
+
+        -   key: 41
+            name: play
+            type: toggle
+            shape: |
+                function() {
+                    if (data.value)
+                        global.timer = true;
+                    else
+                        global.timer = false;
+                        
+                    return value;
+                }
+
+        -   key: 32
+            name: sBtns0
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 33
+            name: sBtns1
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 34
+            name: sBtns2
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 35
+            name: sBtns3
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 36
+            name: sBtns4
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 37
+            name: sBtns5
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 38
+            name: sBtns6
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 39
+            name: sBtns7
+            shape: *defaultToggleFnc
+            type: button
+            
+        -   key: 48
+            name: mBtns0
+            shape: *defaultToggleFnc
+            type: button
+            
+        -   key: 49
+            name: mBtns1
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 50
+            name: mBtns2
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 51
+            name: mBtns3
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 52
+            name: mBtns4
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 53
+            name: mBtns5
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 54
+            name: mBtns6
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 55
+            name: mBtns7
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 64
+            name: rBtns0
+            shape: *defaultToggleFnc
+            type: button
+            
+        -   key: 65
+            name: rBtns1
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 66
+            name: rBtns2
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 67
+            name: rBtns3
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 68
+            name: rBtns4
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 69
+            name: rBtns5
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 70
+            name: rBtns6
+            shape: *defaultToggleFnc
+            type: button
+
+        -   key: 71
+            name: rBtns7
+            shape: *defaultToggleFnc
+            type: button
