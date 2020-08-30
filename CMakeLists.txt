@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-set(VERSION 0.1)
+set(VERSION 0.4)
 project(midigyver VERSION ${VERSION}
                   LANGUAGES CXX)
 

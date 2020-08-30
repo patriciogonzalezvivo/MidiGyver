@@ -16,7 +16,7 @@
 
 CommandList commands;
 Context*    ctx; 
-std::string version = "0.3";
+std::string version = "0.4";
 std::string name = "midigyver";
 std::string header = name + " " + version + " by Patricio Gonzalez Vivo ( patriciogonzalezvivo.com )"; 
 std::string configfile = "";
