@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --with autotools-dev
+	dh $@ --parallel
 
 override_dh_auto_install:
 	install -D -m 0755 build/midigyver $$(pwd)/debian/midigyver/usr/bin/midigyver
