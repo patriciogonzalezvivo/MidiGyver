@@ -58,5 +58,5 @@ public:
 protected:
 
     JSContext                           js;
-    std::map<std::string, u_int32_t>    shapeFncs;
+    std::map<std::string, size_t>       shapeFncs;
 };

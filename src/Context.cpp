@@ -7,6 +7,10 @@
 #include "types/Vector.h"
 #include "types/Color.h"
 
+#ifndef M_MIN
+#define M_MIN(_a, _b) ((_a)<(_b)?(_a):(_b))
+#endif
+
 Context::Context() {
 }
 
@@ -368,7 +372,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
                     float total = _keynode["map"].size() - 1;
 
                     size_t i_low = value * total;
-                    size_t i_high = std::min(i_low + 1, size_t(total));
+                    size_t i_high = M_MIN(i_low + 1, size_t(total));
                     float pct = (value * total) - (float)i_low;
                     value = lerp(   _keynode["map"][i_low].as<float>(),
                                     _keynode["map"][i_high].as<float>(),
@@ -392,7 +396,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
                     float total = _keynode["map"].size() - 1;
 
                     size_t i_low = pct * total;
-                    size_t i_high = std::min(i_low + 1, size_t(total));
+                    size_t i_high = M_MIN(i_low + 1, size_t(total));
 
                     value = lerp(   _keynode["map"][i_low].as<Vector>(),
                                     _keynode["map"][i_high].as<Vector>(),
@@ -416,7 +420,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
                     float total = _keynode["map"].size() - 1;
 
                     size_t i_low = pct * total;
-                    size_t i_high = std::min(i_low + 1, size_t(total));
+                    size_t i_high = M_MIN(i_low + 1, size_t(total));
 
                     value = lerp(   _keynode["map"][i_low].as<Color>(),
                                     _keynode["map"][i_high].as<Color>(),

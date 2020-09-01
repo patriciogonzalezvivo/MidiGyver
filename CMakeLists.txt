@@ -18,70 +18,69 @@ add_executable(midigyver
     ${ROOT_SOURCE}
 )
 
-target_include_directories(midigyver 
-    PUBLIC 
+target_include_directories(midigyver PRIVATE
     deps
 )
 
-target_link_libraries(midigyver 
-    # Threads::Threads
+
+target_link_libraries(midigyver PRIVATE
     yaml-cpp
     duktape
     rtmidi
     lo_static
 )
 
+
 install(TARGETS midigyver
         RUNTIME DESTINATION bin)
 
-set(CPACK_GENERATOR "DEB")
-set(CPACK_PACKAGE_CONTACT "Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>")
-set(CPACK_PACKAGE_NAME "midigyver")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A bridge between MIDI to OSC")
-set(CPACK_PACKAGE_VENDOR https://github.com/patriciogonzalezvivo/midigyver)
-SET(CPACK_PACKAGE_VERSION ${VERSION})
+# set(CPACK_GENERATOR "DEB")
+# set(CPACK_PACKAGE_CONTACT "Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>")
+# set(CPACK_PACKAGE_NAME "midigyver")
+# set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A bridge between MIDI to OSC")
+# set(CPACK_PACKAGE_VENDOR https://github.com/patriciogonzalezvivo/midigyver)
+# SET(CPACK_PACKAGE_VERSION ${VERSION})
 
-set(DEBSRC_BUILD_DEPENDS debhelper git cmake)
-set(DEBSRC_PACKAGE_DEPENDS git cmake)
+# set(DEBSRC_BUILD_DEPENDS debhelper git cmake)
+# set(DEBSRC_PACKAGE_DEPENDS git cmake)
 
-set(CPACK_DEBIAN_PACKAGE_DEPENDS)
-foreach(DEP ${DEBSRC_PACKAGE_DEPENDS})
-set(CPACK_DEBIAN_PACKAGE_DEPEND "${CPACK_DEBIAN_PACKAGE_DEPENDS}, ${DEP}")
-endforeach(DEP ${DEBSRC_PACKAGE_DEPENDS})  
+# set(CPACK_DEBIAN_PACKAGE_DEPENDS)
+# foreach(DEP ${DEBSRC_PACKAGE_DEPENDS})
+# set(CPACK_DEBIAN_PACKAGE_DEPEND "${CPACK_DEBIAN_PACKAGE_DEPENDS}, ${DEP}")
+# endforeach(DEP ${DEBSRC_PACKAGE_DEPENDS})  
 
-set(CPACK_DEBIAN_BUILD_DEPENDS)
-foreach(DEP ${DEBSRC_BUILD_DEPENDS})
-set(CPACK_DEBIAN_BUILD_DEPENDS "${CPACK_DEBIAN_BUILD_DEPENDS}, ${DEP}")
-endforeach(DEP ${DEBSRC_BUILD_DEPENDS})
+# set(CPACK_DEBIAN_BUILD_DEPENDS)
+# foreach(DEP ${DEBSRC_BUILD_DEPENDS})
+# set(CPACK_DEBIAN_BUILD_DEPENDS "${CPACK_DEBIAN_BUILD_DEPENDS}, ${DEP}")
+# endforeach(DEP ${DEBSRC_BUILD_DEPENDS})
 
-execute_process(
-    COMMAND dpkg --print-architecture
-    OUTPUT_VARIABLE DEB_ARCHITECTURE 
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+# execute_process(
+#     COMMAND dpkg --print-architecture
+#     OUTPUT_VARIABLE DEB_ARCHITECTURE 
+#     OUTPUT_STRIP_TRAILING_WHITESPACE
+#     )
 
-message(STATUS "architecture is: ${DEB_ARCHITECTURE}")
-set(DEB_ARCH ${DEB_ARCHITECTURE})
-set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCH})
-message(STATUS "architecture is: ${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
-set(CPACK_DEBIAN_PACKAGE_PRIORITY optional)
-SET(CPACK_PACKAGE_VERSION ${VERSION})
-set(CPACK_DEBIAN_DISTRIBUTION_NAME ubuntu)
-set(CPACK_DEBIAN_PACKAGE_SECTION "multimedia")
+# message(STATUS "architecture is: ${DEB_ARCHITECTURE}")
+# set(DEB_ARCH ${DEB_ARCHITECTURE})
+# set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCH})
+# message(STATUS "architecture is: ${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+# set(CPACK_DEBIAN_PACKAGE_PRIORITY optional)
+# SET(CPACK_PACKAGE_VERSION ${VERSION})
+# set(CPACK_DEBIAN_DISTRIBUTION_NAME ubuntu)
+# set(CPACK_DEBIAN_PACKAGE_SECTION "multimedia")
     
-set(CPACK_DEBIAN_DISTRIBUTION_RELEASES Groovy Focal Eoan Bionic) 
+# set(CPACK_DEBIAN_DISTRIBUTION_RELEASES Groovy Focal Eoan Bionic) 
 
-message(STATUS " CPACK_DEBIAN_DISTRIBUTION_RELEASES : ${CPACK_DEBIAN_DISTRIBUTION_RELEASES}")
+# message(STATUS " CPACK_DEBIAN_DISTRIBUTION_RELEASES : ${CPACK_DEBIAN_DISTRIBUTION_RELEASES}")
 
-if(${SRC_DIR} MATCHES "")
-    set(CPACK_RESOURCE_FILE_LICENSE ${SRC_DIR}/deb/LICENSE)
-    set(DEB_SRC_DIR ${SRC_DIR})
-else(${SRC_DIR} MATCHES "")
-    set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
-    set(DEB_SRC_DIR ${CMAKE_SOURCE_DIR})
-endif(${SRC_DIR} MATCHES "")
+# if(${SRC_DIR} MATCHES "")
+#     set(CPACK_RESOURCE_FILE_LICENSE ${SRC_DIR}/deb/LICENSE)
+#     set(DEB_SRC_DIR ${SRC_DIR})
+# else(${SRC_DIR} MATCHES "")
+#     set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+#     set(DEB_SRC_DIR ${CMAKE_SOURCE_DIR})
+# endif(${SRC_DIR} MATCHES "")
 
-set(CPACK_DEBIAN_CHANGELOG "  * Latest development version.")
+# set(CPACK_DEBIAN_CHANGELOG "  * Latest development version.")
 
-
-INCLUDE(CPack)
+# INCLUDE(CPack)

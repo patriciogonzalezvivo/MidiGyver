@@ -4,7 +4,12 @@
 #include "../types/Color.h"
 #include "../types/Vector.h"
 
-#include "lo/lo.h"
+#ifndef WIN32
+#include <unistd.h>
+#endif
+
+#include <lo/lo.h>
+#include <lo/lo_cpp.h>
 
 struct OscTarget {
     std::string address = "localhost";

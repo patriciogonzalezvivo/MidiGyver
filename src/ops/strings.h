@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 template <class T>
 inline std::string toString(const T& _value){
@@ -66,10 +67,17 @@ inline bool beginsWith(const std::string& _stringA, const std::string& _stringB)
 }
 
 inline void stringReplace(std::string& str, char rep) {
-    replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ' '), rep);
-    replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ':'), rep);
-    replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ','), rep);
-    replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), '/'), rep);
+#if _WIN32
+    replace_if(str.begin(), str.end(), std::bind2nd<std::equal_to<char>>(std::equal_to<char>(), ' '), rep);
+    replace_if(str.begin(), str.end(), std::bind2nd<std::equal_to<char>>(std::equal_to<char>(), ':'), rep);
+    replace_if(str.begin(), str.end(), std::bind2nd<std::equal_to<char>>(std::equal_to<char>(), ','), rep);
+    replace_if(str.begin(), str.end(), std::bind2nd<std::equal_to<char>>(std::equal_to<char>(), '/'), rep);
+#else
+	replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ' '), rep);
+	replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ':'), rep);
+	replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), ','), rep);
+	replace_if(str.begin(), str.end(), std::bind2nd(std::equal_to<char>(), '/'), rep);
+#endif
 }
 
 inline std::vector<std::string> split(const std::string& _string, char _sep, bool _tolerate_empty) {
