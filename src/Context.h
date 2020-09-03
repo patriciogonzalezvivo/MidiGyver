@@ -45,6 +45,7 @@ public:
     bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, const std::string& _type, size_t _key, float* _value);
     bool        mapKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key, float _value);
     bool        updateKey(YAML::Node _keynode, const std::string& _device, size_t _key);
+    bool        feedbackLED(const std::string& _device, size_t _key, size_t _value);
     bool        sendKeyValue(YAML::Node _keynode);
 
     std::vector<std::string>            targets;
