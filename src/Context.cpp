@@ -48,7 +48,7 @@ bool Context::load(const std::string& _filename) {
                 devices[inName] = (Device*)m;
 
                 if (config["in"][inName].IsMap()) {
-                    std::cout << inName << " keys are a map" << std::endl;
+                    // std::cout << inName << " keys are a map" << std::endl;
                     for (YAML::const_iterator it = config["in"][inName].begin(); it != config["in"][inName].end(); ++it) {
                         std::string key = it->first.as<std::string>();
                         
@@ -63,37 +63,43 @@ bool Context::load(const std::string& _filename) {
                 }
 
                 else if (config["in"][inName].IsSequence()) {
-                    std::cout << inName << " keys are enumerated as a sequence" << std::endl;
+                    // std::cout << inName << " keys are enumerated as a sequence" << std::endl;
                     for (size_t i = 0; i < config["in"][inName].size(); i++) {
 
-                        if (config["in"][inName][i]["shape"].IsDefined() &&
-                            config["in"][inName][i]["key"].IsDefined()) {
+                        if (config["in"][inName][i]["key"].IsDefined()) {
 
-                            std::string function = config["in"][inName][i]["shape"].as<std::string>();
+                            bool haveShapingFunction = false;
+                            if (config["in"][inName][i]["shape"].IsDefined()) {
+                                std::string function = config["in"][inName][i]["shape"].as<std::string>();
+                                if ( js.setFunction(id, function) ) {
+                                    haveShapingFunction = true;
+                                }
 
-                            if ( js.setFunction(id, function) ) {
+                            }
 
-                                if (config["in"][inName][i]["key"].IsScalar()) {
-                                    size_t key = config["in"][inName][i]["key"].as<size_t>();
+                            if (config["in"][inName][i]["key"].IsScalar()) {
+                                size_t key = config["in"][inName][i]["key"].as<size_t>();
+                                std::cout << " adding key " << key << std::endl;
+
+                                devices[inName]->keyMap[key] = i;
+                                // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
+                                if (haveShapingFunction)
+                                    shapeFncs[inName + "_" + toString(key)] = id;
+                            }
+                            else if (config["in"][inName][i]["key"].IsSequence()) {
+                                for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
+                                    size_t key = config["in"][inName][i]["key"][j].as<size_t>();
                                     std::cout << " adding key " << key << std::endl;
 
                                     devices[inName]->keyMap[key] = i;
                                     // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
-                                    shapeFncs[inName + "_" + toString(key)] = id;
-                                }
-                                else if (config["in"][inName][i]["key"].IsSequence()) {
-                                    for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
-                                        size_t key = config["in"][inName][i]["key"][j].as<size_t>();
-                                        std::cout << " adding key " << key << std::endl;
-
-                                        devices[inName]->keyMap[key] = i;
-                                        // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
+                                    if (haveShapingFunction)
                                         shapeFncs[inName + "_" + toString(key)] = id;
-                                    }
                                 }
-                                
-                                id++;
                             }
+                                
+                            if (haveShapingFunction)
+                                id++;
                         }   
                     }
                 }
@@ -211,12 +217,14 @@ bool Context::doKeyExist(const std::string& _device, size_t _key) {
      if ( !config["in"][_device].IsNull() ) {
 
         if (config["in"][_device].IsMap()) {
+            // std::cout << " exploring the map for the KEY" << _key << std::endl; 
             std::string key = toString(_key);
             if (config["in"][_device][key].IsDefined())
                 return true;
         }
 
         else if (config["in"][_device].IsSequence()) {
+            // std::cout << " exploring the sequence (" << devices[_device]->keyMap.size() << ") for the KEY " << _key << std::endl;
             return devices[_device]->keyMap.find(_key) != devices[_device]->keyMap.end(); 
         }
     }

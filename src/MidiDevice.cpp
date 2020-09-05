@@ -221,9 +221,9 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     float value = (float)_message->at(2);
 
     context->configMutex.lock();
+    // std::cout << device->name << " Channel: " << channel << " Key: " << key << " Value:" << value << std::endl;
     if (context->doKeyExist(device->name, key)) {
         YAML::Node node = context->getKeyNode(device->name, key);
-        // std::cout << "Key: " << key << " Value:" << value << std::endl;
         if (context->shapeKeyValue(node, device->name, type, key, &value)) {
             context->mapKeyValue(node, device->name, key, value);
         }
