@@ -1,3 +1,21 @@
+midigyver (0.7) focal; urgency=medium
+
+  * last deb build of the day
+
+ -- Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>  Sat, 05 Sep 2020 11:30:55 -0700
+
+midigyver (0.6) focal; urgency=medium
+
+  * Working on the deb build 
+
+ -- Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>  Sat, 05 Sep 2020 11:19:07 -0700
+
+midigyver (0.5) focal; urgency=medium
+
+  * Trying to fix deb building
+
+ -- Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>  Sat, 05 Sep 2020 07:36:56 -0700
+
 midigyver (0.4) focal; urgency=medium
 
   * Hot reloading
