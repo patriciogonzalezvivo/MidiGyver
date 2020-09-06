@@ -60,4 +60,5 @@ protected:
 
     JSContext                           js;
     std::map<std::string, size_t>       shapeFncs;
+    std::map<std::string, size_t>       namingFncs;
 };

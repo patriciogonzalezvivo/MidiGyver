@@ -124,7 +124,9 @@ bool Context::load(const std::string& _filename) {
             // std::cout << "Adding pulse: " << name << std::endl;
             Pulse* p = new Pulse(this, i);
             
-            if (n["interval"].IsDefined()) 
+            if (n["bpm"].IsDefined())
+                p->start(60000/n["bpm"].as<int>());
+            else if (n["interval"].IsDefined()) 
                 p->start(int(n["interval"].as<float>()));
 
             if (n["shape"].IsDefined()) {
