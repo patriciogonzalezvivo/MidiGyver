@@ -11,7 +11,7 @@ public:
     Pulse(void* _ctx, size_t _index);
     virtual ~Pulse();
 
-    void    start(size_t _interval);
+    void    start(size_t _milliSec);
     void    stop();
 
     size_t  index;

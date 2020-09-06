@@ -17,14 +17,14 @@ Pulse::Pulse(void* _ctx, size_t _index) {
 Pulse::~Pulse() {
 }
 
-void Pulse::start(size_t _interval) {
+void Pulse::start(size_t _milliSec) {
     this->clear = false;
 
     std::thread t([=]() {
         float counter = 0.0;
         while(true) {
             if(this->clear) return;
-            std::this_thread::sleep_for(std::chrono::milliseconds(_interval));
+            std::this_thread::sleep_for(std::chrono::milliseconds(_milliSec));
             if(this->clear) return;
             
             ((Context*)ctx)->configMutex.lock();
