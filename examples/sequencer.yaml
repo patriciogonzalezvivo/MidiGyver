@@ -1,0 +1,196 @@
+global:
+    track: 1
+    track_max: 5
+    marker: 4
+    timer: false
+    time: -1
+    time_dir: 1.0
+    steps: [    [32,0,0,0,0,0], [33,0,0,0,0,0], [34,0,0,0,0,0], [35,0,0,0,0,0], [36,0,0,0,0,0], [37,0,0,0,0,0], [38,0,0,0,0,0], [39,0,0,0,0,0],
+                [48,0,0,0,0,0], [49,0,0,0,0,0], [50,0,0,0,0,0], [51,0,0,0,0,0], [52,0,0,0,0,0], [53,0,0,0,0,0], [54,0,0,0,0,0], [55,0,0,0,0,0]    ]
+
+out:
+    # -   osc://localhost:4560
+    -   csv
+
+pulse:
+    -   name: pulse
+        interval: 60
+        # bpm: 120
+        type: scalar
+        shape: |
+            function() {
+                if (global.timer) {
+                    global.time += 1
+
+                    var head = global.time % 16;
+                    var triggers = [];
+                    for (i = 1; i <= global.track_max; i++) {
+                        if (global.steps[head][i] > 0) {
+                            triggers.push( [i, 127] );
+                        }
+                    }
+
+                    // LED feedback
+                    var leds = [];
+                    for (i = 0; i < 16; i++) { 
+                        if (global.steps[i][global.track] == 0) {
+                            leds.push( [global.steps[i][0], (i == head) ? 127 : 0 ]);
+                        }
+                    }
+
+                    return { 
+                        'nanoKONTROL2*_FEEDBACKLEDS': leds,
+                        'nanoKONTROL2*': triggers
+                    };
+                }
+                else
+                    return false;
+            }
+
+in:
+    nanoKONTROL2*:
+
+        -   name: kick
+            key: 1
+
+        -   name: snare
+            key: 2
+
+        -   name: closed_hi-hat
+            key: 3
+
+        -   name: open_hi-hat
+            key: 4
+
+        -   name: clap
+            key: 5
+
+        -   name: button_step
+            type: button
+            key: [ 32, 33, 34, 35, 36, 37, 38, 39, 48, 49, 50, 51, 52, 53, 54, 55 ]
+            shape: |
+                function() {
+                    if (value > 0) {
+                        for (i = 0; i < global.steps.length; i++) {
+                            if (global.steps[i][0] == key) {
+                                if (global.steps[i][global.track] == 0) {
+                                    global.steps[i][global.track] = 127;
+                                    return global.steps[i][global.track];
+                                }
+                                else {
+                                    global.steps[i][global.track] = 0;
+                                    return global.steps[i][global.track];
+                                }
+                            }
+                        }
+                    }
+
+                    return false;
+                }
+
+        -   name: button_stop
+            key: 42
+            # type: button
+            shape: |
+                function() {
+                    var leds = [];
+                    for (i = 0; i < 16; i++) { 
+                        leds.push( [global.steps[i][0], (global.steps[i][global.track] > 0) ? 127 : 0 ]);
+                    }
+                    global.time = -1;
+
+                    if (value == 127 && global.timer) {
+                        global.timer = false;
+                        
+                        return { 
+                            'nanoKONTROL2*_FEEDBACKLEDS': leds,
+                            'nanoKONTROL2*': [ [41, 127] ] 
+                        };
+                    }
+                    return { 
+                            'nanoKONTROL2*_FEEDBACKLEDS': leds
+                        };;
+                }
+
+        -   name: button_play
+            key: 41
+            type: toggle
+            shape: |
+                function() {
+                    if (data.value)
+                        global.timer = true;
+                    else
+                        global.timer = false;
+                        
+                    return value;
+                }
+
+        -   name: button_tracks
+            key: [58, 59]
+            type: scalar
+            shape: |
+                function() {
+                    if (value == 127) {
+                        if (key == 58) {
+                            if (global.track == 1)
+                                return false;
+                            global.track--;
+                        }
+                        else {
+                            if (global.track == global.track_max)
+                                return false;
+                            global.track++;
+                        }
+
+                        // LED feedback
+                        var leds = [];
+                        for (i = 0; i < 16; i++) { 
+                            leds.push( [global.steps[i][0], (global.steps[i][global.track] > 0) ? 127 : 0 ]);
+                        }
+
+                        return { 
+                            'nanoKONTROL2*_FEEDBACKLEDS': leds,
+                            'nanoKONTROL2*': [ [key, global.track] ]
+                        };
+                    }
+                    return false;
+                }
+
+        -   name: button_marker
+            key: [61, 62]
+            type: scalar
+            shape: |
+                function() {
+                    if (value == 127) {
+                        if (key == 61) {
+                            if (global.time == 0)
+                                return false;
+                            global.time--;
+                        }
+                        else {
+                            global.time++;
+                        }
+
+                        var head = global.time % 16;
+                        var triggers = [];
+                        for (i = 1; i <= global.track_max; i++) {
+                            if (global.steps[head][i] > 0) {
+                                triggers.push( [i, 127] );
+                            }
+                        }
+
+                        // LED feedback
+                        var leds = [];
+                        for (i = 0; i < 16; i++) { 
+                            if (global.steps[i][global.track] == 0) {
+                                leds.push( [global.steps[i][0], (i == head) ? 127 : 0 ]);
+                            }
+                        }
+
+                        return { 
+                            'nanoKONTROL2*_FEEDBACKLEDS': leds,
+                            'nanoKONTROL2*': triggers
+                        };
+                    }
+                    return false;
+                }

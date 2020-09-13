@@ -1,6 +1,7 @@
 #include "Context.h"
 
-#include "ops/osc.h"
+#include "ops/broadcast.h"
+
 #include "ops/nodes.h"
 #include "ops/strings.h"
 
@@ -24,7 +25,7 @@ bool Context::load(const std::string& _filename) {
     JSValue global = parseNode(js, config["global"]);
     js.setGlobalValue("global", std::move(global));
 
-    // Define OSC out targets
+    // Define out targets
     if (config["out"].IsSequence())
         for (size_t i = 0; i < config["out"].size(); i++)
             targets.push_back(config["out"][i].as<std::string>());
@@ -47,38 +48,31 @@ bool Context::load(const std::string& _filename) {
                 devicesNames.push_back(inName);
                 devices[inName] = (Device*)m;
 
-                if (config["in"][inName].IsMap()) {
-                    // std::cout << inName << " keys are a map" << std::endl;
-                    for (YAML::const_iterator it = config["in"][inName].begin(); it != config["in"][inName].end(); ++it) {
-                        std::string key = it->first.as<std::string>();
-                        
-                        if (config["in"][inName][key]["shape"].IsDefined()) {
-                            std::string function = config["in"][inName][key]["shape"].as<std::string>();
+                for (size_t i = 0; i < config["in"][inName].size(); i++) {
+
+                    if (config["in"][inName][i]["key"].IsDefined()) {
+
+                        bool haveShapingFunction = false;
+                        if (config["in"][inName][i]["shape"].IsDefined()) {
+                            std::string function = config["in"][inName][i]["shape"].as<std::string>();
                             if ( js.setFunction(id, function) ) {
-                                shapeFncs[inName + "_" + key] = id;
-                                id++;
+                                haveShapingFunction = true;
                             }
+
                         }
-                    }
-                }
 
-                else if (config["in"][inName].IsSequence()) {
-                    // std::cout << inName << " keys are enumerated as a sequence" << std::endl;
-                    for (size_t i = 0; i < config["in"][inName].size(); i++) {
+                        if (config["in"][inName][i]["key"].IsScalar()) {
+                            size_t key = config["in"][inName][i]["key"].as<size_t>();
+                            std::cout << " adding key " << key << std::endl;
 
-                        if (config["in"][inName][i]["key"].IsDefined()) {
-
-                            bool haveShapingFunction = false;
-                            if (config["in"][inName][i]["shape"].IsDefined()) {
-                                std::string function = config["in"][inName][i]["shape"].as<std::string>();
-                                if ( js.setFunction(id, function) ) {
-                                    haveShapingFunction = true;
-                                }
-
-                            }
-
-                            if (config["in"][inName][i]["key"].IsScalar()) {
-                                size_t key = config["in"][inName][i]["key"].as<size_t>();
+                            devices[inName]->keyMap[key] = i;
+                            // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
+                            if (haveShapingFunction)
+                                shapeFncs[inName + "_" + toString(key)] = id;
+                        }
+                        else if (config["in"][inName][i]["key"].IsSequence()) {
+                            for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
+                                size_t key = config["in"][inName][i]["key"][j].as<size_t>();
                                 std::cout << " adding key " << key << std::endl;
 
                                 devices[inName]->keyMap[key] = i;
@@ -86,24 +80,13 @@ bool Context::load(const std::string& _filename) {
                                 if (haveShapingFunction)
                                     shapeFncs[inName + "_" + toString(key)] = id;
                             }
-                            else if (config["in"][inName][i]["key"].IsSequence()) {
-                                for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
-                                    size_t key = config["in"][inName][i]["key"][j].as<size_t>();
-                                    std::cout << " adding key " << key << std::endl;
-
-                                    devices[inName]->keyMap[key] = i;
-                                    // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
-                                    if (haveShapingFunction)
-                                        shapeFncs[inName + "_" + toString(key)] = id;
-                                }
-                            }
-                                
-                            if (haveShapingFunction)
-                                id++;
-                        }   
-                    }
+                        }
+                            
+                        if (haveShapingFunction)
+                            id++;
+                    }   
                 }
-
+            
                 updateDevice(inName);
             }
         }
@@ -126,6 +109,8 @@ bool Context::load(const std::string& _filename) {
             
             if (n["bpm"].IsDefined())
                 p->start(60000/n["bpm"].as<int>());
+            else if (n["fps"].IsDefined()) 
+                p->start(1000/int(n["fps"].as<float>()) );
             else if (n["interval"].IsDefined()) 
                 p->start(int(n["interval"].as<float>()));
 
@@ -180,35 +165,24 @@ bool Context::close() {
 }
 
 bool Context::updateDevice(const std::string& _device) {
-    if ( config["in"][_device].IsMap() ) {
-        for (YAML::const_iterator it = config["in"][_device].begin(); it != config["in"][_device].end(); ++it) {
-            std::string key = it->first.as<std::string>();
-            if (it->second["value"])
-                updateKey(it->second, _device, toInt(key));
-        }
-    }
 
-    else if (config["in"][_device].IsSequence()) {
-        for (size_t i = 0; i < config["in"][_device].size(); i++) {
-            size_t key = i;
+    for (size_t i = 0; i < config["in"][_device].size(); i++) {
+        size_t key = i;
 
-            if (config["in"][_device][i]["key"].IsDefined()) {
-                if (config["in"][_device][i]["key"].IsScalar()) {
-                    size_t key = config["in"][_device][i]["key"].as<size_t>();
+        if (config["in"][_device][i]["key"].IsDefined()) {
+            if (config["in"][_device][i]["key"].IsScalar()) {
+                size_t key = config["in"][_device][i]["key"].as<size_t>();
+                updateKey(config["in"][_device][i], _device, key);
+            }
+            else if (config["in"][_device][i]["key"].IsSequence()) {
+                for (size_t j = 0; j < config["in"][_device][i]["key"].size(); j++) {
+                    size_t key = config["in"][_device][i]["key"][j].as<size_t>();
                     updateKey(config["in"][_device][i], _device, key);
                 }
-                else if (config["in"][_device][i]["key"].IsSequence()) {
-                    for (size_t j = 0; j < config["in"][_device][i]["key"].size(); j++) {
-                        size_t key = config["in"][_device][i]["key"][j].as<size_t>();
-                        updateKey(config["in"][_device][i], _device, key);
-                    }
-                }
             }
-            else {
-                updateKey(config["in"][_device][i], _device, i);
-            }
-            
-
+        }
+        else {
+            updateKey(config["in"][_device][i], _device, i);
         }
     }
 
@@ -274,7 +248,7 @@ DataType Context::getKeyDataType(YAML::Node _keynode) {
                 return TYPE_COLOR;
         }
     }
-    return TYPE_UNKNOWN;
+    return TYPE_NUMBER;
 }
 
 std::string Context::getKeyName(YAML::Node _keynode) {
@@ -532,7 +506,7 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
     if ( !_keynode["value"].IsDefined() )
         return false;
 
-    // Define OSC out targets
+    // Define out targets
     std::vector<std::string> keyTargets;
     if (_keynode["out"].IsDefined() ) {
         if (_keynode["out"].IsSequence()) 
@@ -564,12 +538,8 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
                         std::string msg = "";
 
                         if ( parseString(_keynode["map"][value_str][i], prop, msg) ) {
-                            for (size_t t = 0; t < keyTargets.size(); t++) {
-                                if (keyTargets[t].rfind("osc://", 0) == 0)
-                                    sendValue(parseOscTarget(keyTargets[t]), prop, msg );
-                                else if (keyTargets[t] == "csv")
-                                    std::cout << prop << "," << msg << std::endl;
-                            }
+                            for (size_t t = 0; t < keyTargets.size(); t++)
+                                broadcast(keyTargets[t], prop, msg);
                         }
 
                     }
@@ -579,12 +549,8 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
                     std::string msg = "";
 
                     if ( parseString(_keynode["map"][value_str], prop, msg) ) {
-                        for (size_t t = 0; t < keyTargets.size(); t++) {
-                            if (keyTargets[t].rfind("osc://", 0) == 0)
-                                sendValue(parseOscTarget(keyTargets[t]), prop, msg );
-                            else if (keyTargets[t] == "csv")
-                                std::cout << prop << "," << msg << std::endl;
-                        }
+                        for (size_t t = 0; t < keyTargets.size(); t++)
+                            broadcast(keyTargets[t], prop, msg);
                     }
                 }
 
@@ -592,12 +558,8 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
 
         }
         else {
-            for (size_t t = 0; t < keyTargets.size(); t++) {
-                if (keyTargets[t].rfind("osc://", 0) == 0)
-                    sendValue(parseOscTarget(keyTargets[t]), name, value_str);
-                else if (keyTargets[t] == "csv")
-                    std::cout << name << "," << (value_str) << std::endl;
-            }
+            for (size_t t = 0; t < keyTargets.size(); t++)
+                broadcast(keyTargets[t], name, value_str);
 
             return true;
         }
@@ -605,47 +567,33 @@ bool Context::sendKeyValue(YAML::Node _keynode) {
 
     // STATE
     else if ( type == TYPE_STRING ) {
-        for (size_t t = 0; t < keyTargets.size(); t++) {
-            if (keyTargets[t].rfind("osc://", 0) == 0)
-                sendValue(parseOscTarget(keyTargets[t]), name, value.as<std::string>());
-            else if (keyTargets[t] == "csv")
-                std::cout << name << "," << value.as<std::string>() << std::endl;
-        }
+        for (size_t t = 0; t < keyTargets.size(); t++)
+            broadcast(keyTargets[t], name, value.as<std::string>());
 
         return true;
     }
 
     // SCALAR
     else if ( type == TYPE_NUMBER ) {
-        for (size_t t = 0; t < keyTargets.size(); t++) {
-            if (keyTargets[t].rfind("osc://", 0) == 0)
-                sendValue(parseOscTarget(keyTargets[t]), name, value.as<float>());
-            else if (keyTargets[t] == "csv")
-                std::cout << name << "," << value.as<float>() << std::endl;
-        }
+        for (size_t t = 0; t < keyTargets.size(); t++)
+            broadcast(keyTargets[t], name, value.as<float>());
+
         return true;
     }
 
     // VECTOR
     else if ( type == TYPE_VECTOR ) {
-        for (size_t t = 0; t < keyTargets.size(); t++) {
-            if (keyTargets[t].rfind("osc://", 0) == 0)
-                sendValue(parseOscTarget(keyTargets[t]), name, value.as<Vector>());
-            else if (keyTargets[t] == "csv")
-                std::cout << name << "," << value.as<Vector>() << std::endl;
-        }
+        for (size_t t = 0; t < keyTargets.size(); t++)
+            broadcast(keyTargets[t], name, value.as<Vector>());
 
         return true;
     }
 
     // COLOR
     else if ( type == TYPE_COLOR ) {
-        for (size_t t = 0; t < keyTargets.size(); t++) {
-            if (keyTargets[t].rfind("osc://", 0) == 0)
-                sendValue(parseOscTarget(keyTargets[t]), name, value.as<Color>());
-            else if (keyTargets[t] == "csv")
-                std::cout << name << "," << value.as<Color>() << std::endl;
-        }
+        for (size_t t = 0; t < keyTargets.size(); t++)
+            broadcast(keyTargets[t], name, value.as<Color>());
+        
         return true;
     }
 
