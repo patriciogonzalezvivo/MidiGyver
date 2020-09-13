@@ -14,8 +14,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#define MAXLINE 1024 
-
 bool sendUDP(const std::string& _hostname, const std::string& _port, const std::string& _msg) {
 
     struct addrinfo hints;
@@ -52,7 +50,6 @@ bool sendUDP(const std::string& _hostname, const std::string& _port, const std::
 template <typename T>
 inline void broadcast_UDP(const Target& _target, const std::string& _prop, const T& _value) {
     std::string msg = toString(_value);
-    // std::cout << msg << std::endl;
     sendUDP(_target.address, _target.port, msg);
 }
 

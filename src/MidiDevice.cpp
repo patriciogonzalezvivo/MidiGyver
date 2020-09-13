@@ -40,7 +40,7 @@ MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) {
         error.printMessage();
     }
 
-    midiIn->openPort(_midiPort);
+    midiIn->openPort(_midiPort, "MidiGyver");
     midiIn->setCallback(onMidi, this);
     midiIn->ignoreTypes(false, false, true);
 
@@ -49,7 +49,7 @@ MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) {
 
     try {
         midiOut = new RtMidiOut();
-        midiOut->openPort(_midiPort);
+        midiOut->openPort(_midiPort, "MidiGyver");
     }
     catch(RtMidiError &error) {
         error.printMessage();
