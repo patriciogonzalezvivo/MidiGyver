@@ -7,7 +7,7 @@
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
 
-inline void broadcast_OSC(const Target& _target, const std::string& _folder, float _value) {
+inline bool broadcast_OSC(const Target& _target, const std::string& _folder, float _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value);
 
@@ -16,9 +16,11 @@ inline void broadcast_OSC(const Target& _target, const std::string& _folder, flo
     lo_send_message(t, std::string(_target.folder + _folder).c_str(), m);
     lo_address_free(t);
     lo_message_free(m);
+
+    return true;
 }
 
-inline void broadcast_OSC(const Target& _target, const std::string& _folder, const std::string& _value) {
+inline bool broadcast_OSC(const Target& _target, const std::string& _folder, const std::string& _value) {
     lo_message m = lo_message_new();
     lo_message_add_string(m, _value.c_str());
 
@@ -27,9 +29,11 @@ inline void broadcast_OSC(const Target& _target, const std::string& _folder, con
     lo_send_message(t, std::string(_target.folder + _folder).c_str(), m);
     lo_address_free(t);
     lo_message_free(m);
+
+    return true;
 }
 
-inline void broadcast_OSC(const Target& _target, const std::string& _folder, Vector _value) {
+inline bool broadcast_OSC(const Target& _target, const std::string& _folder, Vector _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value.x);
     lo_message_add_float(m, _value.y);
@@ -40,9 +44,11 @@ inline void broadcast_OSC(const Target& _target, const std::string& _folder, Vec
     lo_send_message(t, std::string(_target.folder + _folder).c_str(), m);
     lo_address_free(t);
     lo_message_free(m);
+
+    return true;
 }
 
-inline void broadcast_OSC(const Target& _target, const std::string& _folder, Color _value) {
+inline bool broadcast_OSC(const Target& _target, const std::string& _folder, Color _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value.r);
     lo_message_add_float(m, _value.g);
@@ -54,4 +60,6 @@ inline void broadcast_OSC(const Target& _target, const std::string& _folder, Col
     lo_send_message(t, std::string(_target.folder + _folder).c_str(), m);
     lo_address_free(t);
     lo_message_free(m);
+
+    return true;
 }

@@ -8,10 +8,11 @@
 #include <string>
 
 enum TargetProtocol {
-    UNKNOWN_PROTOCOL    = 0,
-    CSV_PROTOCOL        = 1,
-    UDP_PROTOCOL        = 2,
-    OSC_PROTOCOL        = 3
+    UNKNOWN_PROTOCOL    = 0,    
+    MIDI_PROTOCOL       = 1,    // MIDI OUT
+    CSV_PROTOCOL        = 2,    // CONSOLE OUT
+    UDP_PROTOCOL        = 3,    // NETWORK
+    OSC_PROTOCOL        = 4     // NETWORK
 };
 
 struct Target {
@@ -26,7 +27,12 @@ inline Target parseTarget(const std::string _address) {
 
     std::string protocol = _address.substr(0,3);
 
-    if (protocol == "csv") {
+    if (protocol == "mid") {
+        target.protocol = MIDI_PROTOCOL;
+        target.address = _address.substr(7, _address.size() - 7);
+        return target;
+    }
+    else if (protocol == "csv") {
         target.protocol = CSV_PROTOCOL;
         return target;
     }

@@ -48,8 +48,8 @@ bool sendUDP(const std::string& _hostname, const std::string& _port, const std::
 }
 
 template <typename T>
-inline void broadcast_UDP(const Target& _target, const std::string& _prop, const T& _value) {
+inline bool broadcast_UDP(const Target& _target, const std::string& _prop, const T& _value) {
     std::string msg = toString(_value);
-    sendUDP(_target.address, _target.port, msg);
+    return sendUDP(_target.address, _target.port, msg);
 }
 

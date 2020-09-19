@@ -8,61 +8,83 @@
 
 #include "Context.h"
 
-//status bytes
-const unsigned char NOTE_OFF = 0x80;
-const unsigned char NOTE_ON = 0x90;
-const unsigned char KEY_PRESSURE = 0xA0;
-const unsigned char CONTROLLER_CHANGE = 0xB0;
-const unsigned char PROGRAM_CHANGE = 0xC0;
-const unsigned char CHANNEL_PRESSURE = 0xD0;
-const unsigned char PITCH_BEND = 0xE0;
-const unsigned char SYSTEM_EXCLUSIVE = 0xF0;
-const unsigned char SONG_POSITION = 0xF2;
-const unsigned char SONG_SELECT = 0xF3;
-const unsigned char TUNE_REQUEST = 0xF6;
-const unsigned char END_OF_SYSEX = 0xF7;
-const unsigned char TIMING_TICK = 0xF8;
-const unsigned char START_SONG = 0xFA;
-const unsigned char CONTINUE_SONG = 0xFB;
-const unsigned char STOP_SONG = 0xFC;
-const unsigned char ACTIVE_SENSING = 0xFE;
-const unsigned char SYSTEM_RESET = 0xFF;
+// VIRTUAL PORT
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : midiIn(NULL), midiOut(NULL) {
+    type = DEVICE_MIDI;
+    ctx = _ctx;
+    name = _name;
+}
 
-MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) {
+// REAL PORT
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) : midiIn(NULL), midiOut(NULL) {
     type = DEVICE_MIDI;
     ctx = _ctx;
     name = _name;
     midiPort = _midiPort;
 
+    openInPort(_name, _midiPort);
+    openOutPort(_name, _midiPort);
+}
+
+MidiDevice::~MidiDevice() {
+    if (midiIn)
+        delete midiIn;
+    if (midiOut) 
+        delete midiOut;
+}
+
+bool MidiDevice::openInPort(const std::string& _name, size_t _midiPort) {
     try {
-        midiIn = new RtMidiIn();
+        midiIn = new RtMidiIn(RtMidi::Api(0), "midigyver");
     } catch(RtMidiError &error) {
         error.printMessage();
+        return false;
     }
 
-    midiIn->openPort(_midiPort, "MidiGyver");
+    midiIn->openPort(_midiPort, _name);
     midiIn->setCallback(onMidi, this);
     midiIn->ignoreTypes(false, false, true);
 
     // midiName = midiIn->getPortName(_midiPort);
     // stringReplace(midiName, '_');
+    return true;
+}
 
+bool MidiDevice::openOutPort(const std::string& _name, size_t _midiPort) {
     try {
-        midiOut = new RtMidiOut();
-        midiOut->openPort(_midiPort, "MidiGyver");
+        midiOut = new RtMidiOut(RtMidi::Api(0), "midigyver");
+        midiOut->openPort(_midiPort, _name);
     }
     catch(RtMidiError &error) {
         error.printMessage();
+        return false;
     }
+
+    return true;
 }
 
-MidiDevice::~MidiDevice() {
-    delete this->midiIn;
+bool MidiDevice::openVirtualOutPort(const std::string& _name) {
+    try {
+        midiOut = new RtMidiOut(RtMidi::Api(0), "midigyver" );
+        midiOut->openVirtualPort(_name);
+    }
+    catch(RtMidiError &error) {
+        error.printMessage();
+        return false;
+    }
+
+    return true;
 }
 
-void MidiDevice::send_CC(size_t _key, size_t _value) {
+void MidiDevice::send(const unsigned char _type) {
     std::vector<unsigned char> msg;
-    msg.push_back( CONTROLLER_CHANGE );
+    msg.push_back( _type );
+    midiOut->sendMessage( &msg );   
+}
+
+void MidiDevice::send(const unsigned char _type, size_t _key, size_t _value) {
+    std::vector<unsigned char> msg;
+    msg.push_back( _type );
     msg.push_back( _key );
     msg.push_back( _value );
     midiOut->sendMessage( &msg );   
@@ -81,43 +103,43 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
         status = _message->at(0);
     }
 
-    switch(status) {
-        case NOTE_OFF:
+    switch (status) {
+        case MidiDevice::NOTE_OFF:
             _type = "note_off";
             _bytes = 2;
             break;
 
-        case NOTE_ON:
+        case MidiDevice::NOTE_ON:
             _type = "note_on";
             _bytes = 2;
             break;
 
-        case KEY_PRESSURE:
+        case MidiDevice::KEY_PRESSURE:
             _type = "key_pressure";
             _bytes = 2;
             break;
 
-        case CONTROLLER_CHANGE:
+        case MidiDevice::CONTROLLER_CHANGE:
             _type = "controller_change";
             _bytes = 2;
             break;
 
-        case PROGRAM_CHANGE:
+        case MidiDevice::PROGRAM_CHANGE:
             _type = "program_change";
             _bytes = 2;
             break;
 
-        case CHANNEL_PRESSURE:
+        case MidiDevice::CHANNEL_PRESSURE:
             _type = "channel_pressure";
             _bytes = 2;
             break;
 
-        case PITCH_BEND:
+        case MidiDevice::PITCH_BEND:
             _type = "pitch_bend";
             _bytes = 2;
             break;
 
-        case SYSTEM_EXCLUSIVE:
+        case MidiDevice::SYSTEM_EXCLUSIVE:
             if(_message->size() == 6) {
                 unsigned int type = _message->at(4);
                 if (type == 1)
@@ -136,37 +158,37 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
             _bytes = 0;
             break;
 
-        case SONG_POSITION:
+        case MidiDevice::SONG_POSITION:
             _type = "song_position";
             _bytes = 2;
             break;
 
-        case SONG_SELECT:
+        case MidiDevice::SONG_SELECT:
             _type = "song_select";
             _bytes = 2;
             break;
 
-        case TUNE_REQUEST:
+        case MidiDevice::TUNE_REQUEST:
             _type = "tune_request";
             _bytes = 2;
             break;
 
-        case TIMING_TICK:
+        case MidiDevice::TIMING_TICK:
             _type = "timing_tick";
             _bytes = 0;
             break;
 
-        case START_SONG:
+        case MidiDevice::START_SONG:
             _type = "start_song";
             _bytes = 0;
             break;
 
-        case CONTINUE_SONG:
+        case MidiDevice::CONTINUE_SONG:
             _type = "continue_song";
             _bytes = 0;
             break;
 
-        case STOP_SONG:
+        case MidiDevice::STOP_SONG:
             _type = "stop_song";
             _bytes = 0;
             break;
@@ -177,7 +199,7 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
             break;
     }
 
-    if (status == NOTE_ON && _message->at(2) == 0) {
+    if (status == MidiDevice::NOTE_ON && _message->at(2) == 0) {
         _type = "note_off";
     }
 }
