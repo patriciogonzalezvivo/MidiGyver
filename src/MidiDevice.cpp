@@ -94,35 +94,39 @@ void MidiDevice::send(const unsigned char _type) {
 
 void MidiDevice::send(size_t _key, size_t _value) {
     std::vector<unsigned char> msg;
-    if (defaultOutChannel > 0)
-        msg.push_back( defaultOutType + (defaultOutChannel-1) );
-    else
-        msg.push_back( defaultOutType );
 
+    msg.push_back( defaultOutType );
     msg.push_back( _key );
     msg.push_back( _value );
+    
+    if (defaultOutChannel > 0 && defaultOutChannel < 16 )
+        msg[0] += defaultOutChannel-1;
+
     midiOut->sendMessage( &msg );   
 }
 
 void MidiDevice::send(const unsigned char _type, size_t _key, size_t _value) {
     std::vector<unsigned char> msg;
-    if (defaultOutChannel > 0)
-        msg.push_back( _type + (defaultOutChannel-1) );
-    else
-        msg.push_back( _type );
+
+    msg.push_back( _type );
     msg.push_back( _key );
     msg.push_back( _value );
+
+    if (defaultOutChannel > 0 && defaultOutChannel < 16 )
+        msg[0] += defaultOutChannel-1;
+
     midiOut->sendMessage( &msg );   
 }
 
 void MidiDevice::send(const unsigned char _type, size_t _channel, size_t _key, size_t _value) {
     std::vector<unsigned char> msg;
-    if (_channel > 0)
-        msg.push_back( _type + (_channel-1) );
-    else
-        msg.push_back( _type );
+
+    msg.push_back( _type );
     msg.push_back( _key );
     msg.push_back( _value );
+    if (defaultOutChannel > 0 && defaultOutChannel < 16 )
+        msg[0] += defaultOutChannel-1;
+
     midiOut->sendMessage( &msg );   
 }
 
