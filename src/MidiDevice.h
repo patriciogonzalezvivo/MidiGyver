@@ -43,13 +43,20 @@ public:
     bool    openOutPort(const std::string& _name, size_t _midiPort);
     bool    openVirtualOutPort(const std::string& _name);
 
-    static std::vector<std::string> getInputPorts();
+    static std::vector<std::string> getInPorts();
+    static std::vector<std::string> getOutPorts();
+
     static void onMidi(double, std::vector<unsigned char>*, void*);
 
     void        send(const unsigned char _type);
+    void        send(size_t _key, size_t _value);
     void        send(const unsigned char _type, size_t _key, size_t _value);
+    void        send(const unsigned char _type, size_t _channel, size_t _key, size_t _value);
 
     size_t      midiPort;
+    
+    size_t          defaultOutChannel;
+    unsigned char   defaultOutType;
 
 protected:
     RtMidiIn*   midiIn;

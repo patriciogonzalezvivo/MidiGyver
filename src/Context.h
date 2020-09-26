@@ -58,8 +58,8 @@ public:
     bool        feedbackLED(const std::string& _device, size_t _key, size_t _value);
     bool        feedbackTick(const std::string& _device, size_t _key, size_t _value);
 
-    std::vector<std::string>            devicesNames;
-    std::map<std::string, Device*>      devices;
+    std::vector<std::string>            listenDevicesNames;
+    std::map<std::string, Device*>      listenDevices;
 
     std::vector<Target>                 targets;
     std::vector<std::string>            targetsDevicesNames;

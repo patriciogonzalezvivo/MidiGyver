@@ -26,7 +26,7 @@ bool Context::load(const std::string& _filename) {
     js.setGlobalValue("global", std::move(global));
 
     // Load MidiDevices
-    std::vector<std::string> availableDevices = MidiDevice::getInputPorts();
+    std::vector<std::string> availableMidiOutPorts = MidiDevice::getOutPorts();
 
     // Define out targets
     if (config["out"].IsSequence()) {
@@ -37,11 +37,22 @@ bool Context::load(const std::string& _filename) {
             if (target.protocol == MIDI_PROTOCOL) {
                 MidiDevice* m = new MidiDevice(this, name);
 
-                int deviceID = getMatchingKey(availableDevices, target.address);
+                int deviceID = getMatchingKey(availableMidiOutPorts, target.address);
                 if (deviceID >= 0)
                     m->openOutPort(target.address, deviceID);
                 else
                     m->openVirtualOutPort(target.address);
+
+                m->defaultOutChannel = toInt(target.port);
+
+                if (target.folder == "/cc" || 
+                    target.folder == "/control_change" )
+                    m->defaultOutType = MidiDevice::CONTROLLER_CHANGE;
+                else if (target.folder == "/note" ||
+                            target.folder == "/note_on") 
+                    m->defaultOutType = MidiDevice::NOTE_ON;
+                else if (target.folder == "/note_off") 
+                    m->defaultOutType = MidiDevice::NOTE_OFF;
 
                 targetsDevicesNames.push_back( target.address );
                 targetsDevices[target.address] = (Device*)m;
@@ -53,16 +64,19 @@ bool Context::load(const std::string& _filename) {
 
     // JS Functions
     uint32_t id = 0;
+    
+    // Load MidiDevices
+    std::vector<std::string> availableMidiInPorts = MidiDevice::getInPorts();
 
     if (config["in"].IsMap()) {
         for (YAML::const_iterator dev = config["in"].begin(); dev != config["in"].end(); ++dev) {
             std::string inName = dev->first.as<std::string>();
-            int deviceID = getMatchingKey(availableDevices, inName);
+            int deviceID = getMatchingKey(availableMidiInPorts, inName);
 
             if (deviceID >= 0) {
                 MidiDevice* m = new MidiDevice(this, inName, deviceID);
-                devicesNames.push_back(inName);
-                devices[inName] = (Device*)m;
+                listenDevicesNames.push_back(inName);
+                listenDevices[inName] = (Device*)m;
 
                 for (size_t i = 0; i < config["in"][inName].size(); i++) {
 
@@ -81,7 +95,7 @@ bool Context::load(const std::string& _filename) {
                             size_t key = config["in"][inName][i]["key"].as<size_t>();
                             std::cout << " adding key " << key << std::endl;
 
-                            devices[inName]->keyMap[key] = i;
+                            listenDevices[inName]->keyMap[key] = i;
                             // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
                             if (haveShapingFunction)
                                 shapeFncs[inName + "_" + toString(key)] = id;
@@ -91,7 +105,7 @@ bool Context::load(const std::string& _filename) {
                                 size_t key = config["in"][inName][i]["key"][j].as<size_t>();
                                 std::cout << " adding key " << key << std::endl;
 
-                                devices[inName]->keyMap[key] = i;
+                                listenDevices[inName]->keyMap[key] = i;
                                 // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
                                 if (haveShapingFunction)
                                     shapeFncs[inName + "_" + toString(key)] = id;
@@ -108,10 +122,10 @@ bool Context::load(const std::string& _filename) {
         }
     }
 
-    if (devices.size() == 0) {
-        std::cout << "Listening to no midi device. Please setup one of the following one in your config YAML file: " << std::endl;
-        for (size_t i = 0; i < availableDevices.size(); i++)
-            std::cout << "  - " << availableDevices[i] << std::endl;
+    if (listenDevices.size() == 0) {
+        std::cout << "Heads up: MidiGyver is not listening to any of the available MIDI devices: " << std::endl;
+        for (size_t i = 0; i < availableMidiInPorts.size(); i++)
+            std::cout << "  - " << availableMidiInPorts[i] << std::endl;
     }
 
     // Load Pulses
@@ -138,8 +152,8 @@ bool Context::load(const std::string& _filename) {
                 }
             }
 
-            devicesNames.push_back(name);
-            devices[name] = (Device*)p;
+            listenDevicesNames.push_back(name);
+            listenDevices[name] = (Device*)p;
         }
     }
 
@@ -159,7 +173,7 @@ bool Context::save(const std::string& _filename) {
 }
 
 bool Context::close() {
-    for (std::map<std::string, Device*>::iterator it = devices.begin(); it != devices.end(); it++) {
+    for (std::map<std::string, Device*>::iterator it = listenDevices.begin(); it != listenDevices.end(); it++) {
         if (it->second->type == DEVICE_MIDI) {
             delete ((MidiDevice*)it->second);
         }
@@ -169,8 +183,8 @@ bool Context::close() {
         }
     }
     
-    devices.clear();
-    devicesNames.clear();
+    listenDevices.clear();
+    listenDevicesNames.clear();
 
     shapeFncs.clear();
 
@@ -224,7 +238,7 @@ bool Context::doKeyExist(const std::string& _device, size_t _key) {
 
         else if (config["in"][_device].IsSequence()) {
             // std::cout << " exploring the sequence (" << devices[_device]->keyMap.size() << ") for the KEY " << _key << std::endl;
-            return devices[_device]->keyMap.find(_key) != devices[_device]->keyMap.end(); 
+            return listenDevices[_device]->keyMap.find(_key) != listenDevices[_device]->keyMap.end(); 
         }
     }
     return false;
@@ -237,7 +251,7 @@ YAML::Node  Context::getKeyNode(const std::string& _device, size_t _key) {
     }
 
     else if (config["in"][_device].IsSequence()) {
-        size_t i = devices[_device]->keyMap[_key];
+        size_t i = listenDevices[_device]->keyMap[_key];
         // std::cout << "ID: " << i << std::endl;
         return config["in"][_device][i];
     }
@@ -327,16 +341,15 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                                     MidiDevice* d = (MidiDevice*)targetsDevices[ targetsDevicesNames[j] ];
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     size_t v = el.getValueAtIndex(1).toInt();
-                                    // d->send( MidiDevice::CONTROLLER_CHANGE, k, v );
-                                    d->send( MidiDevice::NOTE_ON, k, v );
+                                    d->send( k, v );
                                 }
                             }
                         }
                     }
                 }
 
-                for (size_t j = 0; j < devicesNames.size(); j++) {
-                    JSValue d = result.getValueForProperty(devicesNames[j]);
+                for (size_t j = 0; j < listenDevicesNames.size(); j++) {
+                    JSValue d = result.getValueForProperty(listenDevicesNames[j]);
 
                     if (!d.isUndefined()) {
                         for (size_t i = 0; i < d.getLength(); i++) {
@@ -345,15 +358,15 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                                 if (el.getLength() > 1) {
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     float v = el.getValueAtIndex(1).toFloat();
-                                    // std::cout << "trigger(" << devicesNames[j] << "," << k << "," << v << ")" << std::endl;
-                                    YAML::Node n = getKeyNode(devicesNames[j], k);
-                                    mapKeyValue(n, devicesNames[j], k, v);
+                                    // std::cout << "trigger(" << listenDevicesNames[j] << "," << k << "," << v << ")" << std::endl;
+                                    YAML::Node n = getKeyNode(listenDevicesNames[j], k);
+                                    mapKeyValue(n, listenDevicesNames[j], k, v);
                                 }
                             }
                         }
                     }
 
-                    JSValue d_leds = result.getValueForProperty(devicesNames[j] + "_FEEDBACKLEDS");
+                    JSValue d_leds = result.getValueForProperty(listenDevicesNames[j] + "_FEEDBACKLEDS");
                     if (!d_leds.isUndefined()) {
                         for (size_t i = 0; i < d_leds.getLength(); i++) {
                             JSValue el = d_leds.getValueAtIndex(i);
@@ -361,13 +374,13 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                                 if (el.getLength() > 1) {
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     float v = el.getValueAtIndex(1).toFloat();
-                                    YAML::Node n = getKeyNode(devicesNames[j], k);
+                                    YAML::Node n = getKeyNode(listenDevicesNames[j], k);
                                     DataType n_type = getKeyDataType(n);
 
                                     // BUTTONs and TOGGLEs need to change state on the device
-                                    if (devices[devicesNames[j]]->type == DEVICE_MIDI && 
+                                    if (listenDevices[listenDevicesNames[j]]->type == DEVICE_MIDI && 
                                          (n_type == TYPE_BUTTON || n_type == TYPE_TOGGLE)) {
-                                        feedbackLED(devicesNames[j], k, v);
+                                        feedbackLED(listenDevicesNames[j], k, v);
                                     }
                                 }
                             }
@@ -549,7 +562,7 @@ bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t 
         // DataType type = getKeyDataType(_keynode);
 
         // // BUTTONs and TOGGLEs need to change state on the device
-        // if (devices[_device]->type == DEVICE_MIDI && 
+        // if (listenDevices[_device]->type == DEVICE_MIDI && 
         //     (type == TYPE_BUTTON || type == TYPE_TOGGLE)) {
         //     feedbackLED(_device, _key, _keynode["value"].as<bool>() ? 127 : 0);
         // }
@@ -561,7 +574,7 @@ bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t 
 }
 
 bool Context::feedbackLED(const std::string& _device, size_t _key, size_t _value){
-    MidiDevice* midi = static_cast<MidiDevice*>(devices[_device]);
+    MidiDevice* midi = static_cast<MidiDevice*>(listenDevices[_device]);
     midi->send( MidiDevice::CONTROLLER_CHANGE, _key, _value);
     return true;
 }
@@ -634,7 +647,7 @@ bool Context::sendKeyValue(YAML::Node _keynode, const std::string& _device, size
 
         }
 
-        if ( devices[_device]->type == DEVICE_MIDI )
+        if ( listenDevices[_device]->type == DEVICE_MIDI )
             feedbackLED(_device, _key, _keynode["value"].as<bool>() ? 127 : 0);
 
         return true;

@@ -21,7 +21,7 @@ global:
 out:
     -   udp://localhost:4560
     -   osc://localhost:8000
-    -   midi://sequencer
+    -   midi://midigyver_sequencer
     -   csv
 
 pulse:
@@ -59,7 +59,7 @@ pulse:
 
                     return { 
                         'nanoKONTROL2*_FEEDBACKLEDS': leds,
-                        'sequencer': trigers
+                        'midigyver_sequencer': trigers
                     };
                 }
                 else

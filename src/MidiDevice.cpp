@@ -9,14 +9,24 @@
 #include "Context.h"
 
 // VIRTUAL PORT
-MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : midiIn(NULL), midiOut(NULL) {
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : 
+    defaultOutChannel(0),
+    defaultOutType(MidiDevice::CONTROLLER_CHANGE),
+    midiIn(NULL), 
+    midiOut(NULL) 
+{
     type = DEVICE_MIDI;
     ctx = _ctx;
     name = _name;
 }
 
 // REAL PORT
-MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) : midiIn(NULL), midiOut(NULL) {
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) : 
+    defaultOutChannel(0),
+    defaultOutType(MidiDevice::CONTROLLER_CHANGE),
+    midiIn(NULL), 
+    midiOut(NULL)
+{
     type = DEVICE_MIDI;
     ctx = _ctx;
     name = _name;
@@ -82,9 +92,35 @@ void MidiDevice::send(const unsigned char _type) {
     midiOut->sendMessage( &msg );   
 }
 
+void MidiDevice::send(size_t _key, size_t _value) {
+    std::vector<unsigned char> msg;
+    if (defaultOutChannel > 0)
+        msg.push_back( defaultOutType + (defaultOutChannel-1) );
+    else
+        msg.push_back( defaultOutType );
+
+    msg.push_back( _key );
+    msg.push_back( _value );
+    midiOut->sendMessage( &msg );   
+}
+
 void MidiDevice::send(const unsigned char _type, size_t _key, size_t _value) {
     std::vector<unsigned char> msg;
-    msg.push_back( _type );
+    if (defaultOutChannel > 0)
+        msg.push_back( _type + (defaultOutChannel-1) );
+    else
+        msg.push_back( _type );
+    msg.push_back( _key );
+    msg.push_back( _value );
+    midiOut->sendMessage( &msg );   
+}
+
+void MidiDevice::send(const unsigned char _type, size_t _channel, size_t _key, size_t _value) {
+    std::vector<unsigned char> msg;
+    if (_channel > 0)
+        msg.push_back( _type + (_channel-1) );
+    else
+        msg.push_back( _type );
     msg.push_back( _key );
     msg.push_back( _value );
     midiOut->sendMessage( &msg );   
@@ -204,7 +240,7 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
     }
 }
 
-std::vector<std::string> MidiDevice::getInputPorts() {
+std::vector<std::string> MidiDevice::getInPorts() {
     std::vector<std::string> devices;
 
     RtMidiIn* midiIn = new RtMidiIn();
@@ -217,6 +253,23 @@ std::vector<std::string> MidiDevice::getInputPorts() {
     }
 
     delete midiIn;
+
+    return devices;
+}
+
+std::vector<std::string> MidiDevice::getOutPorts() {
+    std::vector<std::string> devices;
+
+    RtMidiOut* midiOut = new RtMidiOut();
+    unsigned int nPorts = midiOut->getPortCount();
+
+    for(unsigned int i = 0; i < nPorts; i++) {
+        std::string name = midiOut->getPortName(i);
+        stringReplace(name, '_');
+        devices.push_back( name );
+    }
+
+    delete midiOut;
 
     return devices;
 }

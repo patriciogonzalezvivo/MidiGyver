@@ -25,12 +25,16 @@ struct Target {
 inline Target parseTarget(const std::string _address) {
     Target target;
 
+    size_t post_protocol = 6;
     std::string protocol = _address.substr(0,3);
 
+
     if (protocol == "mid") {
-        target.protocol = MIDI_PROTOCOL;
-        target.address = _address.substr(7, _address.size() - 7);
-        return target;
+        target.protocol = MIDI_PROTOCOL;    // Protocol
+        post_protocol = 7;                  // give space for 'midi://'
+        target.port = "0";                  // Channel
+        target.folder = "/cc";              // MessageType
+
     }
     else if (protocol == "csv") {
         target.protocol = CSV_PROTOCOL;
@@ -43,7 +47,7 @@ inline Target parseTarget(const std::string _address) {
     else
         return target;
 
-    std::string address = _address.substr(6, _address.size() - 6);
+    std::string address = _address.substr(post_protocol, _address.size() - post_protocol);
     std::size_t addressEnd = address.find(":");
     std::size_t portStart = addressEnd+1;
     std::size_t portEnd = address.find("/"); 
@@ -66,7 +70,6 @@ inline Target parseTarget(const std::string _address) {
 
     if (portEnd != total)
         target.folder = address.substr(portEnd, total - portEnd);
-
 
     if (target.address == "localhost")
         target.address = "127.0.0.1";
