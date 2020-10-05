@@ -19,7 +19,7 @@ aliases:
             }
 
 pulse:
-    -   name: u_pulse
+    -   name: pulse
         interval: 10
         type: scalar
         shape: |
@@ -35,170 +35,132 @@ pulse:
 in:
     nanoKONTROL2*:
         -   key: 0
-            name: u_fader00
+            name: fader00
             shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
-            value: 1
-            value_raw: 127
 
         -   key: 1
-            name: u_fader01
+            name: fader01
             shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
-            value: 0
-            value_raw: 0
         
         -   key: 2
-            name: u_fader02
+            name: fader02
             shape: *defaultShapeFnc
             type: scalar
             map: [0, 1]
-            value: 0.25
-            value_raw: 32
         
         -   key: 3
-            name: u_fader03
+            name: fader03
             shape: *defaultShapeFnc
-            type: color
-            map: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]
-            value: [1, 1, 1, 1]
-            value_raw: 127
+            type: scalar
+            map: [0, 1]
         
         -   key: 4
-            name: u_fader04
+            name: fader04
             shape: *defaultShapeFnc
-            type: vector
-            map: [[0.0, 0.0], [-0.5, 0.0], [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [0.0, 0.5], [0.0, 0.0]]
-            value: [0, 0, 0]
-            value_raw: 127
+            type: scalar
+            map: [0, 1]
         
         -   key: 5
-            name: u_fader05
+            name: fader05
             shape: *defaultShapeFnc
-            type: color
-            map: [[1, 1, 1], [0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 0, 0]]
-            value: [1, 0, 0, 1]
-            value_raw: 127
+            type: scalar
+            map: [0, 1]
         
         -   key: 6
-            name: u_fader06
+            name: fader06
             shape: *defaultShapeFnc
-            type: states
-            map: [low, med, high, ultra_high]
-            value_raw: 0
+            type: scalar
+            map: [0, 1]
         
         -   key: 7
-            name: u_fader07
+            name: fader07
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 16
-            name: u_knob00
+            name: knob00
             shape: *defaultShapeFnc
             type: scalar
-            map: [-3.1415, 3.1415]
-            value: -3.1415
-            value_raw: 0
+            map: [0, 1]
         
         -   key: 17
-            name: u_knob01
+            name: knob01
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 18
-            name: u_knob02
+            name: knob02
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 19
-            name: u_knob03
+            name: knob03
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 20
-            name: u_knob04
+            name: knob04
             shape: *defaultShapeFnc
             type: scalar
-            map: [-3.1415, 3.1415]
-            value: -3.1415
-            value_raw: 0
+            map: [0, 1]
         
         -   key: 21
-            name: u_knob05
+            name: knob05
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 22
-            name: u_knob06
+            name: knob06
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 23
-            name: u_knob07
+            name: knob07
             shape: *defaultShapeFnc
             type: scalar
-            value_raw: 0
-            value: 0
+            map: [0, 1]
         
         -   key: 32
             name: sBtns0
             type: toggle
-            value: true
-            map:
-                on: define,DRAW_SHAPE
-                off: undefine,DRAW_SHAPE
         
         -   key: 33
             name: sBtns1
             type: toggle
-            value: off
         
         -   key: 34
             name: sBtns2
             type: toggle
-            value: off
         
         -   key: 35
             name: sBtns3
             type: toggle
-            value: off
         
         -   key: 36
             name: sBtns4
             type: toggle
-            value: true
-            map:
-                on: define,DRAW_AXIS
-                off: undefine,DRAW_AXIS
         
         -   key: 37
             name: sBtns5
             type: toggle
-            value: off
         
         -   key: 38
             name: sBtns6
             type: toggle
-            value: off
         
         -   key: 39
             name: sBtns7
             type: toggle
-            value: off
 
         -   key: 41
             name: play
@@ -251,42 +213,34 @@ in:
         -   key: 48
             name: mBtns0
             type: toggle
-            value: false
         
         -   key: 49
             name: mBtns1
             type: toggle
-            value: off
         
         -   key: 50
             name: mBtns2
             type: toggle
-            value: off
         
         -   key: 51
             name: mBtns3
             type: toggle
-            value: off
         
         -   key: 52
             name: mBtns4
             type: toggle
-            value: off
         
         -   key: 53
             name: mBtns5
             type: toggle
-            value: off
         
         -   key: 54
             name: mBtns6
             type: toggle
-            value: off
         
         -   key: 55
             name: mBtns7
             type: toggle
-            value: off
         
         -   key: 58
             name: track_back
@@ -315,7 +269,7 @@ in:
             type: toggle
         
         -   key: 61
-            name: u_polygon
+            name: polygon
             type: scalar
             shape: |
                 function() {
@@ -328,7 +282,7 @@ in:
             value: 4
         
         -   key: 62
-            name: u_polygon
+            name: polygon
             type: scalar
             shape: |
                 function() {
@@ -340,39 +294,31 @@ in:
         -   key: 64
             name: rBtns0
             type: toggle
-            value: false
         
         -   key: 65
             name: rBtns1
             type: toggle
-            value: off
         
         -   key: 66
             name: rBtns2
             type: toggle
-            value: off
         
         -   key: 67
             name: rBtns3
             type: toggle
-            value: off
         
         -   key: 68
             name: rBtns4
             type: toggle
-            value: off
         
         -   key: 69
             name: rBtns5
             type: toggle
-            value: off
         
         -   key: 70
             name: rBtns6
             type: toggle
-            value: off
         
         -   key: 71
             name: rBtns7
             type: toggle
-            value: off

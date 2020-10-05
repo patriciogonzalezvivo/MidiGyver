@@ -93,7 +93,7 @@ bool Context::load(const std::string& _filename) {
 
                         if (config["in"][inName][i]["key"].IsScalar()) {
                             size_t key = config["in"][inName][i]["key"].as<size_t>();
-                            std::cout << " adding key " << key << std::endl;
+                            // std::cout << " adding key " << key << std::endl;
 
                             listenDevices[inName]->keyMap[key] = i;
                             // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
@@ -103,7 +103,7 @@ bool Context::load(const std::string& _filename) {
                         else if (config["in"][inName][i]["key"].IsSequence()) {
                             for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
                                 size_t key = config["in"][inName][i]["key"][j].as<size_t>();
-                                std::cout << " adding key " << key << std::endl;
+                                // std::cout << " adding key " << key << std::endl;
 
                                 listenDevices[inName]->keyMap[key] = i;
                                 // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
@@ -223,21 +223,15 @@ bool Context::updateDevice(const std::string& _device) {
 }
 
 bool Context::doKeyExist(const std::string& _device, size_t _key) {
-    // if (_device == "ortho remote") {
-    //     return true;
-    // }
-    // else 
     if ( !config["in"][_device].IsNull() ) {
 
         if (config["in"][_device].IsMap()) {
-            // std::cout << " exploring the map for the KEY" << _key << std::endl; 
             std::string key = toString(_key);
             if (config["in"][_device][key].IsDefined())
                 return true;
         }
 
         else if (config["in"][_device].IsSequence()) {
-            // std::cout << " exploring the sequence (" << devices[_device]->keyMap.size() << ") for the KEY " << _key << std::endl;
             return listenDevices[_device]->keyMap.find(_key) != listenDevices[_device]->keyMap.end(); 
         }
     }
@@ -252,7 +246,6 @@ YAML::Node  Context::getKeyNode(const std::string& _device, size_t _key) {
 
     else if (config["in"][_device].IsSequence()) {
         size_t i = listenDevices[_device]->keyMap[_key];
-        // std::cout << "ID: " << i << std::endl;
         return config["in"][_device][i];
     }
 
@@ -320,99 +313,123 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
 
         std::string key = toString(_key);
         JSValue result = js.getFunctionResult( shapeFncs[_device + "_" + key] );
-
+    
         if (!result.isNull()) {
-
             if (result.isString()) {
+                JSScopeMarker marker1 = js.getScopeMarker();
                 std::cout << "Update result on string: " << result.toString() << " but don't know what to do with it"<< std::endl;
+                js.resetToScopeMarker(marker1);
                 return false;
             }
 
             else if (result.isObject()) {
-                // std::cout << "shapeKey return Object" << std::endl;
+                JSScopeMarker marker1 = js.getScopeMarker();
+                
                 for (size_t j = 0; j < targetsDevicesNames.size(); j++) {
                     JSValue d = result.getValueForProperty(targetsDevicesNames[j]);
                     if (!d.isUndefined()) {
+                        JSScopeMarker marker2 = js.getScopeMarker();
+
                         for (size_t i = 0; i < d.getLength(); i++) {
                             JSValue el = d.getValueAtIndex(i);
                             if (el.isArray()) {
                                 if (el.getLength() > 1) {
+                                    JSScopeMarker marker3 = js.getScopeMarker();
 
                                     MidiDevice* d = (MidiDevice*)targetsDevices[ targetsDevicesNames[j] ];
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     size_t v = el.getValueAtIndex(1).toInt();
                                     d->send( k, v );
+
+                                    js.resetToScopeMarker(marker3);
                                 }
                             }
                         }
+
+                        js.resetToScopeMarker(marker2);
                     }
                 }
-
+                
                 for (size_t j = 0; j < listenDevicesNames.size(); j++) {
                     JSValue d = result.getValueForProperty(listenDevicesNames[j]);
 
                     if (!d.isUndefined()) {
+                        JSScopeMarker marker2 = js.getScopeMarker();
+
                         for (size_t i = 0; i < d.getLength(); i++) {
                             JSValue el = d.getValueAtIndex(i);
                             if (el.isArray()) {
                                 if (el.getLength() > 1) {
+                                    JSScopeMarker marker3 = js.getScopeMarker();
+
                                     size_t k = el.getValueAtIndex(0).toInt();
-                                    float v = el.getValueAtIndex(1).toFloat();
-                                    // std::cout << "trigger(" << listenDevicesNames[j] << "," << k << "," << v << ")" << std::endl;
+                                    size_t v = el.getValueAtIndex(1).toInt();
                                     YAML::Node n = getKeyNode(listenDevicesNames[j], k);
                                     mapKeyValue(n, listenDevicesNames[j], k, v);
+
+                                    js.resetToScopeMarker(marker3);
                                 }
                             }
                         }
+
+                        js.resetToScopeMarker(marker2);
                     }
 
-                    JSValue d_leds = result.getValueForProperty(listenDevicesNames[j] + "_FEEDBACKLEDS");
+
+                    JSValue d_leds = result.getValueForProperty(listenDevicesNames[j] + "_FEEDBACK");
                     if (!d_leds.isUndefined()) {
+                        JSScopeMarker marker2 = js.getScopeMarker();
+
                         for (size_t i = 0; i < d_leds.getLength(); i++) {
                             JSValue el = d_leds.getValueAtIndex(i);
+
                             if (el.isArray()) {
-                                if (el.getLength() > 1) {
+                                if (el.getLength() == 2) {
+                                    JSScopeMarker marker3 = js.getScopeMarker();
+
                                     size_t k = el.getValueAtIndex(0).toInt();
-                                    float v = el.getValueAtIndex(1).toFloat();
                                     YAML::Node n = getKeyNode(listenDevicesNames[j], k);
                                     DataType n_type = getKeyDataType(n);
 
-                                    // BUTTONs and TOGGLEs need to change state on the device
-                                    if (listenDevices[listenDevicesNames[j]]->type == DEVICE_MIDI && 
-                                         (n_type == TYPE_BUTTON || n_type == TYPE_TOGGLE)) {
-                                        feedbackLED(listenDevicesNames[j], k, v);
-                                    }
+                                    size_t v = el.getValueAtIndex(1).toInt();
+                                    feedbackLED(listenDevicesNames[j], k, v);
+
+                                    js.resetToScopeMarker(marker3);
                                 }
                             }
                         }
+
+                        js.resetToScopeMarker(marker2);
                     }                 
                 }
+
+                js.resetToScopeMarker(marker1);
                 return false;
             }
 
             else if (result.isArray()) {
-                // std::cout << "shapeKey return Array" << std::endl;
+                JSScopeMarker marker1 = js.getScopeMarker();
+
                 for (size_t i = 0; i < result.getLength(); i++) {
                     JSValue el = result.getValueAtIndex(i);
                     if (el.isArray()) {
                         if (el.getLength() == 2) {
                             size_t k = el.getValueAtIndex(0).toInt();
                             float v = el.getValueAtIndex(1).toFloat();
-                            // std::cout << "trigger (" << _device << "," << k << "," << v << ")" << std::endl;
                             mapKeyValue(_keynode, _device, k, v);
                         }
                     }
                 }
+
+                js.resetToScopeMarker(marker1);
                 return false;
             }
             
             else if (result.isNumber()) {
-                // std::cout << "shapeKey return Number" << std::endl;
                 *_value = result.toFloat();
             }
 
             else if (result.isBoolean()) {
-                // std::cout << "shapeKey return Bool" << std::endl;
                 return result.toBool();
             }
         }
