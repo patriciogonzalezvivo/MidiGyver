@@ -5,7 +5,7 @@ midigyver (0.8) UNRELEASED; urgency=medium
   * fixing parsing issues
   * sequencer examples 
 
- -- Patricio Gonzalez Vivo <patricio@razor>  Wed, 07 Oct 2020 06:14:02 -0700
+ -- Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>  Wed, 07 Oct 2020 06:14:02 -0700
 
 midigyver (0.7) focal; urgency=medium
 

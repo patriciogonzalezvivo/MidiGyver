@@ -21,6 +21,7 @@ brew install cmake git
 ```bash
 git clone https://github.com/patriciogonzalezvivo/MidiGyver.git
 cd MidiGyver
+
 mkdir build
 cd build
 cmake ..
@@ -34,6 +35,8 @@ Devices are program using a YAML file, which is past as the only argument
 ```bash
 midigyver config.yaml 
 ```
+
+Try one of the examples of the `examples/` folder.
 
 ### Config
 Each YAML file can contain the configuration of multiple devices. The configuration of a device is set under the node with it own name (**note**: empty spaces and other symbols are replaced with `_` ).
