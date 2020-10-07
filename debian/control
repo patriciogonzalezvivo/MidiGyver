@@ -3,7 +3,7 @@ Section: misc
 Priority: optional
 Maintainer: Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>
 Build-Depends: cmake, debhelper (>=11~)
-Standards-Version: 0.7
+Standards-Version: 0.8
 Homepage: https://github.com/patriciogonzalezvivo/midigyver
 
 Package: midigyver

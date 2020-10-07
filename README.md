@@ -4,13 +4,23 @@ Flexible console program to convert MIDI inputs into OSC using a YAML config fil
 
 ### Install dependencies
 
+In linux would be:
+
 ```bash
 sudo apt install cmake
+```
+
+In MacOS would be:
+
+```bash
+brew install cmake git
 ```
 
 ### Compile and Install
 
 ```bash
+git clone https://github.com/patriciogonzalezvivo/MidiGyver.git
+cd MidiGyver
 mkdir build
 cd build
 cmake ..
