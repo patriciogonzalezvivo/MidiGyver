@@ -297,13 +297,16 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     unsigned char channel = 0;
     extractHeader(_message, type, bytes, channel);
 
-    // std::cout << "type: " << type << std::endl;
-    // std::cout << "size: " << _message->size() << std::endl;
 
     if (type == "start_song" ||
         type == "stop_song")
         return;
 
+    if (_message->size() < 3) {
+        std::cout << "type: " << type << std::endl;
+        std::cout << "size: " << _message->size() << std::endl;
+    }
+    
     size_t key = _message->at(1);
     float value = (float)_message->at(2);
 
