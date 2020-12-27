@@ -118,14 +118,14 @@ void MidiDevice::send(const unsigned char _type, size_t _key, size_t _value) {
     midiOut->sendMessage( &msg );   
 }
 
-void MidiDevice::send(const unsigned char _type, size_t _channel, size_t _key, size_t _value) {
+void MidiDevice::send(const unsigned char _type, unsigned char _channel, size_t _key, size_t _value) {
     std::vector<unsigned char> msg;
 
     msg.push_back( _type );
     msg.push_back( _key );
     msg.push_back( _value );
-    if (defaultOutChannel > 0 && defaultOutChannel < 16 )
-        msg[0] += defaultOutChannel-1;
+    if (_channel > 0 && _channel < 16 )
+        msg[0] += _channel-1;
 
     midiOut->sendMessage( &msg );   
 }
@@ -136,6 +136,7 @@ void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int
 
     if ((_message->at(0) & 0xf0) != 0xf0) {
         _channel = _message->at(0) & 0x0f;
+        _channel += 1;
         status = _message->at(0) & 0xf0;
     }
     else {
@@ -293,19 +294,27 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
 
     std::string type;
     int bytes;
-    unsigned char channel;
+    unsigned char channel = 0;
     extractHeader(_message, type, bytes, channel);
+
+    // std::cout << "type: " << type << std::endl;
+    // std::cout << "size: " << _message->size() << std::endl;
+
+    if (type == "start_song" ||
+        type == "stop_song")
+        return;
 
     size_t key = _message->at(1);
     float value = (float)_message->at(2);
 
+    // std::cout << device->name << " Channel: " << (size_t)channel << " Key: " << key << " Value:" << value << std::endl;
+
     context->configMutex.lock();
-    // std::cout << device->name << " Channel: " << channel << " Key: " << key << " Value:" << value << std::endl;
-    if (context->doKeyExist(device->name, key)) {
-        YAML::Node node = context->getKeyNode(device->name, key);
-        if (context->shapeKeyValue(node, device->name, type, key, &value)) {
-            context->mapKeyValue(node, device->name, key, value);
-        }
+
+    if (context->doKeyExist(device->name, (size_t)channel, key)) {
+        YAML::Node node = context->getKeyNode(device->name, (size_t)channel, key);
+        if (context->shapeKeyValue(node, device->name, type, (size_t)channel, key, &value))
+            context->mapKeyValue(node, device->name, (size_t)channel, key, value);
     }
     context->configMutex.unlock();
 

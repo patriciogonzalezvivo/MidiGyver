@@ -45,18 +45,18 @@ public:
 
     bool        updateDevice(const std::string& _device);
 
-    bool        doKeyExist(const std::string& _device, size_t _key);
-    YAML::Node  getKeyNode(const std::string& _device, size_t _key);
+    bool        doKeyExist(const std::string& _device, size_t _channel, size_t _key);
+    YAML::Node  getKeyNode(const std::string& _device, size_t _channel, size_t _key);
     std::string getKeyName(YAML::Node _keynode);
     DataType    getKeyDataType(YAML::Node _keynode);
 
-    bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, const std::string& _type, size_t _key, float* _value);
-    bool        mapKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key, float _value);
-    bool        updateKey(YAML::Node _keynode, const std::string& _device, size_t _key);
-    bool        sendKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key);
+    bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, const std::string& _type, size_t _channel, size_t _key, float* _value);
+    bool        mapKeyValue(YAML::Node _keynode, const std::string& _device, size_t _channel, size_t _key, float _value);
+    bool        updateKey(YAML::Node _keynode, const std::string& _device, size_t _channel, size_t _key);
+    bool        sendKeyValue(YAML::Node _keynode, const std::string& _device, size_t _channel, size_t _key);
 
-    bool        feedbackLED(const std::string& _device, size_t _key, size_t _value);
-    bool        feedbackTick(const std::string& _device, size_t _key, size_t _value);
+    bool        feedbackLED(const std::string& _device, size_t _channel, size_t _key, size_t _value);
+    bool        feedbackTick(const std::string& _device, size_t _channel, size_t _key, size_t _value);
 
     std::vector<std::string>            listenDevicesNames;
     std::map<std::string, Device*>      listenDevices;

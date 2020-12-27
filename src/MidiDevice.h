@@ -51,7 +51,7 @@ public:
     void        send(const unsigned char _type);
     void        send(size_t _key, size_t _value);
     void        send(const unsigned char _type, size_t _key, size_t _value);
-    void        send(const unsigned char _type, size_t _channel, size_t _key, size_t _value);
+    void        send(const unsigned char _type, unsigned char _channel, size_t _key, size_t _value);
 
     size_t      midiPort;
     

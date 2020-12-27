@@ -19,7 +19,7 @@ global:
 
 
 out:
-    -   midi://midigyver_sequencer
+    -   midi://midigyver_sequencer:1/note_on
     -   csv
 
 pulse:

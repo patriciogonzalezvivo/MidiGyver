@@ -1,0 +1,76 @@
+aliases:
+    -   &all_keys [                 53, 54, 55, 56, 57, 58, 59,
+                        60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+                        70, 71, 72, 73, 74, 75, 76 ]
+
+    -   &all_keys_func |
+            function() {
+                if (value > 0)
+                    return ((parseFloat(key) - 53.0) / (76.0 - 53.0)) * 127.0;
+                return false
+            }
+
+out:
+    -   csv
+    -   osc://localhost:8000
+
+in:
+    OP-Z*:
+        -   key: *all_keys
+            channel: 1
+            name: u_kick
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+        -   key: *all_keys
+            channel: 2
+            name: u_snare
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+        -   key: *all_keys
+            channel: 3
+            name: u_perc
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+        -   key: *all_keys
+            channel: 4
+            name: u_sample
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+        
+        -   key: *all_keys
+            channel: 5
+            name: u_bass
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+        -   key: *all_keys
+            channel: 6
+            name: u_lead
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+        -   key: *all_keys
+            channel: 7
+            name: u_arp
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+        -   key: *all_keys
+            channel: 8
+            name: u_chord
+            type: color
+            map: [[0, 0, 0], [1, 1, 1]]
+            shape: *all_keys_func
+
+            
+

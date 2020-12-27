@@ -82,33 +82,37 @@ bool Context::load(const std::string& _filename) {
 
                     if (config["in"][inName][i]["key"].IsDefined()) {
 
+                        size_t channel = 0;
+                        if (config["in"][inName][i]["channel"].IsDefined())
+                            channel = config["in"][inName][i]["channel"].as<int>();
+                        
                         bool haveShapingFunction = false;
                         if (config["in"][inName][i]["shape"].IsDefined()) {
                             std::string function = config["in"][inName][i]["shape"].as<std::string>();
                             if ( js.setFunction(id, function) ) {
                                 haveShapingFunction = true;
                             }
-
                         }
+
 
                         if (config["in"][inName][i]["key"].IsScalar()) {
                             size_t key = config["in"][inName][i]["key"].as<size_t>();
                             // std::cout << " adding key " << key << std::endl;
 
-                            listenDevices[inName]->keyMap[key] = i;
+                            listenDevices[inName]->setFncKey(channel, key, i);
                             // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
                             if (haveShapingFunction)
-                                shapeFncs[inName + "_" + toString(key)] = id;
+                                shapeFncs[inName + "_" + toString(channel) + "_" + toString(key)] = id;
                         }
                         else if (config["in"][inName][i]["key"].IsSequence()) {
                             for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
                                 size_t key = config["in"][inName][i]["key"][j].as<size_t>();
                                 // std::cout << " adding key " << key << std::endl;
 
-                                listenDevices[inName]->keyMap[key] = i;
+                                listenDevices[inName]->setFncKey(channel, key, i);
                                 // std::cout << " linking " << (inName + "_" + toString(key)) << " w id " << id << std::endl; 
                                 if (haveShapingFunction)
-                                    shapeFncs[inName + "_" + toString(key)] = id;
+                                    shapeFncs[inName + "_" + toString(channel) + "_" + toString(key)] = id;
                             }
                         }
                             
@@ -147,7 +151,9 @@ bool Context::load(const std::string& _filename) {
             if (n["shape"].IsDefined()) {
                 std::string function = n["shape"].as<std::string>();
                 if ( js.setFunction(id, function) ) {
-                    shapeFncs[name + "_0"] = id;
+                    std::string fnc = name + "_0_0";
+                    // std::cout << fnc << " " << id << std::endl;
+                    shapeFncs[fnc] = id;
                     id++;
                 }
             }
@@ -202,50 +208,43 @@ bool Context::updateDevice(const std::string& _device) {
     for (size_t i = 0; i < config["in"][_device].size(); i++) {
         size_t key = i;
 
+        unsigned char channel = 0;
+
+        if (config["in"][_device][i]["channel"].IsDefined())
+            channel = config["in"][_device][i]["channel"].as<unsigned char>();
+
         if (config["in"][_device][i]["key"].IsDefined()) {
             if (config["in"][_device][i]["key"].IsScalar()) {
                 size_t key = config["in"][_device][i]["key"].as<size_t>();
-                updateKey(config["in"][_device][i], _device, key);
+                updateKey(config["in"][_device][i], _device, channel, key);
             }
             else if (config["in"][_device][i]["key"].IsSequence()) {
                 for (size_t j = 0; j < config["in"][_device][i]["key"].size(); j++) {
                     size_t key = config["in"][_device][i]["key"][j].as<size_t>();
-                    updateKey(config["in"][_device][i], _device, key);
+                    updateKey(config["in"][_device][i], _device, channel, key);
                 }
             }
         }
         else {
-            updateKey(config["in"][_device][i], _device, i);
+            updateKey(config["in"][_device][i], _device, channel, i);
         }
     }
 
     return true;
 }
 
-bool Context::doKeyExist(const std::string& _device, size_t _key) {
+bool Context::doKeyExist(const std::string& _device, size_t _channel, size_t _key) {
     if ( !config["in"][_device].IsNull() ) {
-
-        if (config["in"][_device].IsMap()) {
-            std::string key = toString(_key);
-            if (config["in"][_device][key].IsDefined())
-                return true;
-        }
-
-        else if (config["in"][_device].IsSequence()) {
-            return listenDevices[_device]->keyMap.find(_key) != listenDevices[_device]->keyMap.end(); 
+        if (config["in"][_device].IsSequence()) {
+            return listenDevices[_device]->isFncKey(_channel, _key); 
         }
     }
     return false;
 }
 
-YAML::Node  Context::getKeyNode(const std::string& _device, size_t _key) {
-    if (config["in"][_device].IsMap()) {
-        std::string key = toString(_key);
-        return config["in"][_device][key];
-    }
-
-    else if (config["in"][_device].IsSequence()) {
-        size_t i = listenDevices[_device]->keyMap[_key];
+YAML::Node  Context::getKeyNode(const std::string& _device, size_t _channel, size_t _key) {
+    if (config["in"][_device].IsSequence()) {
+        size_t i = listenDevices[_device]->getFncKey(_channel, _key);
         return config["in"][_device][i];
     }
 
@@ -301,18 +300,26 @@ std::string Context::getKeyName(YAML::Node _keynode) {
     return "unknownName";
 }
 
-bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, const std::string& _type, size_t _key, float* _value) {
+bool Context::shapeKeyValue(YAML::Node _keynode, 
+                            const std::string& _device, const std::string& _type, 
+                            size_t _channel, size_t _key, 
+                            float* _value) {
+
     if ( _keynode["shape"].IsDefined() ) {
         js.setGlobalValue("device", js.newString(_device));
         js.setGlobalValue("type", js.newString(_type));
+        js.setGlobalValue("key", js.newNumber(_channel));
         js.setGlobalValue("key", js.newNumber(_key));
         js.setGlobalValue("value", js.newNumber(*_value));
 
         JSValue keyData = parseNode(js, _keynode);
         js.setGlobalValue("data", std::move(keyData));
 
+        std::string channel = toString( (size_t)_channel );
         std::string key = toString(_key);
-        JSValue result = js.getFunctionResult( shapeFncs[_device + "_" + key] );
+        std::string fnc = _device + "_" + channel + "_" + key;
+        // std::cout << fnc << std::endl;
+        JSValue result = js.getFunctionResult( shapeFncs[fnc] );
     
         if (!result.isNull()) {
             if (result.isString()) {
@@ -359,13 +366,25 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                         for (size_t i = 0; i < d.getLength(); i++) {
                             JSValue el = d.getValueAtIndex(i);
                             if (el.isArray()) {
-                                if (el.getLength() > 1) {
+                                if (el.getLength() == 2) {
                                     JSScopeMarker marker3 = js.getScopeMarker();
 
                                     size_t k = el.getValueAtIndex(0).toInt();
                                     size_t v = el.getValueAtIndex(1).toInt();
-                                    YAML::Node n = getKeyNode(listenDevicesNames[j], k);
-                                    mapKeyValue(n, listenDevicesNames[j], k, v);
+                                    YAML::Node n = getKeyNode(listenDevicesNames[j], 0, k);
+                                    mapKeyValue(n, listenDevicesNames[j], 0, k, v);
+
+                                    js.resetToScopeMarker(marker3);
+                                }
+                                else if (el.getLength() == 3) {
+                                    JSScopeMarker marker3 = js.getScopeMarker();
+
+                                    unsigned char c = (unsigned char)el.getValueAtIndex(0).toInt();
+                                    size_t k = el.getValueAtIndex(1).toInt();
+                                    float v = el.getValueAtIndex(2).toFloat();
+
+                                    YAML::Node n = getKeyNode(listenDevicesNames[j], c, k);
+                                    mapKeyValue(n, listenDevicesNames[j], c, k, v);
 
                                     js.resetToScopeMarker(marker3);
                                 }
@@ -388,11 +407,22 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                                     JSScopeMarker marker3 = js.getScopeMarker();
 
                                     size_t k = el.getValueAtIndex(0).toInt();
-                                    YAML::Node n = getKeyNode(listenDevicesNames[j], k);
+                                    YAML::Node n = getKeyNode(listenDevicesNames[j], 0, k);
                                     DataType n_type = getKeyDataType(n);
-
                                     size_t v = el.getValueAtIndex(1).toInt();
-                                    feedbackLED(listenDevicesNames[j], k, v);
+                                    feedbackLED(listenDevicesNames[j], 0, k, v);
+
+                                    js.resetToScopeMarker(marker3);
+                                }
+                                else if (el.getLength() == 3) {
+                                    JSScopeMarker marker3 = js.getScopeMarker();
+
+                                    unsigned char c = (unsigned char)el.getValueAtIndex(0).toInt();
+                                    size_t k = el.getValueAtIndex(1).toInt();
+                                    YAML::Node n = getKeyNode(listenDevicesNames[j], c, k);
+                                    DataType n_type = getKeyDataType(n);
+                                    float v = el.getValueAtIndex(2).toFloat();
+                                    feedbackLED(listenDevicesNames[j], c, k, v);
 
                                     js.resetToScopeMarker(marker3);
                                 }
@@ -416,8 +446,15 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
                         if (el.getLength() == 2) {
                             size_t k = el.getValueAtIndex(0).toInt();
                             float v = el.getValueAtIndex(1).toFloat();
-                            mapKeyValue(_keynode, _device, k, v);
+                            mapKeyValue(_keynode, _device, 0, k, v);
                         }
+                        else if (el.getLength() == 3) {
+                            unsigned char c = (unsigned char)el.getValueAtIndex(0).toInt();
+                            size_t k = el.getValueAtIndex(1).toInt();
+                            float v = el.getValueAtIndex(2).toFloat();
+                            mapKeyValue(_keynode, _device, c, k, v);
+                        }
+                        
                     }
                 }
 
@@ -438,9 +475,8 @@ bool Context::shapeKeyValue(YAML::Node _keynode, const std::string& _device, con
     return true;
 }
 
-bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key, float _value) {
+bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_t _channel, size_t _key, float _value) {
 
-    std::string name = getKeyName(_keynode);
     DataType type = getKeyDataType(_keynode);
     _keynode["value_raw"] = _value;
 
@@ -448,7 +484,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
     if (type == TYPE_BUTTON) {
         bool value = _value > 0;
         _keynode["value"] = value;
-        return updateKey(_keynode, _device, _key);
+        return updateKey(_keynode, _device, _channel, _key);
     }
     
     // TOGGLE
@@ -460,7 +496,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
                 value = _keynode["value"].as<bool>();
 
             _keynode["value"] = !value;
-            return updateKey(_keynode, _device, _key);
+            return updateKey(_keynode, _device, _channel, _key);
         }
     }
 
@@ -484,7 +520,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
         }
             
         _keynode["value"] = value_str;
-        return updateKey(_keynode, _device, _key);
+        return updateKey(_keynode, _device, _channel, _key);
     }
     
     // SCALAR
@@ -508,7 +544,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
         }
             
         _keynode["value"] = value;
-        return updateKey(_keynode, _device, _key);
+        return updateKey(_keynode, _device, _channel, _key);
     }
     
     // VECTOR
@@ -532,7 +568,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
         }
             
         _keynode["value"] = value;
-        return updateKey(_keynode, _device, _key);
+        return updateKey(_keynode, _device, _channel, _key);
     }
 
     // COLOR
@@ -556,7 +592,7 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
         }
         
         _keynode["value"] = value;
-        return updateKey(_keynode, _device, _key);
+        return updateKey(_keynode, _device, _channel, _key);
     }
 
     else if (   type == TYPE_MIDI_NOTE || 
@@ -565,14 +601,14 @@ bool Context::mapKeyValue(YAML::Node _keynode, const std::string& _device, size_
 
         _keynode["value"] = int(_value);
 
-        return updateKey(_keynode, _device, _key);
+        return updateKey(_keynode, _device, _channel, _key);
     }
 
 
     return false;
 }
 
-bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t _key) {
+bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t _channel, size_t _key) {
 
     if ( _keynode["value"].IsDefined() ) {
 
@@ -584,24 +620,22 @@ bool Context::updateKey(YAML::Node _keynode, const std::string& _device, size_t 
         //     feedbackLED(_device, _key, _keynode["value"].as<bool>() ? 127 : 0);
         // }
 
-        return sendKeyValue(_keynode, _device, _key);
+        return sendKeyValue(_keynode, _device, _channel, _key);
     }
     
     return false;
 }
 
-bool Context::feedbackLED(const std::string& _device, size_t _key, size_t _value){
+bool Context::feedbackLED(const std::string& _device, size_t _channel, size_t _key, size_t _value){
     MidiDevice* midi = static_cast<MidiDevice*>(listenDevices[_device]);
-    midi->send( MidiDevice::CONTROLLER_CHANGE, _key, _value);
+    midi->send( MidiDevice::CONTROLLER_CHANGE, _channel, _key, _value);
     return true;
 }
 
-bool Context::sendKeyValue(YAML::Node _keynode, const std::string& _device, size_t _key) {
+bool Context::sendKeyValue(YAML::Node _keynode, const std::string& _device, size_t _channel, size_t _key) {
 
     if ( !_keynode["value"].IsDefined() )
         return false;
-
-
 
     // Define out targets
     std::vector<Target> keyTargets;
@@ -620,7 +654,20 @@ bool Context::sendKeyValue(YAML::Node _keynode, const std::string& _device, size
         keyTargets = targets;
         
     // KEY
-    std::string name = getKeyName(_keynode);
+    std::string name = "unknown"; 
+    // std::string name = getKeyName(_keynode);
+    if ( _keynode.IsDefined() ) {
+        if ( _keynode["name"].IsDefined() ) {
+            name = _keynode["name"].as<std::string>();
+        }
+        else {
+            name = ""; 
+            if ( _keynode["channel"].IsDefined() )
+                name += toString(_channel) + ",";
+            name += toString(_key);
+        } 
+    }
+
     DataType type = getKeyDataType(_keynode);
     YAML::Node value = _keynode["value"];
 
@@ -665,7 +712,7 @@ bool Context::sendKeyValue(YAML::Node _keynode, const std::string& _device, size
         }
 
         if ( listenDevices[_device]->type == DEVICE_MIDI )
-            feedbackLED(_device, _key, _keynode["value"].as<bool>() ? 127 : 0);
+            feedbackLED(_device, _channel, _key, _keynode["value"].as<bool>() ? 127 : 0);
 
         return true;
     }

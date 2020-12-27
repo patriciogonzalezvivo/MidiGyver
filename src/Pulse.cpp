@@ -10,7 +10,7 @@ Pulse::Pulse(void* _ctx, size_t _index) {
     type = DEVICE_PULSE;
     ctx = _ctx;
     name = ((Context*)ctx)->config["pulse"][_index]["name"].as<std::string>();
-    keyMap[_index] = _index;
+    setFncKey(0, _index, _index);
     index = _index;
 }   
 
@@ -28,8 +28,8 @@ void Pulse::start(size_t _milliSec) {
             if(this->clear) return;
             
             ((Context*)ctx)->configMutex.lock();
-            if (((Context*)ctx)->shapeKeyValue(((Context*)ctx)->config["pulse"][index], name, "pulse", 0, &counter))
-                        ((Context*)ctx)->mapKeyValue(((Context*)ctx)->config["pulse"][index], name, 0, counter);
+            if (((Context*)ctx)->shapeKeyValue(((Context*)ctx)->config["pulse"][index], name, "pulse", 0, 0, &counter))
+                        ((Context*)ctx)->mapKeyValue(((Context*)ctx)->config["pulse"][index], name, 0, 0, counter);
             ((Context*)ctx)->configMutex.unlock();
 
             counter++;

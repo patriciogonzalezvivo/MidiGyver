@@ -1,4 +1,4 @@
-midigyver (0.8) UNRELEASED; urgency=medium
+midigyver (0.8) focal; urgency=medium
 
   * Virtual OUT MIDI devices
   * _FEEDBACK out
