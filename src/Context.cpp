@@ -208,10 +208,10 @@ bool Context::updateDevice(const std::string& _device) {
     for (size_t i = 0; i < config["in"][_device].size(); i++) {
         size_t key = i;
 
-        unsigned char channel = 0;
+        size_t channel = 0;
 
         if (config["in"][_device][i]["channel"].IsDefined())
-            channel = config["in"][_device][i]["channel"].as<unsigned char>();
+            channel = config["in"][_device][i]["channel"].as<size_t>();
 
         if (config["in"][_device][i]["key"].IsDefined()) {
             if (config["in"][_device][i]["key"].IsScalar()) {
@@ -379,7 +379,7 @@ bool Context::shapeKeyValue(YAML::Node _keynode,
                                 else if (el.getLength() == 3) {
                                     JSScopeMarker marker3 = js.getScopeMarker();
 
-                                    unsigned char c = (unsigned char)el.getValueAtIndex(0).toInt();
+                                    size_t c = el.getValueAtIndex(0).toInt();
                                     size_t k = el.getValueAtIndex(1).toInt();
                                     float v = el.getValueAtIndex(2).toFloat();
 
@@ -417,7 +417,7 @@ bool Context::shapeKeyValue(YAML::Node _keynode,
                                 else if (el.getLength() == 3) {
                                     JSScopeMarker marker3 = js.getScopeMarker();
 
-                                    unsigned char c = (unsigned char)el.getValueAtIndex(0).toInt();
+                                    size_t c = el.getValueAtIndex(0).toInt();
                                     size_t k = el.getValueAtIndex(1).toInt();
                                     YAML::Node n = getKeyNode(listenDevicesNames[j], c, k);
                                     DataType n_type = getKeyDataType(n);
@@ -449,7 +449,7 @@ bool Context::shapeKeyValue(YAML::Node _keynode,
                             mapKeyValue(_keynode, _device, 0, k, v);
                         }
                         else if (el.getLength() == 3) {
-                            unsigned char c = (unsigned char)el.getValueAtIndex(0).toInt();
+                            size_t c = el.getValueAtIndex(0).toInt();
                             size_t k = el.getValueAtIndex(1).toInt();
                             float v = el.getValueAtIndex(2).toFloat();
                             mapKeyValue(_keynode, _device, c, k, v);
