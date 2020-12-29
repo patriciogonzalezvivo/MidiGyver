@@ -1,3 +1,9 @@
+midigyver (0.9) focal; urgency=medium
+
+  * Adding channel filtering
+
+ -- Patricio Gonzalez Vivo <patriciogonzalezvivo@gmail.com>  Tue, 29 Dec 2020 06:37:24 -0500
+
 midigyver (0.8) focal; urgency=medium
 
   * Virtual OUT MIDI devices
