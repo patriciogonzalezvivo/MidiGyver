@@ -317,8 +317,7 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
 
     if (context->doKeyExist(device->name, (size_t)channel, key)) {
         YAML::Node node = context->getKeyNode(device->name, (size_t)channel, key);
-        if ( !node["channel"].IsDefined() )
-            channel = 0;
+        
         if (context->shapeKeyValue(node, device->name, type, (size_t)channel, key, &value))
             context->mapKeyValue(node, device->name, (size_t)channel, key, value);
     }

@@ -304,20 +304,22 @@ bool Context::shapeKeyValue(YAML::Node _keynode,
                             float* _value) {
 
     if ( _keynode["shape"].IsDefined() ) {
+
+        size_t channel = _channel;
+
+        if ( !_keynode["channel"].IsDefined() )
+            channel = 0;
+
         js.setGlobalValue("device", js.newString(_device));
         js.setGlobalValue("type", js.newString(_type));
-        js.setGlobalValue("channel", js.newNumber(_channel));
+        js.setGlobalValue("channel", js.newNumber(channel));
         js.setGlobalValue("key", js.newNumber(_key));
         js.setGlobalValue("value", js.newNumber(*_value));
 
         JSValue keyData = parseNode(js, _keynode);
         js.setGlobalValue("data", std::move(keyData));
 
-        std::string channel = toString( (size_t)_channel );        
-        std::string key = toString(_key);
-        std::string fnc = _device + "_" + channel + "_" + key;
-        // std::cout << fnc << std::endl;
-        JSValue result = js.getFunctionResult( shapeFncs[fnc] );
+        JSValue result = js.getFunctionResult( shapeFncs[ _device + "_" + toString( (size_t)channel ) + "_" + toString(_key) ] );
     
         if (!result.isNull()) {
             if (result.isString()) {
