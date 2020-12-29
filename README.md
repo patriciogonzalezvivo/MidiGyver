@@ -1,6 +1,12 @@
 # MidiGyver [![Build Status](https://travis-ci.org/patriciogonzalezvivo/midiGyver.svg?branch=master)](https://travis-ci.org/patriciogonzalezvivo/midiGyver)
 
-Flexible console program to convert MIDI inputs into OSC using a YAML config file
+Flexible console program to convert MIDI inputs into OSC using a YAML config file.
+
+Suported MIDI Event types:
+
+* CONTROLLER_CHANGE;
+* NOTE_ON
+* NOTE_OFF
 
 ### Install dependencies
 

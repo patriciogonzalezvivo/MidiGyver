@@ -151,9 +151,7 @@ bool Context::load(const std::string& _filename) {
             if (n["shape"].IsDefined()) {
                 std::string function = n["shape"].as<std::string>();
                 if ( js.setFunction(id, function) ) {
-                    std::string fnc = name + "_0_0";
-                    // std::cout << fnc << " " << id << std::endl;
-                    shapeFncs[fnc] = id;
+                    shapeFncs[name + "_0_0"] = id;
                     id++;
                 }
             }
@@ -308,14 +306,14 @@ bool Context::shapeKeyValue(YAML::Node _keynode,
     if ( _keynode["shape"].IsDefined() ) {
         js.setGlobalValue("device", js.newString(_device));
         js.setGlobalValue("type", js.newString(_type));
-        js.setGlobalValue("key", js.newNumber(_channel));
+        js.setGlobalValue("channel", js.newNumber(_channel));
         js.setGlobalValue("key", js.newNumber(_key));
         js.setGlobalValue("value", js.newNumber(*_value));
 
         JSValue keyData = parseNode(js, _keynode);
         js.setGlobalValue("data", std::move(keyData));
 
-        std::string channel = toString( (size_t)_channel );
+        std::string channel = toString( (size_t)_channel );        
         std::string key = toString(_key);
         std::string fnc = _device + "_" + channel + "_" + key;
         // std::cout << fnc << std::endl;
