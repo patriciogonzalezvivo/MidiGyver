@@ -10,7 +10,7 @@ global:
 
 
 out:
-    -   midi://Client*:1/note_on
+    -   midi://sequencer:1/NOTE_ON
     -   csv
 
 pulse:
@@ -42,8 +42,8 @@ pulse:
                     }
 
                     return { 
-                        'nanoKONTROL2*_FEEDBACK': leds,
-                        'Client*': trigers
+                        'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
+                        'sequencer': trigers
                     };
                 }
                 else
@@ -95,12 +95,12 @@ in:
                         global.play = false;
                         
                         return { 
-                            'nanoKONTROL2*_FEEDBACK': leds,
+                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
                             'nanoKONTROL2*': [ [41, 127] ] 
                         };
                     }
                     return { 
-                            'nanoKONTROL2*_FEEDBACK': leds
+                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds
                         };;
                 }
 
@@ -147,7 +147,7 @@ in:
                         }
 
                         return { 
-                            'nanoKONTROL2*_FEEDBACK': leds,
+                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
                             'nanoKONTROL2*': [ [key, global.track] ]
                         };
                     }
@@ -186,7 +186,7 @@ in:
                         }
 
                         return { 
-                            'nanoKONTROL2*_FEEDBACK': leds,
+                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
                             'nanoKONTROL2*': trigers
                         };
                     }

@@ -59,6 +59,14 @@ inline double toDouble(const std::string& _string) {
     return x;
 }
 
+inline std::string toLower(const std::string& _string) {
+    std::string std = _string;
+    for (int i = 0; _string[i]; i++) {
+        std[i] = tolower(_string[i]);
+    }
+    return std;
+}
+
 inline bool match(const char* _pattern, const char* _target) { 
     // If we reach at the end of both strings, we are done 
     if (*_pattern == '\0' && *_target == '\0') 

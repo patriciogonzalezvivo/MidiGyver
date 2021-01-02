@@ -8,10 +8,71 @@
 
 #include "Context.h"
 
+unsigned char statusByte[18] = { 
+    MidiDevice::CONTROLLER_CHANGE,
+    MidiDevice::NOTE_ON,
+    MidiDevice::TIMING_TICK,
+    MidiDevice::NOTE_OFF,
+    MidiDevice::KEY_PRESSURE,
+    MidiDevice::PROGRAM_CHANGE,
+    MidiDevice::CHANNEL_PRESSURE,
+    MidiDevice::PITCH_BEND,
+    MidiDevice::SONG_POSITION,
+    MidiDevice::SONG_SELECT,
+    MidiDevice::TUNE_REQUEST,
+    MidiDevice::END_OF_SYSEX,
+    MidiDevice::START_SONG,
+    MidiDevice::CONTINUE_SONG,
+    MidiDevice::STOP_SONG,
+    MidiDevice::ACTIVE_SENSING,
+    MidiDevice::SYSTEM_RESET,
+    MidiDevice::SYSTEM_EXCLUSIVE
+};
+
+std::string statusNames[18] = { 
+    "CONTROLLER_CHANGE",
+    "NOTE_ON", 
+    "TIMING_TICK",
+    "NOTE_OFF", 
+    "KEY_PRESSURE", 
+    "PROGRAM_CHANGE",
+    "CHANNEL_PRESSURE",
+    "PITCH_BEND",
+    "SONG_POSITION",
+    "SONG_SELECT",
+    "TUNE_REQUEST",
+    "END_OF_SYSEX",
+    "START_SONG",
+    "CONTINUE_SONG",
+    "STOP_SONG",
+    "ACTIVE_SENSING",
+    "SYSTEM_RESET",
+    "SYSTEM_EXCLUSIVE"
+};
+
+std::string MidiDevice::getStatusName(size_t i) { return statusNames[i]; }
+unsigned char MidiDevice::getStatusByte(size_t i) { return statusByte[i]; }
+
+std::string MidiDevice::statusByteToName(const unsigned char& _type) {
+    for (int i = 0; i < 18; i++ ) {
+        if (statusByte[i] == _type)
+            return statusNames[i];
+    }
+    return "NONE";
+}
+
+unsigned char MidiDevice::statusNameToByte(const std::string& _name) {
+    for (int i = 0; i < 18; i++ ) {
+        if (statusNames[i] == _name)
+            return statusByte[i];
+    }
+    return 0;
+}
+
 // VIRTUAL PORT
 MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : 
     defaultOutChannel(0),
-    defaultOutType(MidiDevice::CONTROLLER_CHANGE),
+    defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
     midiIn(NULL), 
     midiOut(NULL) 
 {
@@ -23,7 +84,7 @@ MidiDevice::MidiDevice(void* _ctx, const std::string& _name) :
 // REAL PORT
 MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) : 
     defaultOutChannel(0),
-    defaultOutType(MidiDevice::CONTROLLER_CHANGE),
+    defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
     midiIn(NULL), 
     midiOut(NULL)
 {
@@ -86,162 +147,131 @@ bool MidiDevice::openVirtualOutPort(const std::string& _name) {
     return true;
 }
 
-void MidiDevice::send(const unsigned char _type) {
+void MidiDevice::trigger(const unsigned char _status, unsigned char _channel) {
+    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << std::endl;
+
     std::vector<unsigned char> msg;
-    msg.push_back( _type );
+    msg.push_back( _status );
+    if (_channel > 0 && _channel < 16 )
+        msg[0] += _channel-1;
     midiOut->sendMessage( &msg );   
 }
 
-void MidiDevice::send(size_t _key, size_t _value) {
-    std::vector<unsigned char> msg;
-
-    msg.push_back( defaultOutType );
-    msg.push_back( _key );
-    msg.push_back( _value );
+void MidiDevice::trigger(const unsigned char _status, unsigned char _channel, size_t _key, size_t _value) {
+    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << " Key: " << _key << " Value:" << _value << std::endl;
     
-    if (defaultOutChannel > 0 && defaultOutChannel < 16 )
-        msg[0] += defaultOutChannel-1;
-
-    midiOut->sendMessage( &msg );   
-}
-
-void MidiDevice::send(const unsigned char _type, size_t _key, size_t _value) {
     std::vector<unsigned char> msg;
+    msg.push_back( _status );
 
-    msg.push_back( _type );
-    msg.push_back( _key );
-    msg.push_back( _value );
+    if (_status != MidiDevice::TIMING_TICK) {
+        msg.push_back( _key );
+        msg.push_back( _value );
+    }
 
-    if (defaultOutChannel > 0 && defaultOutChannel < 16 )
-        msg[0] += defaultOutChannel-1;
-
-    midiOut->sendMessage( &msg );   
-}
-
-void MidiDevice::send(const unsigned char _type, unsigned char _channel, size_t _key, size_t _value) {
-    std::vector<unsigned char> msg;
-
-    msg.push_back( _type );
-    msg.push_back( _key );
-    msg.push_back( _value );
     if (_channel > 0 && _channel < 16 )
         msg[0] += _channel-1;
 
     midiOut->sendMessage( &msg );   
 }
 
-void extractHeader(std::vector<unsigned char>* _message, std::string& _type, int& _bytes, unsigned char& _channel) {
-    unsigned char status = 0;
+void extractHeader(std::vector<unsigned char>* _message, unsigned char& _channel, unsigned char& _status, int& _bytes) {
     int j = 0;
 
     if ((_message->at(0) & 0xf0) != 0xf0) {
         _channel = _message->at(0) & 0x0f;
         _channel += 1;
-        status = _message->at(0) & 0xf0;
+        _status = _message->at(0) & 0xf0;
     }
     else {
         _channel = 0;
-        status = _message->at(0);
+        _status = _message->at(0);
     }
 
-    switch (status) {
-        case MidiDevice::NOTE_OFF:
-            _type = "note_off";
+    switch (_status) {
+        case MidiDevice::CONTROLLER_CHANGE:
             _bytes = 2;
             break;
 
         case MidiDevice::NOTE_ON:
-            _type = "note_on";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::KEY_PRESSURE:
-            _type = "key_pressure";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::CONTROLLER_CHANGE:
-            _type = "controller_change";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::PROGRAM_CHANGE:
-            _type = "program_change";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::CHANNEL_PRESSURE:
-            _type = "channel_pressure";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::PITCH_BEND:
-            _type = "pitch_bend";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::SYSTEM_EXCLUSIVE:
-            if(_message->size() == 6) {
-                unsigned int type = _message->at(4);
-                if (type == 1)
-                    _type = "mmc_stop";
-                else if(type == 2)
-                    _type = "mmc_play";
-                else if(type == 4)
-                    _type = "mmc_fast_forward";
-                else if(type == 5)
-                    _type = "mmc_rewind";
-                else if(type == 6)
-                    _type = "mmc_record";
-                else if(type == 9)
-                    _type = "mmc_pause";
-            }
-            _bytes = 0;
-            break;
-
-        case MidiDevice::SONG_POSITION:
-            _type = "song_position";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::SONG_SELECT:
-            _type = "song_select";
-            _bytes = 2;
-            break;
-
-        case MidiDevice::TUNE_REQUEST:
-            _type = "tune_request";
             _bytes = 2;
             break;
 
         case MidiDevice::TIMING_TICK:
-            _type = "timing_tick";
             _bytes = 0;
             break;
 
+        case MidiDevice::NOTE_OFF:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::KEY_PRESSURE:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::PROGRAM_CHANGE:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::CHANNEL_PRESSURE:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::PITCH_BEND:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::SONG_POSITION:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::SONG_SELECT:
+            _bytes = 2;
+            break;
+
+        case MidiDevice::TUNE_REQUEST:
+            _bytes = 2;
+            break;
+
+        
         case MidiDevice::START_SONG:
-            _type = "start_song";
             _bytes = 0;
             break;
 
         case MidiDevice::CONTINUE_SONG:
-            _type = "continue_song";
             _bytes = 0;
             break;
 
         case MidiDevice::STOP_SONG:
-            _type = "stop_song";
+            _bytes = 0;
+            break;
+
+        case MidiDevice::SYSTEM_EXCLUSIVE:
+            // if(_message->size() == 6) {
+            //     unsigned int type = _message->at(4);
+            //     if (type == 1)
+            //         _type = "mmc_stop";
+            //     else if(type == 2)
+            //         _type = "mmc_play";
+            //     else if(type == 4)
+            //         _type = "mmc_fast_forward";
+            //     else if(type == 5)
+            //         _type = "mmc_rewind";
+            //     else if(type == 6)
+            //         _type = "mmc_record";
+            //     else if(type == 9)
+            //         _type = "mmc_pause";
+            // }
             _bytes = 0;
             break;
 
         default:
-            _type = "";
             _bytes = 0;
             break;
     }
 
-    if (status == MidiDevice::NOTE_ON && _message->at(2) == 0) {
-        _type = "note_off";
+    if (_status == MidiDevice::NOTE_ON && 
+        _message->at(2) == 0) {
+        _status = MidiDevice::NOTE_OFF;
     }
 }
 
@@ -292,34 +322,34 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     MidiDevice *device = static_cast<MidiDevice*>(_userData);
     Context *context = static_cast<Context*>(device->ctx);
 
-    std::string type;
+    unsigned char status;
     int bytes;
     unsigned char channel = 0;
-    extractHeader(_message, type, bytes, channel);
+    extractHeader(_message, channel, status, bytes);
 
 
-    if (type == "program_change" ||
-        type == "start_song" ||
-        type == "stop_song")
+    if (status == PROGRAM_CHANGE ||
+        status == START_SONG ||
+        status == STOP_SONG)
         return;
 
-    if (_message->size() < 3) {
-        std::cout << "type: " << type << std::endl;
-        std::cout << "size: " << _message->size() << std::endl;
-    }
+    // if (_message->size() < 3) {
+    //     std::cout << "status: " << statusByteToName(status) << std::endl;
+    //     std::cout << "size: " << _message->size() << std::endl;
+    // }
     
     size_t key = _message->at(1);
     float value = (float)_message->at(2);
 
-    // std::cout << device->name << " Channel: " << (size_t)channel << " Key: " << key << " Value:" << value << std::endl;
+    // std::cout << device->name << " Status: " <<  statusByteToName(status) << " Channel: " << (size_t)channel << " Key: " << key << " Value:" << value << std::endl;
 
     context->configMutex.lock();
 
     if (context->doKeyExist(device->name, (size_t)channel, key)) {
         YAML::Node node = context->getKeyNode(device->name, (size_t)channel, key);
         
-        if (context->shapeKeyValue(node, device->name, type, (size_t)channel, key, &value))
-            context->mapKeyValue(node, device->name, (size_t)channel, key, value);
+        if (context->shapeKeyValue(node, device->name, status, (size_t)channel, key, &value))
+            context->mapKeyValue(node, device->name, status, (size_t)channel, key, value);
     }
     context->configMutex.unlock();
 

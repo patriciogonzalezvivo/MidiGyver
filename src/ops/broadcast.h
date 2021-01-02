@@ -5,6 +5,9 @@
 #include "udp.h"
 #include "osc.h"
 
+#include <iostream>
+#include <fstream>
+
 template <typename T>
 inline bool broadcast(const Target& _target, const std::string& _prop, const T& _value) {
     if (_target.protocol == UNKNOWN_PROTOCOL) {
@@ -12,7 +15,16 @@ inline bool broadcast(const Target& _target, const std::string& _prop, const T& 
         return true;
     }
     else if (_target.protocol == CSV_PROTOCOL) {
-        std::cout << _prop << "," << _value << std::endl;
+        if (_target.isFile) {
+            std::ofstream file;
+            file.open (_target.address, std::ios_base::app);
+            file << _prop << "," << _value << std::endl;
+            file.close();
+        }
+        else {
+            std::cout << _prop << "," << _value << std::endl;
+        }
+
         return true;
     }
     else if (_target.protocol == OSC_PROTOCOL) {

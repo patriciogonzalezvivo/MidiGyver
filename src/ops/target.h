@@ -20,25 +20,26 @@ struct Target {
     std::string address = "localhost";
     std::string port    = "8000";
     std::string folder  = "/";
+    bool        isFile  = false;
 };
 
 inline Target parseTarget(const std::string _address) {
     Target target;
 
-    size_t post_protocol = 6;
+    size_t post_protocol = 6;               // index position after protocol. Ex: 'abc://'
     std::string protocol = _address.substr(0,3);
-
 
     if (protocol == "mid") {
         target.protocol = MIDI_PROTOCOL;    // Protocol
         post_protocol = 7;                  // give space for 'midi://'
         target.port = "0";                  // Channel
-        target.folder = "/cc";              // MessageType
-
+        // target.folder = "/cc";              // MessageType
     }
     else if (protocol == "csv") {
         target.protocol = CSV_PROTOCOL;
-        return target;
+
+        if (_address.size() == 3)
+            return target;
     }
     else if (protocol == "udp")
         target.protocol = UDP_PROTOCOL;
@@ -65,16 +66,24 @@ inline Target parseTarget(const std::string _address) {
     if (addressEnd != 0)
         target.address = address.substr(0, addressEnd);
 
-    if (portStart != portEnd)
-        target.port = address.substr(portStart, portEnd - portStart);
+    if (target.address.find('.') == target.address.size() - 4) {
+        target.isFile = true;
+    }
 
-    if (portEnd != total)
-        target.folder = address.substr(portEnd, total - portEnd);
+    else {
 
-    if (target.address == "localhost")
-        target.address = "127.0.0.1";
+        if (portStart != portEnd)
+            target.port = address.substr(portStart, portEnd - portStart);
 
-    // std::cout << target.protocol << " " << target.address << " " << target.port  << " " << target.folder  << std::endl;
+        if (portEnd != total)
+            target.folder = address.substr(portEnd, total - portEnd);
+
+        if (target.address == "localhost")
+            target.address = "127.0.0.1";
+
+    }
+
+    // std::cout << (target.isFile ? "FILE " : "NET  ") << target.protocol << " " << target.address << " " << target.port  << " " << target.folder  << std::endl;
 
     return target;
 }

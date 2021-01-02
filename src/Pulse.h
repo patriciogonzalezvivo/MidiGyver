@@ -15,6 +15,7 @@ public:
     void    stop();
 
     size_t  index;
+    size_t  defaultOutChannel;
 
 private:
 
