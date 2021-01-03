@@ -10,7 +10,7 @@ global:
 
 
 out:
-    -   midi://sequencer:1/NOTE_ON
+    -   midi://Client-*:1/NOTE_ON
     -   csv
 
 pulse:
@@ -43,7 +43,7 @@ pulse:
 
                     return { 
                         'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
-                        'sequencer': trigers
+                        'Client-*': trigers
                     };
                 }
                 else
