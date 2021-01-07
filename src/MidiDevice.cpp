@@ -8,6 +8,9 @@
 
 #include "Context.h"
 
+#include <thread>
+#include <chrono>
+
 unsigned char statusByte[18] = { 
     MidiDevice::CONTROLLER_CHANGE,
     MidiDevice::NOTE_ON,
@@ -339,19 +342,23 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     // }
     
     size_t key = _message->at(1);
-    float value = (float)_message->at(2);
+    size_t target_value = _message->at(2);
 
-    // std::cout << device->name << " Status: " <<  statusByteToName(status) << " Channel: " << (size_t)channel << " Key: " << key << " Value:" << value << std::endl;
-
-    context->configMutex.lock();
+    // std::cout << device->name << " Status: " <<  statusByteToName(status) << " Channel: " << (size_t)channel << " Key: " << key << " Value:" << target_value << std::endl;
 
     if (context->doKeyExist(device->name, (size_t)channel, key)) {
         YAML::Node node = context->getKeyNode(device->name, (size_t)channel, key);
+
+        if (node["status"].IsDefined()) {
+            unsigned char target_status = statusNameToByte(node["status"].as<std::string>());
+            if (target_status != status)
+                return;
+        }
         
-        if (context->shapeKeyValue(node, device->name, status, (size_t)channel, key, &value))
-            context->mapKeyValue(node, device->name, status, (size_t)channel, key, value);
+        context->configMutex.lock();
+        context->processKey(node, device->name, status, (size_t)channel, key, (float)target_value);
+        context->configMutex.unlock();
     }
-    context->configMutex.unlock();
 
 }
 

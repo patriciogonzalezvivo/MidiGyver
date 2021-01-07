@@ -66,6 +66,30 @@ inline bool getBool(const YAML::Node& node, bool& result) {
     return YAML::convert<bool>::decode(node, result);
 }
 
+inline std::vector<size_t> getArrayOfKeys(const YAML::Node& node) {
+    std::vector<size_t> result;
+
+    if (node.IsScalar()) {
+        std::string key = node.as<std::string>();
+
+        if ( isInt(key) ) {
+            result.push_back( node.as<size_t>() );
+        }
+        else {
+            std::vector<size_t> sub = toIntArray(key);
+            result.insert(result.end(), sub.begin(), sub.end());
+        }
+    }
+    else if (node.IsSequence()) {
+        for (size_t j = 0; j < node.size(); j++) {
+            size_t key = node[j].as<size_t>();
+            result.push_back( key );
+        }
+    }
+
+    return result;
+}
+
 // Convert a scalar node to a boolean, double, or string (in that order)
 // and for the first conversion that works, push it to the top of the JS stack.
 inline JSValue pushYamlScalarAsJsPrimitive(JSContext& _js, const YAML::Node& _node) {

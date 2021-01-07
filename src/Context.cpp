@@ -133,28 +133,33 @@ bool Context::load(const std::string& _filename) {
                             }
                         }
 
-                        if (config["in"][inName][i]["key"].IsScalar()) {
-                            size_t key = config["in"][inName][i]["key"].as<size_t>();
+                        // Get keys
+                        std::vector<size_t> keys = getArrayOfKeys(config["in"][inName][i]["key"]);
 
+                        // if it's only one 
+                        if (keys.size() == 1) {
+                            size_t key = keys[0];
+                            config["in"][inName][i]["key"] = key;
                             listenDevices[inName]->setFncKey(channel, key, i);
-                            if (haveShapingFunction)
-                                shapeFncs[inName + "_" + toString(channel) + "_" + toString(key)] = id;
-                        }
-                        else if (config["in"][inName][i]["key"].IsSequence()) {
-                            for (size_t j = 0; j < config["in"][inName][i]["key"].size(); j++) {
-                                size_t key = config["in"][inName][i]["key"][j].as<size_t>();
-
-                                listenDevices[inName]->setFncKey(channel, key, i);
                                 if (haveShapingFunction)
                                     shapeFncs[inName + "_" + toString(channel) + "_" + toString(key)] = id;
+                        }
+                        // If they are multiple keys
+                        else if (keys.size() > 1) {
+                            config["in"][inName][i].remove("key");
+                            for (size_t j = 0; j < keys.size(); j++) {
+                                config["in"][inName][i]["key"].push_back(keys[j]);
+                                listenDevices[inName]->setFncKey(channel, keys[j], i);
+                                if (haveShapingFunction)
+                                    shapeFncs[inName + "_" + toString(channel) + "_" + toString(keys[j])] = id;
                             }
                         }
-                            
+
                         if (haveShapingFunction)
                             id++;
                     }   
                 }
-            
+
                 updateDevice(inName);
             }
         }
@@ -301,6 +306,16 @@ std::string Context::getKeyName(YAML::Node _keynode) {
         }
     }
     return "unknownName";
+}
+
+bool Context::processKey(YAML::Node _keynode, 
+                        const std::string& _device, unsigned char _status, size_t _channel, 
+                        size_t _key, float _value) {
+
+    if (shapeKeyValue(_keynode, _device, _status, _channel, _key, &_value))
+        mapKeyValue(_keynode, _device, _status, _channel, _key, _value);
+
+    return true;
 }
 
 bool Context::shapeKeyValue(YAML::Node _keynode, 
@@ -506,14 +521,12 @@ bool Context::shapeKeyValue(YAML::Node _keynode,
             }
             
             // Result is a number
-            else if (result.isNumber()) {
+            else if (result.isNumber())
                 *_value = result.toFloat();
-            }
 
             // Result is a boolean
-            else if (result.isBoolean()) {
+            else if (result.isBoolean())
                 return result.toBool();
-            }
         }
     }
 

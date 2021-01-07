@@ -51,8 +51,10 @@ public:
     DataType    getKeyDataType(YAML::Node _keynode);
     std::vector<Target> getTargetsForNode(YAML::Node _keynode);
 
+    bool        processKey(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value);
     bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float* _value);
     bool        mapKeyValue(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value);
+    
     bool        updateKey(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key);
 
     bool        feedback(const std::string& _device, unsigned char _status, size_t _channel, size_t _key, size_t _value);

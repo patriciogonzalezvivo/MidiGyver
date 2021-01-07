@@ -29,8 +29,7 @@ void Pulse::start(size_t _milliSec) {
             if(this->clear) return;
             
             ((Context*)ctx)->configMutex.lock();
-            if (((Context*)ctx)->shapeKeyValue(((Context*)ctx)->config["pulse"][index], name, MidiDevice::TIMING_TICK, 0, 0, &counter))
-                        ((Context*)ctx)->mapKeyValue(((Context*)ctx)->config["pulse"][index], name, MidiDevice::TIMING_TICK, 0, 0, counter);
+            ((Context*)ctx)->processKey(((Context*)ctx)->config["pulse"][index], name, MidiDevice::TIMING_TICK, 0, 0, counter);
             ((Context*)ctx)->configMutex.unlock();
 
             counter++;

@@ -128,3 +128,48 @@ inline std::vector<std::string> split(const std::string& _string, char _sep, boo
     }
     return tokens;
 }
+
+inline bool isInt(const std::string& _str) {
+    std::string str = _str;
+    str.erase( std::remove( str.begin(), str.end(), ' '), str.end());
+    return !str.empty() && std::all_of( str.begin(), str.end(), ::isdigit);
+}
+
+inline std::vector<size_t> toIntArray(const std::string& _str) {
+    std::vector<size_t> result;
+
+    if ( isInt(_str) ) {
+        result.push_back( toInt(_str) );
+    }
+    else {
+        std::vector<std::string> elements = split(_str, ',', true);
+        if (elements.size() == 1) {
+            std::vector<std::string> range = split(elements[0], '-', true);
+            if (range.size() == 2) {
+
+                // Looks like a range 
+                if (isInt(range[0]) && isInt(range[1])) {
+                    size_t min = toInt(range[0]);
+                    size_t max = toInt(range[1]);
+                    for (size_t i = min; i <= max; i++)
+                        result.push_back(i);
+                }
+                else
+                    std::cout << "Don't know how to cast " << range[0] << " and "<< range[1] << " " << isInt(range[0]) << "," << isInt(range[1]) << std::endl;
+            }
+            else 
+                std::cout << "Don't know how to cast" << _str << std::endl;
+
+        }
+        else {
+            
+            // Look like an array of elements chained by ','
+            for (size_t i = 0; i < elements.size(); i++){
+                std::vector<size_t> sub = toIntArray(elements[i]);
+                result.insert(result.end(), sub.begin(), sub.end());
+            }
+        }
+    }
+
+    return result;
+}
