@@ -333,13 +333,14 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
 
     if (status == PROGRAM_CHANGE ||
         status == START_SONG ||
-        status == STOP_SONG)
+        status == STOP_SONG ||
+        status == TIMING_TICK)
         return;
 
-    // if (_message->size() < 3) {
-    //     std::cout << "status: " << statusByteToName(status) << std::endl;
-    //     std::cout << "size: " << _message->size() << std::endl;
-    // }
+    if (_message->size() < 3) {
+        std::cout << "status: " << statusByteToName(status) << std::endl;
+        std::cout << "size: " << _message->size() << std::endl;
+    }
     
     size_t key = _message->at(1);
     size_t target_value = _message->at(2);
