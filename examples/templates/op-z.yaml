@@ -1,76 +1,89 @@
-aliases:
-    -   &all_keys [                 53, 54, 55, 56, 57, 58, 59,
-                        60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
-                        70, 71, 72, 73, 74, 75, 76 ]
+global:
+    epsilon: 0.5
+    
+    camera: 0
+    camera_speed: 1.0
+    camera_target: 0
 
-    -   &all_keys_func |
+pulse:
+    -   name: camera_position
+        fps: 30
+        type: vector
+        shape: |
             function() {
-                if (value > 0)
-                    return ((parseFloat(key) - 53.0) / (76.0 - 53.0)) * 127.0;
-                return false
-            }
-
-out:
-    -   csv
-    -   osc://localhost:8000
+                if (global.camera > global.camera_target + global.epsilon) {
+                    global.camera = parseFloat(global.camera) - global.camera_speed;
+                    return global.camera;
+                }
+                else if (global.camera < global.camera_target - global.epsilon) {
+                    global.camera = parseFloat(global.camera) + global.camera_speed;
+                    return global.camera;
+                }
+                else {
+                    return false;
+                }
+            }        
+        map: [[10.0, -10.0, -10.0], [-10.0, 0.0, -20.0], [-10.0, -10.0, 50.0], [10.0, 0.0, 100.0]]
 
 in:
     OP-Z*:
-        -   key: *all_keys
+        -   key: 5-124
             channel: 1
             name: u_kick
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-        -   key: *all_keys
+        -   key: 5-124
             channel: 2
             name: u_snare
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-        -   key: *all_keys
+        -   key: 5-124
             channel: 3
             name: u_perc
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-        -   key: *all_keys
+        -   key: 5-124
             channel: 4
             name: u_sample
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
         
-        -   key: *all_keys
+        -   key: 5-124
             channel: 5
             name: u_bass
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-        -   key: *all_keys
+        -   key: 5-124
             channel: 6
             name: u_lead
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-        -   key: *all_keys
+        -   key: 5-124
             channel: 7
             name: u_arp
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-        -   key: *all_keys
+        -   key: 5-124
             channel: 8
             name: u_chord
-            type: color
-            map: [[0, 0, 0], [1, 1, 1]]
-            shape: *all_keys_func
+            type: number
+            map: [0.0, 1.0]
 
-            
+        -   key: 53-76
+            channel: 16
+            shape: |
+                function() {
+                    if (value > 0)
+                        global.camera_target = ((parseFloat(key) - 53) / 23) * 127;
+                    return false;
+                }
 
+out:
+    -   csv
+    -   osc://localhost:8080
