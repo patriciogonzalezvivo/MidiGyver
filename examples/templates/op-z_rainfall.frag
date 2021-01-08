@@ -23,7 +23,7 @@ vec3 hsv2rgb(in vec3 hsb) {
     return hsb.z * mix(vec3(1.), rgb, hsb.y);
 }
 
-float getChannel(float track) {
+float getChannel(int channel) {
     float tracks[8];
     tracks[0] = u_kick;
     tracks[1] = u_snare;
@@ -33,29 +33,32 @@ float getChannel(float track) {
     tracks[5] = u_lead;
     tracks[6] = u_arp;
     tracks[7] = u_chord;
-    return tracks[int(track)];
+
+    return tracks[channel];
 }
 
 void main(void) {
     vec3 color = vec3(0.0);
     vec2 st = gl_FragCoord.xy / u_resolution;
+    st.y = 1.0-st.y;
     vec2 pixel = 1.0/u_resolution;
-
-    float track = floor(st.x * 8.0);
-    float tone = getChannel(track);
-    vec3  hue = hsv2rgb( vec3(track / 8.0, 1., 1.) );
+    int col = int(floor(st.x * 8.0));
+    float tone = getChannel(col);
+    vec3 hue = hsv2rgb(vec3( float(col) / 8.0, 1., tone) );
 
 #if defined(BUFFER_0)
-    color += texture2D(u_buffer1, st).r;
+    color = texture2D(u_buffer1, st).rgb;
 
 #elif defined(BUFFER_1)
-    color += mix(texture2D(u_buffer0, st).r, tone, 0.1);
+    color += texture2D(u_buffer0, st + pixel * vec2(0.0, 1.)).rgb * 0.999;
 
+    float pct = 1.0 - smoothstep(0.0, 0.01, st.y);
+    color += hue * pct;
+    
 #else
-    color += hue * step(st.y, texture2D(u_buffer1, st).r) * step(0.5, fract(st.y * 100.));
-
+    color = texture2D(u_buffer1, st).rgb;
+    color += hue;
 #endif
-
 
     gl_FragColor = vec4(color, 1.0);
 }
