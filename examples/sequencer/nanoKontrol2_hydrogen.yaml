@@ -24,7 +24,7 @@ out:
 
 pulse:
     -   name: main_loop
-        bpm: 240
+        bpm: 120
         shape: |
             function() {
 
