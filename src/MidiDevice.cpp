@@ -14,7 +14,6 @@
 unsigned char statusByte[18] = { 
     MidiDevice::CONTROLLER_CHANGE,
     MidiDevice::NOTE_ON,
-    MidiDevice::TIMING_TICK,
     MidiDevice::NOTE_OFF,
     MidiDevice::KEY_PRESSURE,
     MidiDevice::PROGRAM_CHANGE,
@@ -23,19 +22,19 @@ unsigned char statusByte[18] = {
     MidiDevice::SONG_POSITION,
     MidiDevice::SONG_SELECT,
     MidiDevice::TUNE_REQUEST,
-    MidiDevice::END_OF_SYSEX,
+    MidiDevice::TIMING_TICK,
     MidiDevice::START_SONG,
     MidiDevice::CONTINUE_SONG,
     MidiDevice::STOP_SONG,
     MidiDevice::ACTIVE_SENSING,
     MidiDevice::SYSTEM_RESET,
-    MidiDevice::SYSTEM_EXCLUSIVE
+    MidiDevice::SYSTEM_EXCLUSIVE,
+    MidiDevice::END_OF_SYSEX
 };
 
 std::string statusNames[18] = { 
     "CONTROLLER_CHANGE",
     "NOTE_ON", 
-    "TIMING_TICK",
     "NOTE_OFF", 
     "KEY_PRESSURE", 
     "PROGRAM_CHANGE",
@@ -44,17 +43,18 @@ std::string statusNames[18] = {
     "SONG_POSITION",
     "SONG_SELECT",
     "TUNE_REQUEST",
-    "END_OF_SYSEX",
+    "TIMING_TICK",
     "START_SONG",
     "CONTINUE_SONG",
     "STOP_SONG",
     "ACTIVE_SENSING",
     "SYSTEM_RESET",
-    "SYSTEM_EXCLUSIVE"
+    "SYSTEM_EXCLUSIVE",
+    "END_OF_SYSEX"
 };
 
-std::string MidiDevice::getStatusName(size_t i) { return statusNames[i]; }
 unsigned char MidiDevice::getStatusByte(size_t i) { return statusByte[i]; }
+std::string MidiDevice::getStatusName(size_t i) { return statusNames[i]; }
 
 std::string MidiDevice::statusByteToName(const unsigned char& _type) {
     for (int i = 0; i < 18; i++ ) {
@@ -76,6 +76,7 @@ unsigned char MidiDevice::statusNameToByte(const std::string& _name) {
 MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : 
     defaultOutChannel(0),
     defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
+    tickCounter(0),
     midiIn(NULL), 
     midiOut(NULL) 
 {
@@ -199,10 +200,6 @@ void extractHeader(std::vector<unsigned char>* _message, unsigned char& _channel
             _bytes = 2;
             break;
 
-        case MidiDevice::TIMING_TICK:
-            _bytes = 0;
-            break;
-
         case MidiDevice::NOTE_OFF:
             _bytes = 2;
             break;
@@ -235,7 +232,10 @@ void extractHeader(std::vector<unsigned char>* _message, unsigned char& _channel
             _bytes = 2;
             break;
 
-        
+        case MidiDevice::TIMING_TICK:
+            _bytes = 0;
+            break;
+
         case MidiDevice::START_SONG:
             _bytes = 0;
             break;
@@ -325,42 +325,44 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     MidiDevice *device = static_cast<MidiDevice*>(_userData);
     Context *context = static_cast<Context*>(device->ctx);
 
-    unsigned char status;
-    int bytes;
+    int bytes = 0;
+    unsigned char status = 0;
     unsigned char channel = 0;
     extractHeader(_message, channel, status, bytes);
 
+    if (bytes == 0) {
+        if (context->doStatusExist(device->name, status)) {
+            YAML::Node node = context->getStatusNode(device->name, status);
 
-    if (status == PROGRAM_CHANGE ||
-        status == START_SONG ||
-        status == STOP_SONG ||
-        status == TIMING_TICK)
-        return;
+            context->configMutex.lock();
+            context->processEvent(node, device->name, status, 0, 0, device->tickCounter, true);
+            context->configMutex.unlock();
 
-    if (_message->size() < 3) {
-        std::cout << "status: " << statusByteToName(status) << std::endl;
-        std::cout << "size: " << _message->size() << std::endl;
-    }
-    
-    size_t key = _message->at(1);
-    size_t target_value = _message->at(2);
-
-    // std::cout << device->name << " Status: " <<  statusByteToName(status) << " Channel: " << (size_t)channel << " Key: " << key << " Value:" << target_value << std::endl;
-
-    if (context->doKeyExist(device->name, (size_t)channel, key)) {
-        YAML::Node node = context->getKeyNode(device->name, (size_t)channel, key);
-
-        if (node["status"].IsDefined()) {
-            unsigned char target_status = statusNameToByte(node["status"].as<std::string>());
-            if (target_status != status)
-                return;
+            if (status == MidiDevice::TIMING_TICK) {
+                device->tickCounter++;
+                if (device->tickCounter > 127)
+                    device->tickCounter = 0;
+            }
         }
-        
-        context->configMutex.lock();
-        context->processKey(node, device->name, status, (size_t)channel, key, (float)target_value);
-        context->configMutex.unlock();
     }
+    else {
+        size_t key = _message->at(1);
+        size_t target_value = _message->at(2);
 
+        if (context->doKeyExist(device->name, (size_t)channel, key)) {
+            YAML::Node node = context->getKeyNode(device->name, (size_t)channel, key);
+
+            if (node["status"].IsDefined()) {
+                unsigned char target_status = statusNameToByte(node["status"].as<std::string>());
+                if (target_status != status)
+                    return;
+            }
+            
+            context->configMutex.lock();
+            context->processEvent(node, device->name, status, (size_t)channel, key, (float)target_value, false);
+            context->configMutex.unlock();
+        }
+    }
 }
 
 

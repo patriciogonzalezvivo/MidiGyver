@@ -61,6 +61,7 @@ public:
     
     size_t          defaultOutChannel;
     unsigned char   defaultOutStatus;
+    size_t          tickCounter;
 
 protected:
     RtMidiIn*   midiIn;

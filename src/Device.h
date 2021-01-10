@@ -13,13 +13,13 @@ public:
     std::string                 name;
     DeviceType                  type;
 
-    void                        setFncKey(size_t _channel, size_t _key, size_t _fnc) {
+    // KEYS EVENTS
+    void                        setKeyFnc(size_t _channel, size_t _key, size_t _fnc) {
         size_t offset = _channel * 127;
         keyMap[offset + _key] = _fnc;
     }
 
-    bool                        isFncKey(size_t _channel, size_t _key) {
-
+    bool                        isKeyFnc(size_t _channel, size_t _key) {
         // Channel 0 replay to all 
         //
         if (keyMap.find(_key) != keyMap.end())
@@ -29,7 +29,7 @@ public:
         return keyMap.find(offset + _key) != keyMap.end();
     }
 
-    size_t                      getFncKey(size_t _channel, size_t _key) {
+    size_t                      getKeyFnc(size_t _channel, size_t _key) {
         // Channel 0 have precedent over channel specific
         //
         if (keyMap.find(_key) != keyMap.end())
@@ -39,7 +39,24 @@ public:
         return keyMap[offset + _key];
     }
 
+
+    // STATUS ONLY EVENTS
+    void                        setStatusFnc(unsigned char _status, size_t _fnc) {
+        statusMap[_status] = _fnc;
+    }
+
+    bool                        isStatusFnc(unsigned char _status) {
+        if (statusMap.find(_status) == statusMap.end())
+            return false;
+        return true;
+    }
+
+    size_t                      getStatusFnc(unsigned char _status) {
+        return statusMap[_status];
+    }
+
 protected:
-    std::map<size_t, size_t>    keyMap;
-    void*       ctx;
+    std::map<size_t, size_t>            keyMap;
+    std::map<unsigned char, size_t>     statusMap;
+    void*                               ctx;
 };

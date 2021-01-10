@@ -45,17 +45,23 @@ public:
 
     bool        updateDevice(const std::string& _device);
 
+    // STATUS ONLY EVENTS
+    bool        doStatusExist(const std::string& _device, unsigned char _status);
+    YAML::Node  getStatusNode(const std::string& _device, unsigned char _status);
+
+    // KEYS EVENTS 
     bool        doKeyExist(const std::string& _device, size_t _channel, size_t _key);
     YAML::Node  getKeyNode(const std::string& _device, size_t _channel, size_t _key);
-    std::string getKeyName(YAML::Node _keynode);
-    DataType    getKeyDataType(YAML::Node _keynode);
-    std::vector<Target> getTargetsForNode(YAML::Node _keynode);
 
-    bool        processKey(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value);
-    bool        shapeKeyValue(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float* _value);
-    bool        mapKeyValue(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value);
-    
-    bool        updateKey(YAML::Node _keynode, const std::string& _device, unsigned char _status, size_t _channel, size_t _key);
+    // Common Proces
+    DataType    getKeyDataType(YAML::Node _node);
+    std::vector<Target> getTargetsForNode(YAML::Node _node);
+
+    bool        processEvent(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value, bool _statusOnly);
+    bool        shapeValue(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float* _value, bool _statusOnly);
+    bool        mapValue(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value);
+
+    bool        updateNode(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key);
 
     bool        feedback(const std::string& _device, unsigned char _status, size_t _channel, size_t _key, size_t _value);
 
@@ -72,5 +78,4 @@ protected:
 
     JSContext                           js;
     std::map<std::string, size_t>       shapeFncs;
-    std::map<std::string, size_t>       namingFncs;
 };

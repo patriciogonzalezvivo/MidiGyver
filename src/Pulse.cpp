@@ -11,7 +11,8 @@ Pulse::Pulse(void* _ctx, size_t _index) {
     ctx = _ctx;
     defaultOutChannel = 0;
     name = ((Context*)ctx)->config["pulse"][_index]["name"].as<std::string>();
-    setFncKey(0, _index, _index);
+    // setKeyFnc(0, _index, _index);
+    setStatusFnc(MidiDevice::TIMING_TICK, _index);
     index = _index;
 }   
 
@@ -29,7 +30,7 @@ void Pulse::start(size_t _milliSec) {
             if(this->clear) return;
             
             ((Context*)ctx)->configMutex.lock();
-            ((Context*)ctx)->processKey(((Context*)ctx)->config["pulse"][index], name, MidiDevice::TIMING_TICK, 0, 0, counter);
+            ((Context*)ctx)->processEvent(((Context*)ctx)->config["pulse"][index], name, MidiDevice::TIMING_TICK, 0, 0, counter, true);
             ((Context*)ctx)->configMutex.unlock();
 
             counter++;
