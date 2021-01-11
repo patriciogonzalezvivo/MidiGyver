@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
 
         #if defined(_WIN32)
         std::this_thread::sleep_for(std::chrono::microseconds(500000));
-        #else
+        #elsekey
         usleep(500000);
         #endif 
 

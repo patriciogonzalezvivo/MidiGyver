@@ -74,6 +74,7 @@ public:
 
     YAML::Node                          config;
     std::mutex                          configMutex;
+    bool                                safe;
 protected:
 
     JSContext                           js;

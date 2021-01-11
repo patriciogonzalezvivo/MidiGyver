@@ -1,6 +1,8 @@
 #pragma once
 
+#include <thread>
 #include <functional>
+
 #include "yaml-cpp/yaml.h"
 
 #include "Device.h"
@@ -18,6 +20,6 @@ public:
     size_t  defaultOutChannel;
 
 private:
-
-    bool    clear = false;
+    std::thread t;
+    bool        clear = false;
 };

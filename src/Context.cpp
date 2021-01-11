@@ -12,7 +12,7 @@
 #define M_MIN(_a, _b) ((_a)<(_b)?(_a):(_b))
 #endif
 
-Context::Context() {
+Context::Context() : safe(false) {
 }
 
 Context::~Context() {
@@ -226,7 +226,8 @@ bool Context::load(const std::string& _filename) {
         }
     }
 
-    return true;
+    safe = true;
+    return safe;
 }
 
 bool Context::save(const std::string& _filename) {
@@ -242,6 +243,8 @@ bool Context::save(const std::string& _filename) {
 }
 
 bool Context::close() {
+    safe = false;
+
     for (std::map<std::string, Device*>::iterator it = listenDevices.begin(); it != listenDevices.end(); it++) {
         if (it->second->type == DEVICE_MIDI) {
             delete ((MidiDevice*)it->second);
