@@ -618,13 +618,19 @@ bool Context::mapValue(  YAML::Node _node,
             if ( _node["map"].IsSequence() ) {
                 float total = _node["map"].size();
 
-                if (value == 127.0f) {
+                if (total == 1) {
+                    value_str = _node["map"][0].as<std::string>();
+                }
+                else if (value == 127.0f) {
                     value_str = _node["map"][total-1].as<std::string>();
                 } 
                 else {
                     size_t index = (value / 127.0f) * _node["map"].size();
                     value_str = _node["map"][index].as<std::string>();
                 } 
+            }
+            else if ( _node["map"].IsScalar() ) {
+                value_str = _node["map"].as<std::string>();
             }
         }
             
@@ -753,7 +759,9 @@ bool Context::updateNode(YAML::Node _node,
             name = ""; 
             if ( _node["channel"].IsDefined() )
                 name += toString(_channel) + ",";
-            name += toString(_key);
+
+            if (_key != 0)
+                name += toString(_key);
         } 
     }
 
