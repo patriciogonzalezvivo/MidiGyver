@@ -4,6 +4,9 @@ global:
     camera: 0
     camera_speed: 1.0
     camera_target: 0
+    
+    time: 0.0
+    time_status: false
 
 pulse:
     -   name: camera_position
@@ -83,6 +86,41 @@ in:
                         global.camera_target = ((parseFloat(key) - 53) / 23) * 127;
                     return false;
                 }
+
+        -   status: START_SONG
+            name: define
+            type: state
+            map: "OPZ_PLAYING"
+            shape: |
+                function() {
+                    global.time_status = true;
+                    global.time = 0.0;
+                    return true;
+                }
+
+        -   status: STOP_SONG
+            name: undefine
+            type: state
+            map: "OPZ_PLAYING"
+            shape: |
+                function() {
+                    global.time_status = false;
+                    return true;
+                }
+
+        -   status: TIMING_TICK
+            name: u_clock
+            shape: |
+                function() {
+                    if (global.time_status == true) {
+                        global.time = parseFloat(global.time) + 0.05;
+                        return parseFloat(global.time);
+                    }
+                    else {
+                        return false;
+                    }
+                }
+
 
 out:
     -   csv
