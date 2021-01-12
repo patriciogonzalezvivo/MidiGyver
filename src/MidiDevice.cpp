@@ -209,7 +209,7 @@ void extractHeader(std::vector<unsigned char>* _message, unsigned char& _channel
             break;
 
         case MidiDevice::PROGRAM_CHANGE:
-            _bytes = 2;
+            _bytes = 1;
             break;
 
         case MidiDevice::CHANNEL_PRESSURE:
@@ -330,19 +330,23 @@ void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message,
     unsigned char channel = 0;
     extractHeader(_message, channel, status, bytes);
 
-    if (bytes == 0) {
+    if (bytes < 2) {
         if (context->doStatusExist(device->name, status)) {
             YAML::Node node = context->getStatusNode(device->name, status);
 
-            context->configMutex.lock();
-            context->processEvent(node, device->name, status, 0, 0, device->tickCounter, true);
-            context->configMutex.unlock();
-
+            size_t target_value = 0;
             if (status == MidiDevice::TIMING_TICK) {
+                target_value = device->tickCounter;
                 device->tickCounter++;
                 if (device->tickCounter > 127)
                     device->tickCounter = 0;
             }
+            else if (status == MidiDevice::PROGRAM_CHANGE)
+                target_value = _message->at(1);
+
+            context->configMutex.lock();
+            context->processEvent(node, device->name, status, 0, 0, target_value, true);
+            context->configMutex.unlock();
         }
     }
     else {
