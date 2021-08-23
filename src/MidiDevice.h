@@ -35,36 +35,36 @@ public:
     static const unsigned char  SYSTEM_RESET = 0xFF;
     static const unsigned char  SYSTEM_EXCLUSIVE = 0xF0;
 
+    static std::string          getStatusName(size_t i);
+    static unsigned char        getStatusByte(size_t i);
+    static std::string          statusByteToName(const unsigned char& _byte);
+    static unsigned char        statusNameToByte(const std::string& _name);
+    static void                 parseDeviceType(const std::string& _address, std::string& _deviceName, unsigned char& _statusType);
+
+    static std::vector<std::string> getInPorts();
+    static std::vector<std::string> getOutPorts();
+    
     MidiDevice(void* _ctx, const std::string& _name);
     MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort);
     virtual ~MidiDevice();
 
-    bool    openInPort(const std::string& _name, size_t _midiPort);
-    bool    openOutPort(const std::string& _name, size_t _midiPort);
-    bool    openVirtualOutPort(const std::string& _name);
+    bool            openInPort(const std::string& _name, size_t _midiPort);
+    bool            openOutPort(const std::string& _name, size_t _midiPort);
+    bool            openVirtualOutPort(const std::string& _name);
+    bool            close();
 
-    static std::vector<std::string> getInPorts();
-    static std::vector<std::string> getOutPorts();
+    static void     onMidi(double, std::vector<unsigned char>*, void*);
 
-    static void onMidi(double, std::vector<unsigned char>*, void*);
+    void            trigger(unsigned char _status, unsigned char _channel);
+    void            trigger(unsigned char _status, unsigned char _channel, size_t _key, size_t _value);
 
-    static std::string getStatusName(size_t i);
-    static unsigned char getStatusByte(size_t i);
-    static std::string statusByteToName(const unsigned char& _byte);
-    static unsigned char statusNameToByte(const std::string& _name);
-    static void parseDeviceType(const std::string& _address, std::string& _deviceName, unsigned char& _statusType);
-
-    void        trigger(unsigned char _status, unsigned char _channel);
-    void        trigger(unsigned char _status, unsigned char _channel, size_t _key, size_t _value);
-
-    size_t      midiPort;
-    
+    size_t          midiPort;
     size_t          defaultOutChannel;
     unsigned char   defaultOutStatus;
     size_t          tickCounter;
 
 protected:
-    RtMidiIn*   midiIn;
-    RtMidiOut*  midiOut;
+    RtMidiIn*       midiIn;
+    RtMidiOut*      midiOut;
 };
 

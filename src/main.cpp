@@ -5,6 +5,7 @@
 #endif
 
 #include <thread>
+#include <vector>
 #include <mutex>
 #include <atomic>
 #include <iostream>
@@ -34,7 +35,7 @@ int main(int argc, char** argv) {
     
     configfile = std::string(argv[1]);
 
-        commands.push_back(Command("help", [&](const std::string& _line){
+    commands.push_back(Command("help", [&](const std::string& _line){
         if (_line == "help") {
             std::cout << "// " << header << std::endl;
             std::cout << "// " << std::endl;
@@ -56,6 +57,34 @@ int main(int argc, char** argv) {
         return false;
     },
     "help[,<command>]               print help for one or all command"));
+
+    commands.push_back(Command("device", [&](const std::string& _line){ 
+        if (_line == "devices") {
+            std::cout << std::endl << "Devices:" << std::endl;
+            std::cout << "----------------------------" << std::endl;
+            for (size_t i = 0; i < ctx->listenDevicesNames.size(); i++)
+                std::cout << ctx->listenDevicesNames[i] << std::endl;
+            std::cout << std::endl;
+            
+            return true;
+        }
+        return false;
+    },
+    "version                        return version."));
+
+    commands.push_back(Command("target", [&](const std::string& _line){ 
+        if (_line == "targets") {
+            std::cout << std::endl << "Targets:" << std::endl;
+            std::cout << "----------------------------" << std::endl;
+            for (size_t i = 0; i < ctx->targetsDevicesNames.size(); i++)
+                std::cout << ctx->targetsDevicesNames[i] << std::endl;
+            std::cout << std::endl;
+            
+            return true;
+        }
+        return false;
+    },
+    "version                        return version."));
 
     commands.push_back(Command("version", [&](const std::string& _line){ 
         if (_line == "version") {
@@ -114,23 +143,26 @@ int main(int argc, char** argv) {
 
     std::thread cinWatcher( &cinWatcherThread );
 
-    // Commands comming from the console IN
+    // Watch for MIDI deivces or file changes
+    size_t lastMidiIn = MidiDevice::getInPorts().size();
     while (bRun) {
 
         stat( configfile.c_str(), &st );
         int date = st.st_mtime;
-        if ( date != lastChange ) {
+        size_t midiIn = MidiDevice::getInPorts().size();
+        if ( date != lastChange || lastMidiIn != midiIn) {
             contextMutex.lock();
             lastChange = date;
+            lastMidiIn = midiIn;
             ctx->close();
             ctx->load(configfile);
             contextMutex.unlock();
         }
 
         #if defined(_WIN32)
-        std::this_thread::sleep_for(std::chrono::microseconds(500000));
+        std::this_thread::sleep_for(std::chrono::microseconds(1000000));
         #else
-        usleep(500000);
+        usleep(1000000);
         #endif 
 
     }

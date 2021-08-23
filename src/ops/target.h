@@ -1,6 +1,5 @@
 #pragma once
 
-
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -16,11 +15,11 @@ enum TargetProtocol {
 };
 
 struct Target {
-    TargetProtocol protocol = UNKNOWN_PROTOCOL;
-    std::string address = "localhost";
-    std::string port    = "8000";
-    std::string folder  = "/";
-    bool        isFile  = false;
+    TargetProtocol  protocol    = UNKNOWN_PROTOCOL;
+    std::string     address     = "localhost";
+    std::string     port        = "8000";
+    std::string     folder      = "/";
+    bool            isFile      = false;
 };
 
 inline Target parseTarget(const std::string _address) {
@@ -37,7 +36,6 @@ inline Target parseTarget(const std::string _address) {
     }
     else if (protocol == "csv") {
         target.protocol = CSV_PROTOCOL;
-
         if (_address.size() == 3)
             return target;
     }

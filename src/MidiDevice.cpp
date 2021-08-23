@@ -72,111 +72,6 @@ unsigned char MidiDevice::statusNameToByte(const std::string& _name) {
     return 0;
 }
 
-// VIRTUAL PORT
-MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : 
-    defaultOutChannel(0),
-    defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
-    tickCounter(0),
-    midiIn(NULL), 
-    midiOut(NULL) 
-{
-    type = DEVICE_MIDI;
-    ctx = _ctx;
-    name = _name;
-}
-
-// REAL PORT
-MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) : 
-    defaultOutChannel(0),
-    defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
-    midiIn(NULL), 
-    midiOut(NULL)
-{
-    type = DEVICE_MIDI;
-    ctx = _ctx;
-    name = _name;
-    midiPort = _midiPort;
-
-    openInPort(_name, _midiPort);
-    openOutPort(_name, _midiPort);
-}
-
-MidiDevice::~MidiDevice() {
-    if (midiIn)
-        delete midiIn;
-    if (midiOut) 
-        delete midiOut;
-}
-
-bool MidiDevice::openInPort(const std::string& _name, size_t _midiPort) {
-    try {
-        midiIn = new RtMidiIn(RtMidi::Api(0), "midigyver");
-    } catch(RtMidiError &error) {
-        error.printMessage();
-        return false;
-    }
-
-    midiIn->openPort(_midiPort, _name);
-    midiIn->setCallback(onMidi, this);
-    midiIn->ignoreTypes(false, false, true);
-
-    // midiName = midiIn->getPortName(_midiPort);
-    // stringReplace(midiName, '_');
-    return true;
-}
-
-bool MidiDevice::openOutPort(const std::string& _name, size_t _midiPort) {
-    try {
-        midiOut = new RtMidiOut(RtMidi::Api(0), "midigyver");
-        midiOut->openPort(_midiPort, _name);
-    }
-    catch(RtMidiError &error) {
-        error.printMessage();
-        return false;
-    }
-
-    return true;
-}
-
-bool MidiDevice::openVirtualOutPort(const std::string& _name) {
-    try {
-        midiOut = new RtMidiOut(RtMidi::Api(0), "midigyver" );
-        midiOut->openVirtualPort(_name);
-    }
-    catch(RtMidiError &error) {
-        error.printMessage();
-        return false;
-    }
-
-    return true;
-}
-
-void MidiDevice::trigger(const unsigned char _status, unsigned char _channel) {
-    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << std::endl;
-
-    std::vector<unsigned char> msg;
-    msg.push_back( _status );
-    if (_channel > 0 && _channel < 16 )
-        msg[0] += _channel-1;
-    midiOut->sendMessage( &msg );   
-}
-
-void MidiDevice::trigger(const unsigned char _status, unsigned char _channel, size_t _key, size_t _value) {
-    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << " Key: " << _key << " Value:" << _value << std::endl;
-    
-    std::vector<unsigned char> msg;
-    msg.push_back( _status );
-
-    if (_status != MidiDevice::TIMING_TICK) {
-        msg.push_back( _key );
-        msg.push_back( _value );
-    }
-
-    if (_channel > 0 && _channel < 16 )
-        msg[0] += _channel-1;
-
-    midiOut->sendMessage( &msg );   
-}
 
 void extractHeader(std::vector<unsigned char>* _message, unsigned char& _channel, unsigned char& _status, int& _bytes) {
     int j = 0;
@@ -311,6 +206,134 @@ std::vector<std::string> MidiDevice::getOutPorts() {
 
     return devices;
 }
+
+// VIRTUAL PORT
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name) : 
+    midiPort(0),
+    defaultOutChannel(0),
+    defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
+    tickCounter(0),
+    midiIn(NULL), 
+    midiOut(NULL) 
+{
+    type = DEVICE_MIDI;
+    ctx = _ctx;
+    name = _name;
+}
+
+// REAL PORT
+MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) : 
+    defaultOutChannel(0),
+    defaultOutStatus(MidiDevice::CONTROLLER_CHANGE),
+    midiIn(NULL), 
+    midiOut(NULL)
+{
+    type = DEVICE_MIDI;
+    ctx = _ctx;
+    name = _name;
+    midiPort = _midiPort;
+
+    openInPort(_name, _midiPort);
+    openOutPort(_name, _midiPort);
+}
+
+MidiDevice::~MidiDevice() {
+    close();
+}
+
+bool MidiDevice::openInPort(const std::string& _name, size_t _midiPort) {
+    try {
+        midiIn = new RtMidiIn(RtMidi::Api(0), "midigyver");
+    } catch(RtMidiError &error) {
+        error.printMessage();
+        return false;
+    }
+
+    midiIn->openPort(_midiPort, _name);
+    midiIn->ignoreTypes(false, false, true);
+    midiIn->setCallback(onMidi, this);
+    // midiIn->setCallback( , this);
+
+    // midiName = midiIn->getPortName(_midiPort);
+    // stringReplace(midiName, '_');
+    return true;
+}
+
+bool MidiDevice::openOutPort(const std::string& _name, size_t _midiPort) {
+    try {
+        midiOut = new RtMidiOut(RtMidi::Api(0), "midigyver");
+        midiOut->openPort(_midiPort, _name);
+    }
+    catch(RtMidiError &error) {
+        error.printMessage();
+        return false;
+    }
+
+    return true;
+}
+
+bool MidiDevice::openVirtualOutPort(const std::string& _name) {
+    try {
+        midiOut = new RtMidiOut(RtMidi::Api(0), "midigyver" );
+        midiOut->openVirtualPort(_name);
+    }
+    catch(RtMidiError &error) {
+        error.printMessage();
+        return false;
+    }
+
+    return true;
+}
+
+bool MidiDevice::close() {
+    if (midiIn) {
+        midiIn->cancelCallback();
+        midiIn->closePort();
+        delete midiIn;
+        midiIn = NULL;
+    }
+
+    if (midiOut) {
+        midiOut->closePort();
+        delete midiOut;
+        midiOut = NULL;
+    }
+
+    midiPort = 0;
+    tickCounter = 0;
+    defaultOutChannel = 0;
+    defaultOutStatus = MidiDevice::CONTROLLER_CHANGE;
+
+    return true;
+}
+
+void MidiDevice::trigger(const unsigned char _status, unsigned char _channel) {
+    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << std::endl;
+
+    std::vector<unsigned char> msg;
+    msg.push_back( _status );
+    if (_channel > 0 && _channel < 16 )
+        msg[0] += _channel-1;
+    midiOut->sendMessage( &msg );   
+}
+
+void MidiDevice::trigger(const unsigned char _status, unsigned char _channel, size_t _key, size_t _value) {
+    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << " Key: " << _key << " Value:" << _value << std::endl;
+    
+    std::vector<unsigned char> msg;
+    msg.push_back( _status );
+
+    if (_status != MidiDevice::TIMING_TICK) {
+        msg.push_back( _key );
+        msg.push_back( _value );
+    }
+
+    if (_channel > 0 && _channel < 16 )
+        msg[0] += _channel-1;
+
+    midiOut->sendMessage( &msg );   
+}
+
 
 void MidiDevice::onMidi(double _deltatime, std::vector<unsigned char>* _message, void* _userData) {
     unsigned int nBytes = 0;

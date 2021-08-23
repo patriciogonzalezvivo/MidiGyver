@@ -254,6 +254,16 @@ bool Context::close() {
             delete ((Pulse*)it->second);
         }
     }
+
+    for (std::map<std::string, Device*>::iterator it = targetsDevices.begin(); it != targetsDevices.end(); it++) {
+        if (it->second->type == DEVICE_MIDI) {
+            delete ((MidiDevice*)it->second);
+        }
+        else if (it->second->type == DEVICE_PULSE) {
+            ((Pulse*)it->second)->stop();
+            delete ((Pulse*)it->second);
+        }
+    }
     
     listenDevices.clear();
     listenDevicesNames.clear();
