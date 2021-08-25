@@ -4,6 +4,7 @@
 
 #include "ops/nodes.h"
 #include "ops/strings.h"
+#include "ops/times.h"
 
 #include "types/Vector.h"
 #include "types/Color.h"
@@ -12,7 +13,8 @@
 #define M_MIN(_a, _b) ((_a)<(_b)?(_a):(_b))
 #endif
 
-Context::Context() : safe(false) {
+Context::Context() : tickDuration(250), safe(false) {
+    startClock();
 }
 
 Context::~Context() {
@@ -73,6 +75,10 @@ bool Context::load(const std::string& _filename) {
     // Load MidiDevices
     std::vector<std::string> availableMidiOutPorts = MidiDevice::getOutPorts();
 
+    // Define global tick
+    if (config["global"].IsDefined()) 
+        getTickDuration(config["global"], &tickDuration);
+
     // Define out targets
     if (config["out"].IsSequence()) {
         for (size_t i = 0; i < config["out"].size(); i++) {
@@ -80,21 +86,31 @@ bool Context::load(const std::string& _filename) {
             Target target = parseTarget( name );
 
             if (target.protocol == MIDI_PROTOCOL) {
-                MidiDevice* m = new MidiDevice(this, name);
+                if (target.isFile) {
+                    if (targetsFiles.find(target.address) == targetsFiles.end()) {
+                        targetsFiles[target.address] = new smf::MidiFile();
+                        targetsFiles[target.address]->setMillisecondTicks();
+                        
+                        std::cout << "Saving midi data to: " << target.address << std::endl;
+                    }
+                }
+                else {
+                    MidiDevice* m = new MidiDevice(this, name);
 
-                int deviceID = getMatchingKey(availableMidiOutPorts, target.address);
-                if (deviceID >= 0)
-                    m->openOutPort(target.address, deviceID);
-                else
-                    m->openVirtualOutPort(target.address);
+                    int deviceID = getMatchingKey(availableMidiOutPorts, target.address);
+                    if (deviceID >= 0)
+                        m->openOutPort(target.address, deviceID);
+                    else
+                        m->openVirtualOutPort(target.address);
 
-                m->defaultOutChannel = toInt(target.port);
+                    m->defaultOutChannel = toInt(target.port);
 
-                if (target.folder != "/")
-                    m->defaultOutStatus = MidiDevice::statusNameToByte( target.folder.erase(0, 1) );
+                    if (target.folder != "/")
+                        m->defaultOutStatus = MidiDevice::statusNameToByte( target.folder.erase(0, 1) );
 
-                targetsDevicesNames.push_back( target.address );
-                targetsDevices[target.address] = (Device*)m;
+                    targetsDevicesNames.push_back( target.address );
+                    targetsDevices[target.address] = (Device*)m;
+                }
             }
             
             targets.push_back(target);
@@ -206,12 +222,12 @@ bool Context::load(const std::string& _filename) {
             if (n["channel"].IsDefined())
                 p->defaultOutChannel = n["channel"].as<int>();
 
-            if (n["bpm"].IsDefined())
-                p->start(30000/n["bpm"].as<int>());
-            else if (n["fps"].IsDefined()) 
-                p->start(1000/int(n["fps"].as<float>()) );
-            else if (n["interval"].IsDefined()) 
-                p->start(int(n["interval"].as<float>()));
+            int tick = 250; // 120bpm
+            if (!getTickDuration(n, &tick))
+                tick = tickDuration;
+
+            p->start(tick);
+
 
             if (n["shape"].IsDefined()) {
                 std::string function = n["shape"].as<std::string>();
@@ -245,6 +261,7 @@ bool Context::save(const std::string& _filename) {
 bool Context::close() {
     safe = false;
 
+    // close listen devices
     for (std::map<std::string, Device*>::iterator it = listenDevices.begin(); it != listenDevices.end(); it++) {
         if (it->second->type == DEVICE_MIDI) {
             delete ((MidiDevice*)it->second);
@@ -255,6 +272,7 @@ bool Context::close() {
         }
     }
 
+    // close target devices
     for (std::map<std::string, Device*>::iterator it = targetsDevices.begin(); it != targetsDevices.end(); it++) {
         if (it->second->type == DEVICE_MIDI) {
             delete ((MidiDevice*)it->second);
@@ -262,6 +280,15 @@ bool Context::close() {
         else if (it->second->type == DEVICE_PULSE) {
             ((Pulse*)it->second)->stop();
             delete ((Pulse*)it->second);
+        }
+    }
+
+    // Save Midi file
+    for (size_t i = 0; i < targets.size(); i++) {
+        std::map<std::string, smf::MidiFile*>::iterator it = targetsFiles.find( targets[i].address );
+        if (it != targetsFiles.end()) {
+            it->second->sortTracks();
+            it->second->write( targets[i].address );
         }
     }
     
@@ -361,9 +388,9 @@ DataType Context::getKeyDataType(YAML::Node _node) {
     return TYPE_NUMBER;
 }
 
-bool Context::processEvent(YAML::Node _node, 
-                        const std::string& _device, unsigned char _status, size_t _channel, 
-                        size_t _key, float _value, bool _statusOnly) {
+bool Context::processEvent( YAML::Node _node, 
+                            const std::string& _device, unsigned char _status, size_t _channel, 
+                            size_t _key, float _value, bool _statusOnly) {
 
     if (shapeValue(_node, _device, _status, _channel, _key, &_value, _statusOnly))
         mapValue(_node, _device, _status, _channel, _key, _value);
@@ -758,6 +785,28 @@ bool Context::updateNode(YAML::Node _node,
 
     // Define out targets
     std::vector<Target> keyTargets = getTargetsForNode(_node);
+
+    // Save on MIDI file if there is such
+    float val = 0;
+    if ( _node["value_raw"].IsDefined() )
+        val = _node["value_raw"].as<float>();
+
+    for (size_t i = 0; i < keyTargets.size(); i++) {
+        std::map<std::string, smf::MidiFile*>::iterator it = targetsFiles.find( keyTargets[i].address );
+        if (it != targetsFiles.end()) {
+            int ms = getTimeMs();
+
+            if (_status == MidiDevice::NOTE_ON)
+                it->second->addNoteOn(0, ms, _channel, _key, val);
+            else if (_status == MidiDevice::NOTE_OFF)
+                it->second->addNoteOff(0, ms, _channel, _key);
+            else if (_status == MidiDevice::CONTROLLER_CHANGE )
+                it->second->addController(0, ms, _channel, _key, val);
+            
+            it->second->write( keyTargets[i].address );
+        }
+    }
+
         
     // KEY
     std::string name = "unknown";

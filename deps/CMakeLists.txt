@@ -16,6 +16,10 @@ add_subdirectory(duktape)
 ##########################
 add_subdirectory(rtmidi)
 
+## MidiFile
+##########################
+add_subdirectory(midifile)
+
 ## Liblo
 ##########################
 add_subdirectory(liblo/cmake)

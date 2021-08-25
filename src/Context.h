@@ -10,6 +10,7 @@
 #include <mutex>
 
 #include "rtmidi/RtMidi.h"
+#include "midifile/include/MidiFile.h"
 
 #include "Pulse.h"
 #include "MidiDevice.h"
@@ -71,9 +72,11 @@ public:
     std::vector<Target>                 targets;
     std::vector<std::string>            targetsDevicesNames;
     std::map<std::string, Device*>      targetsDevices;
+    std::map<std::string, smf::MidiFile*> targetsFiles;
 
     YAML::Node                          config;
     std::mutex                          configMutex;
+    int                                 tickDuration; // Milli Secs
     bool                                safe;
 protected:
 

@@ -13,11 +13,11 @@ public:
     Pulse(void* _ctx, size_t _index);
     virtual ~Pulse();
 
-    void    start(size_t _milliSec);
-    void    stop();
+    void        start(size_t _milliSec);
+    void        stop();
 
-    size_t  index;
-    size_t  defaultOutChannel;
+    size_t      index;
+    size_t      defaultOutChannel;
 
 private:
     std::thread t;

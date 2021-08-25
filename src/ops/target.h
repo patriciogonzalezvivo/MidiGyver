@@ -64,7 +64,8 @@ inline Target parseTarget(const std::string _address) {
     if (addressEnd != 0)
         target.address = address.substr(0, addressEnd);
 
-    if (target.address.find('.') == target.address.size() - 4) {
+    if (target.address.find('.') == target.address.size() - 4 ||
+        target.address.find('.') == target.address.size() - 5) {
         target.isFile = true;
     }
 

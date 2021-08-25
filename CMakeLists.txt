@@ -22,14 +22,13 @@ target_include_directories(midigyver PRIVATE
     deps
 )
 
-
 target_link_libraries(midigyver PRIVATE
     yaml-cpp
     duktape
     rtmidi
+    midifile
     lo_static
 )
-
 
 install(TARGETS midigyver
         RUNTIME DESTINATION bin)
