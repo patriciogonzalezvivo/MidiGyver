@@ -10,10 +10,10 @@
 #include <mutex>
 
 #include "rtmidi/RtMidi.h"
-#include "midifile/include/MidiFile.h"
 
 #include "Pulse.h"
 #include "MidiDevice.h"
+#include "MidiLog.h"
 #include "ops/nodes.h"
 
 enum DataType {
@@ -72,7 +72,7 @@ public:
     std::vector<Target>                 targets;
     std::vector<std::string>            targetsDevicesNames;
     std::map<std::string, Device*>      targetsDevices;
-    std::map<std::string, smf::MidiFile*> targetsFiles;
+    std::map<std::string, MidiLog*>     targetsFiles;
 
     YAML::Node                          config;
     std::mutex                          configMutex;

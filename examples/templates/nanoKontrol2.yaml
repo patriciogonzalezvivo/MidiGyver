@@ -7,6 +7,7 @@ global:
 
 out:
     -   osc://localhost:8000
+    -   midi://test.midi
     -   csv
 
 aliases:

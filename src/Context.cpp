@@ -14,7 +14,6 @@
 #endif
 
 Context::Context() : tickDuration(250), safe(false) {
-    startClock();
 }
 
 Context::~Context() {
@@ -86,13 +85,11 @@ bool Context::load(const std::string& _filename) {
             Target target = parseTarget( name );
 
             if (target.protocol == MIDI_PROTOCOL) {
+
                 if (target.isFile) {
-                    if (targetsFiles.find(target.address) == targetsFiles.end()) {
-                        targetsFiles[target.address] = new smf::MidiFile();
-                        targetsFiles[target.address]->setMillisecondTicks();
+                    if (targetsFiles.find(target.address) == targetsFiles.end())
+                        targetsFiles[target.address] = new MidiLog(this, target.address);
                         
-                        std::cout << "Saving midi data to: " << target.address << std::endl;
-                    }
                 }
                 else {
                     MidiDevice* m = new MidiDevice(this, name);
@@ -106,7 +103,7 @@ bool Context::load(const std::string& _filename) {
                     m->defaultOutChannel = toInt(target.port);
 
                     if (target.folder != "/")
-                        m->defaultOutStatus = MidiDevice::statusNameToByte( target.folder.erase(0, 1) );
+                        m->defaultOutStatus = Midi::statusNameToByte( target.folder.erase(0, 1) );
 
                     targetsDevicesNames.push_back( target.address );
                     targetsDevices[target.address] = (Device*)m;
@@ -181,12 +178,12 @@ bool Context::load(const std::string& _filename) {
 
                         std::string status_str = config["in"][inName][i]["status"].as<std::string>();
                         status_str = toUpper(status_str);
-                        unsigned char status = MidiDevice::statusNameToByte(status_str);
+                        unsigned char status = Midi::statusNameToByte(status_str);
 
-                        if (status == MidiDevice::TIMING_TICK ||
-                            status == MidiDevice::START_SONG ||
-                            status == MidiDevice::CONTINUE_SONG ||
-                            status == MidiDevice::STOP_SONG ) {
+                        if (status == Midi::TIMING_TICK ||
+                            status == Midi::START_SONG ||
+                            status == Midi::CONTINUE_SONG ||
+                            status == Midi::STOP_SONG ) {
 
                             listenDevices[inName]->setStatusFnc(status, i);
                             if (config["in"][inName][i]["shape"].IsDefined()) {
@@ -285,10 +282,9 @@ bool Context::close() {
 
     // Save Midi file
     for (size_t i = 0; i < targets.size(); i++) {
-        std::map<std::string, smf::MidiFile*>::iterator it = targetsFiles.find( targets[i].address );
+        std::map<std::string, MidiLog*>::iterator it = targetsFiles.find( targets[i].address );
         if (it != targetsFiles.end()) {
-            it->second->sortTracks();
-            it->second->write( targets[i].address );
+            it->second->close();
         }
     }
     
@@ -309,7 +305,7 @@ bool Context::close() {
 bool Context::updateDevice(const std::string& _device) {
 
     for (size_t i = 0; i < config["in"][_device].size(); i++) {
-        unsigned char status = MidiDevice::CONTROLLER_CHANGE;
+        unsigned char status = Midi::CONTROLLER_CHANGE;
         size_t channel = 0;
         size_t key = i;
 
@@ -405,16 +401,23 @@ bool Context::shapeValue(YAML::Node _node,
     if ( _node["shape"].IsDefined() ) {
         size_t channel = _channel;
 
-        std::string status = MidiDevice::statusByteToName(_status);
+        std::string status = Midi::statusByteToName(_status);
 
         if ( !_node["channel"].IsDefined() )
             channel = 0;
 
         js.setGlobalValue("device", js.newString(_device));
         js.setGlobalValue("status", js.newString( status ));
-        js.setGlobalValue("channel", js.newNumber(channel));
+        js.setGlobalValue("channel", js.newNumber( channel ));
         js.setGlobalValue("key", js.newNumber(_key));
         js.setGlobalValue("value", js.newNumber(*_value));
+
+        if ( _node["value_raw"].IsDefined() )
+            js.setGlobalValue("value_raw", js.newNumber( _node["value_raw"].as<float>() ) );
+        else {
+            js.setGlobalValue("value_raw", js.newNumber( *_value ) );
+            _node["value_raw"] = *_value;
+        }
 
         JSValue keyData = parseNode(js, _node);
         js.setGlobalValue("data", std::move(keyData));
@@ -470,8 +473,8 @@ bool Context::shapeValue(YAML::Node _node,
                     }
 
                     for (size_t s = 0; s < 3; s++) {
-                        char unsigned sByte = MidiDevice::getStatusByte(s);
-                        std::string sName = MidiDevice::getStatusName(s);
+                        char unsigned sByte = Midi::getStatusByte(s);
+                        std::string sName = Midi::getStatusName(s);
 
                         // on the same status
                         JSValue d2 = result.getValueForProperty( targetsDevicesNames[j] + "/" + sName);
@@ -553,7 +556,7 @@ bool Context::shapeValue(YAML::Node _node,
                                     YAML::Node n = getKeyNode(listenDevicesNames[j], 0, k);
                                     DataType n_type = getKeyDataType(n);
                                     size_t v = el.getValueAtIndex(1).toInt();
-                                    feedback(listenDevicesNames[j], MidiDevice::CONTROLLER_CHANGE, 0, k, v);
+                                    feedback(listenDevicesNames[j], Midi::CONTROLLER_CHANGE, 0, k, v);
 
                                     js.resetToScopeMarker(marker3);
                                 }
@@ -565,7 +568,7 @@ bool Context::shapeValue(YAML::Node _node,
                                     YAML::Node n = getKeyNode(listenDevicesNames[j], c, k);
                                     DataType n_type = getKeyDataType(n);
                                     float v = el.getValueAtIndex(2).toFloat();
-                                    feedback(listenDevicesNames[j], MidiDevice::CONTROLLER_CHANGE, c, k, v);
+                                    feedback(listenDevicesNames[j], Midi::CONTROLLER_CHANGE, c, k, v);
 
                                     js.resetToScopeMarker(marker3);
                                 }
@@ -623,8 +626,8 @@ bool Context::mapValue(  YAML::Node _node,
                             const std::string& _device, unsigned char _status, size_t _channel, 
                             size_t _key, float _value) {
 
-    DataType type = getKeyDataType(_node);
     _node["value_raw"] = _value;
+    DataType type = getKeyDataType(_node);
 
     // BUTTON
     if (type == TYPE_BUTTON) {
@@ -792,22 +795,18 @@ bool Context::updateNode(YAML::Node _node,
         val = _node["value_raw"].as<float>();
 
     for (size_t i = 0; i < keyTargets.size(); i++) {
-        std::map<std::string, smf::MidiFile*>::iterator it = targetsFiles.find( keyTargets[i].address );
-        if (it != targetsFiles.end()) {
-            int ms = getTimeMs();
+        if (keyTargets[i].protocol == MIDI_PROTOCOL && keyTargets[i].isFile) {
+            std::map<std::string, MidiLog*>::iterator it = targetsFiles.find( keyTargets[i].address );
 
-            if (_status == MidiDevice::NOTE_ON)
-                it->second->addNoteOn(0, ms, _channel, _key, val);
-            else if (_status == MidiDevice::NOTE_OFF)
-                it->second->addNoteOff(0, ms, _channel, _key);
-            else if (_status == MidiDevice::CONTROLLER_CHANGE )
-                it->second->addController(0, ms, _channel, _key, val);
-            
-            it->second->write( keyTargets[i].address );
+            if (it == targetsFiles.end()) {
+                targetsFiles[ keyTargets[i].address ] = new MidiLog(this,  keyTargets[i].address );
+                targetsFiles[ keyTargets[i].address ]->trigger(_device, _status, _channel, _key, val);
+            }
+            else
+                it->second->trigger(_device, _status, _channel, _key, val);
         }
     }
 
-        
     // KEY
     std::string name = "unknown";
     if ( _node.IsDefined() ) {
@@ -916,15 +915,15 @@ bool Context::updateNode(YAML::Node _node,
 
                     if ( type == TYPE_MIDI_NOTE) {
                         if (value == 0)
-                            d->trigger( MidiDevice::NOTE_OFF, 0, _key, 0 );
+                            d->trigger( Midi::NOTE_OFF, 0, _key, 0 );
                         else 
-                            d->trigger( MidiDevice::NOTE_ON, 0, _key, value );
+                            d->trigger( Midi::NOTE_ON, 0, _key, value );
                     }
                     else if ( type == TYPE_MIDI_CONTROLLER_CHANGE )
-                        d->trigger( MidiDevice::CONTROLLER_CHANGE, 0, _key, value );
+                        d->trigger( Midi::CONTROLLER_CHANGE, 0, _key, value );
                     
                     else if ( type == TYPE_MIDI_TIMING_TICK )
-                        d->trigger( MidiDevice::TIMING_TICK, 0 );
+                        d->trigger( Midi::TIMING_TICK, 0 );
                 }
             }
         }

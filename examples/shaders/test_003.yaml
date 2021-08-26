@@ -6,7 +6,7 @@ global:
 pulse:
     - name: u_timeline
       type: scalar
-      interval: 10
+      tick_ms: 10
       shape: |
           function () {
               if (global.play) {

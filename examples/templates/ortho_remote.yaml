@@ -4,7 +4,7 @@ global:
 pulse:
     -   name: frame
         type: scalar
-        interval: 41.14
+        tick_ms: 41.14
         shape: |
             function () {
                 if (global.play)

@@ -27,11 +27,7 @@ inline bool getTickDuration(const YAML::Node& _node, int *_milliSecs) {
     return true;
 }
 
-// get Time Function
-struct timespec time_start;
-inline void startClock() { clock_gettime(CLOCK_MONOTONIC, &time_start); };
-
-double getTimeSec() {
+inline double getTimeSec(const timespec &time_start) {
     timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     timespec temp;
@@ -46,4 +42,4 @@ double getTimeSec() {
     return double(temp.tv_sec) + double(temp.tv_nsec/1000000000.);
 }
 
-inline int getTimeMs() { return getTimeSec() * MS_SECOND; }
+inline int getTimeMs(const timespec &time_start) { return getTimeSec(time_start) * MS_SECOND; }
