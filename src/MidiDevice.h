@@ -12,6 +12,7 @@
 
 #include "Device.h"
 #include "Midi.h"
+#include "ops/nodes.h"
 
 class MidiDevice : public Device, Midi {
 public:
@@ -33,10 +34,11 @@ public:
     void            trigger(unsigned char _status, unsigned char _channel);
     void            trigger(unsigned char _status, unsigned char _channel, size_t _key, size_t _value);
 
+    YAML::Node      node;
     size_t          midiPort;
     size_t          defaultOutChannel;
-    unsigned char   defaultOutStatus;
     size_t          tickCounter;
+    unsigned char   defaultOutStatus;
 
 protected:
     RtMidiIn*       midiIn;

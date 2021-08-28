@@ -5,9 +5,9 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "Device.h"
+#include "Term.h"
 
-class Pulse : public Device {
+class Pulse : public Term {
 public:
 
     Pulse(void* _ctx, size_t _index);

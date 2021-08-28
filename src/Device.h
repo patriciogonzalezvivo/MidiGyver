@@ -1,17 +1,12 @@
 #pragma once
 
+#include "Term.h"
+
 #include <map>
 
-enum DeviceType {
-    DEVICE_PULSE,
-    DEVICE_MIDI
-};
 
-class Device {
+class Device : public Term {
 public:
-
-    std::string     name;
-    DeviceType      type;
 
     // KEYS EVENTS
     virtual void    setKeyFnc(size_t _channel, size_t _key, size_t _fnc) {
@@ -45,5 +40,4 @@ public:
 protected:
     std::map<size_t, size_t>            keyMap;
     std::map<unsigned char, size_t>     statusMap;
-    void*                               ctx;
 };

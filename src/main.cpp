@@ -58,12 +58,12 @@ int main(int argc, char** argv) {
     },
     "help[,<command>]               print help for one or all command"));
 
-    commands.push_back(Command("device", [&](const std::string& _line){ 
-        if (_line == "devices") {
-            std::cout << std::endl << "Devices:" << std::endl;
+    commands.push_back(Command("source", [&](const std::string& _line){ 
+        if (_line == "sources") {
+            std::cout << std::endl << "Sources:" << std::endl;
             std::cout << "----------------------------" << std::endl;
-            for (size_t i = 0; i < ctx->listenDevicesNames.size(); i++)
-                std::cout << ctx->listenDevicesNames[i] << std::endl;
+            for (size_t i = 0; i < ctx->sources.size(); i++)
+                std::cout << ctx->sources[i].address << std::endl;
             std::cout << std::endl;
             
             return true;
@@ -76,8 +76,8 @@ int main(int argc, char** argv) {
         if (_line == "targets") {
             std::cout << std::endl << "Targets:" << std::endl;
             std::cout << "----------------------------" << std::endl;
-            for (size_t i = 0; i < ctx->targetsDevicesNames.size(); i++)
-                std::cout << ctx->targetsDevicesNames[i] << std::endl;
+            for (size_t i = 0; i < ctx->targets.size(); i++)
+                std::cout << ctx->targets[i].address << std::endl;
             std::cout << std::endl;
             
             return true;

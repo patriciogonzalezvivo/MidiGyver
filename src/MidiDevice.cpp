@@ -54,7 +54,7 @@ MidiDevice::MidiDevice(void* _ctx, const std::string& _name) :
     midiIn(NULL), 
     midiOut(NULL) 
 {
-    type = DEVICE_MIDI;
+    type = MIDI_DEVICE;
     ctx = _ctx;
     name = _name;
 }
@@ -66,7 +66,7 @@ MidiDevice::MidiDevice(void* _ctx, const std::string& _name, size_t _midiPort) :
     midiIn(NULL), 
     midiOut(NULL)
 {
-    type = DEVICE_MIDI;
+    type = MIDI_DEVICE;
     ctx = _ctx;
     name = _name;
     midiPort = _midiPort;

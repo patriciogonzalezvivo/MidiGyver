@@ -30,6 +30,8 @@ public:
     JSScopeMarker getScopeMarker();
     void    resetToScopeMarker(JSScopeMarker marker);
 
+    uint32_t idCounter;
+
 private:
     static void fatalErrorHandler(void* userData, const char* message);
 

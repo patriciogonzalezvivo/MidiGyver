@@ -6,12 +6,12 @@
 #include "Context.h"
 
 Pulse::Pulse(void* _ctx, size_t _index) {
-    type = DEVICE_PULSE;
+    type = PULSE;
     ctx = _ctx;
     defaultOutChannel = 0;
     name = ((Context*)ctx)->config["pulse"][_index]["name"].as<std::string>();
     // setKeyFnc(0, _index, _index);
-    setStatusFnc(Midi::TIMING_TICK, _index);
+    // setStatusFnc(Midi::TIMING_TICK, _index);
     index = _index;
 }   
 

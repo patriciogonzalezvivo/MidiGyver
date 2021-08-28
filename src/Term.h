@@ -2,15 +2,17 @@
 
 #include <string>
 
-enum FileType {
-    FILE_MIDI
+enum TermType {
+    PULSE,
+    MIDI_FILE,
+    MIDI_DEVICE
 };
 
-class File {
+class Term {
 public:
 
     std::string     name;
-    FileType        type;
+    TermType        type;
 
 protected:
 

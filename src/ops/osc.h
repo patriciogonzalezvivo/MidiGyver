@@ -24,6 +24,10 @@ inline bool broadcast_OSC(const Target& _target, const std::string& _folder, con
     lo_message m = lo_message_new();
     lo_message_add_string(m, _value.c_str());
 
+    // std::string address = _target.address;
+    // if (address == "localhost")
+    //     address = "127.0.0.1";
+
     lo_address t = lo_address_new(_target.address.c_str(), _target.port.c_str());
 
     lo_send_message(t, std::string(_target.folder + _folder).c_str(), m);

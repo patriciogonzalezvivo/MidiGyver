@@ -5,20 +5,27 @@
 #endif
 
 #include <string>
-
-enum TargetProtocol {
-    UNKNOWN_PROTOCOL    = 0,    
-    MIDI_PROTOCOL       = 1,    // MIDI OUT
-    CSV_PROTOCOL        = 2,    // CONSOLE OUT
-    UDP_PROTOCOL        = 3,    // NETWORK
-    OSC_PROTOCOL        = 4     // NETWORK
-};
+#include "protocol.h"
+#include "source.h"
+#include "../term.h"
 
 struct Target {
-    TargetProtocol  protocol    = UNKNOWN_PROTOCOL;
+    Target() {};
+    Target(const Source &_p) {
+        protocol = _p.protocol;
+        address = _p.address;
+        term = _p.term;
+        isFile = _p.isFile;
+
+        if (protocol == MIDI_PROTOCOL && isFile) 
+            folder = "CONTROLLER_CHANGE"; 
+    };
+
+    Protocol        protocol    = UNKNOWN_PROTOCOL;
     std::string     address     = "localhost";
     std::string     port        = "8000";
     std::string     folder      = "/";
+    Term*           term        = nullptr;
     bool            isFile      = false;
 };
 
@@ -32,10 +39,11 @@ inline Target parseTarget(const std::string _address) {
         target.protocol = MIDI_PROTOCOL;    // Protocol
         post_protocol = 7;                  // give space for 'midi://'
         target.port = "0";                  // Channel
-        // target.folder = "/cc";              // MessageType
+        // target.folder = "/";                // MessageType
     }
     else if (protocol == "csv") {
         target.protocol = CSV_PROTOCOL;
+        target.address = "cout";
         if (_address.size() == 3)
             return target;
     }
@@ -76,9 +84,6 @@ inline Target parseTarget(const std::string _address) {
 
         if (portEnd != total)
             target.folder = address.substr(portEnd, total - portEnd);
-
-        if (target.address == "localhost")
-            target.address = "127.0.0.1";
 
     }
 

@@ -4,27 +4,26 @@
 
 #include "ops/times.h"
 
-MidiLog::MidiLog(void* _ctx, const std::string& _name) {
-    type = FILE_MIDI;
+MidiFile::MidiFile(void* _ctx, const std::string& _name) {
+    type = MIDI_FILE;
     ctx = _ctx;
     name = _name;
 
     m_file.setMillisecondTicks();
-    std::cout << "Saving midi data to: " << _name << std::endl;
 
     clock_gettime(CLOCK_MONOTONIC, &m_epoc);
 }
 
-MidiLog::~MidiLog() {
+MidiFile::~MidiFile() {
     close();
 }
 
-void MidiLog::close() {
+void MidiFile::close() {
     m_file.sortTracks();
     m_file.write( name );
 }
 
-void MidiLog::trigger(const std::string& _track, unsigned char _status, size_t _channel, size_t _key, size_t _value) {
+void MidiFile::trigger(const std::string& _track, unsigned char _status, size_t _channel, size_t _key, size_t _value) {
     // Search for the track number
     size_t track = m_tracks.size();
     for (size_t i = 0; i < track; i++)

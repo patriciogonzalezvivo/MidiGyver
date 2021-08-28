@@ -8,7 +8,7 @@
 const static char INSTANCE_ID[] = "\xff""\xff""obj";
 const static char FUNC_ID[] = "\xff""\xff""fns";
 
-JSContext::JSContext() {
+JSContext::JSContext() : idCounter(0), _ctx(nullptr) {
     // Create duktape heap with default allocation functions and custom fatal error handler.
     _ctx = duk_create_heap(nullptr, nullptr, nullptr, nullptr, fatalErrorHandler);
 

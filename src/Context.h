@@ -15,6 +15,7 @@
 #include "MidiDevice.h"
 #include "MidiLog.h"
 #include "ops/nodes.h"
+#include "ops/source.h"
 
 enum DataType {
     TYPE_UNKNOWN,
@@ -40,39 +41,36 @@ public:
     Context();
     virtual ~Context();
 
-    bool load(const std::string& _filename);
-    bool save(const std::string& _filename);
-    bool close();
-
-    bool        updateDevice(const std::string& _device);
+    bool    load(const std::string& _filename);
+    Term*   loadMidiDeviceIn(const std::string& _devicesName, YAML::Node _node);
+    bool    save(const std::string& _filename);
+    bool    close();
 
     // STATUS ONLY EVENTS
-    bool        doStatusExist(const std::string& _device, unsigned char _status);
-    YAML::Node  getStatusNode(const std::string& _device, unsigned char _status);
+    bool        doStatusExist(const std::string& _term, unsigned char _status);
+    YAML::Node  getStatusNode(const std::string& _term, unsigned char _status);
 
     // KEYS EVENTS 
-    bool        doKeyExist(const std::string& _device, size_t _channel, size_t _key);
-    YAML::Node  getKeyNode(const std::string& _device, size_t _channel, size_t _key);
+    bool        doKeyExist(const std::string& _term, size_t _channel, size_t _key);
+    YAML::Node  getKeyNode(const std::string& _term, size_t _channel, size_t _key);
 
     // Common Proces
     DataType    getKeyDataType(YAML::Node _node);
     std::vector<Target> getTargetsForNode(YAML::Node _node);
 
-    bool        processEvent(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value, bool _statusOnly);
-    bool        shapeValue(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float* _value, bool _statusOnly);
-    bool        mapValue(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key, float _value);
+    bool        processEvent(YAML::Node _node, const std::string& _term, unsigned char _status, size_t _channel, size_t _key, float _value, bool _statusOnly);
+    bool        shapeValue(YAML::Node _node, const std::string& _term, unsigned char _status, size_t _channel, size_t _key, float* _value, bool _statusOnly);
+    bool        mapValue(YAML::Node _node, const std::string& _term, unsigned char _status, size_t _channel, size_t _key, float _value);
 
-    bool        updateNode(YAML::Node _node, const std::string& _device, unsigned char _status, size_t _channel, size_t _key);
+    bool        updateNode(YAML::Node _node, const std::string& _term, unsigned char _status, size_t _channel, size_t _key);
 
-    bool        feedback(const std::string& _device, unsigned char _status, size_t _channel, size_t _key, size_t _value);
+    bool        feedback(const std::string& _term, unsigned char _status, size_t _channel, size_t _key, size_t _value);
 
-    std::vector<std::string>            listenDevicesNames;
-    std::map<std::string, Device*>      listenDevices;
+    std::vector<Source>                 sources;
+    std::map<std::string, Term*>        sourcesTerm;
 
     std::vector<Target>                 targets;
-    std::vector<std::string>            targetsDevicesNames;
-    std::map<std::string, Device*>      targetsDevices;
-    std::map<std::string, MidiLog*>     targetsFiles;
+    std::map<std::string, Term*>        targetsTerm;
 
     YAML::Node                          config;
     std::mutex                          configMutex;
