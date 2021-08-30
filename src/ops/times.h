@@ -27,6 +27,7 @@ inline bool getTickDuration(const YAML::Node& _node, int *_milliSecs) {
     return true;
 }
 
+
 inline double getTimeSec(const timespec &time_start) {
     timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
