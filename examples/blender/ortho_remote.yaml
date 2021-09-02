@@ -1,11 +1,6 @@
-out:
-    -   osc://localhost:8000
-    -   csv
-
 global:
     play: false
     frame: 1.0
-
 pulse:
     -   name: frame
         type: scalar
@@ -39,3 +34,7 @@ in:
                         global.frame += 0.5;
                     return global.frame;
                 }
+
+out:
+    -   csv
+    -   osc://:9001

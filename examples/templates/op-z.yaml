@@ -65,7 +65,9 @@ in:
         -   key: 5-124
             channel: 8
             name: chord
-            shape: *defaultShapeFnc
+            shape: *defaultShap-   key: [72]
+            channel: 1
+            name: knob2eFnc
 
         -   status: START_SONG
             name: start

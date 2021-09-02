@@ -1,0 +1,95 @@
+out:
+    -   osc://localhost:8000
+    # -   midi://test.midi
+    # -   csv://test.csv
+    -   csv
+
+aliases:
+    -   &getKey |
+            function() {
+                if (value > 0.0) {
+                    return key;
+                }
+                return false;
+            }
+
+in:
+    MPK_mini*:
+        -   key: [0, 16, 36]
+            channel: 10
+            name: pad01
+
+        -   key: [1, 17, 37]
+            channel: 10
+            name: pad02
+
+        -   key: [2, 18, 38]
+            channel: 10
+            name: pad03
+
+        -   key: [3, 19, 39]
+            channel: 10
+            name: pad04
+
+        -   key: [4, 20, 40]
+            channel: 10
+            name: pad05
+
+        -   key: [5, 21, 41]
+            channel: 10
+            name: pad06
+
+        -   key: [6, 22, 42]
+            channel: 10
+            name: pad07
+
+        -   key: [7, 23, 43]
+            channel: 10
+            name: pad08
+
+        -   key: 70
+            channel: 1
+            # status: CONTROLLER_CHANGE
+            name: knob1
+
+        -   key: 71
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob2
+
+        -   key: 72
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob3
+
+        -   key: 73
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob4
+
+        -   key: 74
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob5
+
+        -   key: 75
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob6
+
+        -   key: 76
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob7
+
+        -   key: 77
+            channel: 1
+            status: CONTROLLER_CHANGE
+            name: knob8
+
+        -   key: 0-120
+            channel: 1
+            name: key
+            status: NOTE_ON
+            shape: *getKey
+
