@@ -7,8 +7,9 @@ global:
 
 out:
     -   osc://localhost:8000
-    -   midi://test.midi
-    -   csv
+    # -   midi://test.midi
+    # -   csv://test.csv
+    - csv
 
 aliases:
     -   &defaultShapeFnc |

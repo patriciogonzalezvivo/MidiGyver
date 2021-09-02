@@ -1,127 +1,78 @@
-global:
-    epsilon: 0.5
-    
-    camera: 0
-    camera_speed: 1.0
-    camera_target: 0
-    
-    time: 0.0
-    time_status: false
+out:
+    -   osc://localhost:8000
+    # -   midi://test.midi
+    # -   csv://test.csv
+    -   csv
 
-pulse:
-    -   name: camera_position
-        fps: 30
-        type: vector
-        shape: |
+aliases:
+    -   &defaultShapeFnc |
             function() {
-                if (global.camera > global.camera_target + global.epsilon) {
-                    global.camera = parseFloat(global.camera) - global.camera_speed;
-                    return global.camera;
+                if (value > 0.0) {
+                    return key;
                 }
-                else if (global.camera < global.camera_target - global.epsilon) {
-                    global.camera = parseFloat(global.camera) + global.camera_speed;
-                    return global.camera;
-                }
-                else {
-                    return false;
-                }
-            }        
-        map: [[10.0, -10.0, -10.0], [-10.0, 0.0, -20.0], [-10.0, -10.0, 50.0], [10.0, 0.0, 100.0]]
+                return false;
+            }
 
 in:
     OP-Z*:
+        -   key: 1
+            name: knob01
+
+        -   key: 2
+            name: knob02
+
+        -   key: 3
+            name: knob03
+
+        -   key: 4
+            name: knob04
+
         -   key: 5-124
             channel: 1
-            name: u_kick
-            type: number
-            map: [0.0, 1.0]
+            name: kicks
+            shape: *defaultShapeFnc
 
         -   key: 5-124
             channel: 2
-            name: u_snare
-            type: number
-            map: [0.0, 1.0]
+            name: snare
+            shape: *defaultShapeFnc
 
         -   key: 5-124
             channel: 3
-            name: u_perc
-            type: number
-            map: [0.0, 1.0]
+            name: perc
+            shape: *defaultShapeFnc
 
         -   key: 5-124
             channel: 4
-            name: u_sample
-            type: number
-            map: [0.0, 1.0]
+            name: sample
+            shape: *defaultShapeFnc
         
         -   key: 5-124
             channel: 5
-            name: u_bass
-            type: number
-            map: [0.0, 1.0]
+            name: bass
+            shape: *defaultShapeFnc
 
         -   key: 5-124
             channel: 6
-            name: u_lead
-            type: number
-            map: [0.0, 1.0]
+            name: lead
+            shape: *defaultShapeFnc
 
         -   key: 5-124
             channel: 7
-            name: u_arp
-            type: number
-            map: [0.0, 1.0]
+            name: arp
+            shape: *defaultShapeFnc
 
         -   key: 5-124
             channel: 8
-            name: u_chord
-            type: number
-            map: [0.0, 1.0]
-
-        -   key: 53-76
-            channel: 16
-            shape: |
-                function() {
-                    if (value > 0)
-                        global.camera_target = ((parseFloat(key) - 53) / 23) * 127;
-                    return false;
-                }
+            name: chord
+            shape: *defaultShapeFnc
 
         -   status: START_SONG
-            name: define
-            type: state
-            map: "OPZ_PLAYING"
-            shape: |
-                function() {
-                    global.time_status = true;
-                    global.time = 0.0;
-                    return true;
-                }
+            name: start
 
         -   status: STOP_SONG
-            name: undefine
-            type: state
-            map: "OPZ_PLAYING"
-            shape: |
-                function() {
-                    global.time_status = false;
-                    return true;
-                }
+            name: stop
 
         -   status: TIMING_TICK
-            name: u_clock
-            shape: |
-                function() {
-                    if (global.time_status == true) {
-                        global.time = parseFloat(global.time) + 0.05;
-                        return parseFloat(global.time);
-                    }
-                    else {
-                        return false;
-                    }
-                }
+            name: tick
 
-
-out:
-    -   csv
-    -   osc://localhost:8080
