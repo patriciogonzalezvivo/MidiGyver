@@ -6,11 +6,20 @@ global:
                 [48,0,0,0,0,0,0,0,0], [49,0,0,0,0,0,0,0,0], [50,0,0,0,0,0,0,0,0], [51,0,0,0,0,0,0,0,0], [52,0,0,0,0,0,0,0,0], [53,0,0,0,0,0,0,0,0], [54,0,0,0,0,0,0,0,0], [55,0,0,0,0,0,0,0,0] ]
     track: 1
     tracks:     [   64, 65, 66, 67, 68, 69, 70, 71 ]
-    track_notes: [  36, 37, 38, 42, 43, 46, 49, 50 ]
+    track_notes: [  36, 38, 42, 46, 39, 47, 43, 51 ]
+
+    #   36 - Kick             37 - Stick          
+    #   38 - Snare Jazz       39 - Hand Clap
+    #   40 - Snare Rock       41 - Tom Low        
+    #   42 - Closed HH        43 - Tom Mid
+    #   44 - Pedal HH         45 - Tom High
+    #   46 - Open HH          47 - Cowbell
+    #   48 - Ride Jazz        49 - Crash
+    #   50 - Ride Rock        51 - Crash Jazz
 
 
 out:
-    -   midi://Client-*:1/NOTE_ON
+    -   midi://sequencer
     -   csv
 
 pulse:
@@ -42,8 +51,8 @@ pulse:
                     }
 
                     return { 
-                        'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
-                        'Client-*': trigers
+                        'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
+                        'midi://sequencer:1/NOTE_ON': trigers
                     };
                 }
                 else
@@ -95,12 +104,12 @@ in:
                         global.play = false;
                         
                         return { 
-                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
-                            'nanoKONTROL2*': [ [41, 127] ] 
+                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
+                            'midi://nanoKONTROL2*': [ [41, 127] ] 
                         };
                     }
                     return { 
-                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds
+                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
                         };;
                 }
 
@@ -147,8 +156,8 @@ in:
                         }
 
                         return { 
-                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
-                            'nanoKONTROL2*': [ [key, global.track] ]
+                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
+                            'midi://nanoKONTROL2*': [ [key, global.track] ]
                         };
                     }
                     return false;
@@ -186,8 +195,8 @@ in:
                         }
 
                         return { 
-                            'nanoKONTROL2*/CONTROLLER_CHANGE': leds,
-                            'nanoKONTROL2*': trigers
+                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
+                            'midi://nanoKONTROL2*': trigers
                         };
                     }
                     return false;

@@ -135,7 +135,7 @@ bool Context::load(const std::string& _filename) {
             }
 
             sources.push_back(src);
-            targets.push_back(src); // for feedback
+            // targets.push_back(src); // for feedback
         }
     }
 
@@ -456,170 +456,82 @@ bool Context::shapeValue(YAML::Node _node,
             // Result is an object
             else if (result.isObject()) {
                 JSScopeMarker marker1 = js.getScopeMarker();
-                
-                // Check on all target devices
-                for (size_t j = 0; j < keyTargets.size(); j++) {
 
-                    // on the same status
-                    JSValue d = result.getValueForProperty( keyTargets[j].address );
+                // Get Object keys
+                std::vector<std::string> keys = result.getKeys();
 
-                    if (!d.isUndefined()) {
-                        JSScopeMarker marker2 = js.getScopeMarker();
+                // Iterate through them
+                for (size_t t = 0; t < keys.size(); t++) {
+                    // Parse the keys into a target
+                    Target target = parseTarget( keys[t] );
 
-                        for (size_t i = 0; i < d.getLength(); i++) {
-                            JSValue el = d.getValueAtIndex(i);
-
-                            if (el.isArray()) {
-                                if (el.getLength() > 1) {
-                                    JSScopeMarker marker3 = js.getScopeMarker();
-
-                                    size_t k = el.getValueAtIndex(0).toInt();
-                                    size_t v = el.getValueAtIndex(1).toInt();
-
-                                    if (keyTargets[j].protocol == MIDI_PROTOCOL) {
-                                        if (keyTargets[j].term != nullptr) {
-                                            if (keyTargets[j].isFile) {
-                                                MidiFile* t = (MidiFile*)keyTargets[j].term;
-                                                t->trigger(keyTargets[j].address, Midi::statusNameToByte(keyTargets[j].folder), 0, k, v );
-                                            }
-                                            else {
-                                                MidiDevice* t = (MidiDevice*)keyTargets[j].term;
-                                                t->trigger(t->defaultOutStatus, 0, k, v );
-                                            }
-                                        }
-                                    }
-                                    else if (keyTargets[j].protocol != UNKNOWN_PROTOCOL)
-                                        broadcast(keyTargets[j], "CONTROLLER_CHANGE", Vector(0, k, v) );
-
-                                    js.resetToScopeMarker(marker3);
-                                }
-                            }
-                        }
-
-                        js.resetToScopeMarker(marker2);
-                    }
-
-                    for (size_t s = 0; s < 3; s++) {
-                        char unsigned sByte = Midi::getStatusByte(s);
-                        std::string sName = Midi::getStatusName(s);
-
-                        // on the same status
-                        JSValue d2 = result.getValueForProperty( keyTargets[j].address + "/" + sName);
-                        if (!d2.isUndefined()) {
+                    // If the target is MIDI
+                    if (target.protocol == MIDI_PROTOCOL) {
+                        // and exist as a target
+                        
+                        // Get values
+                        JSValue values = result.getValueForProperty( keys[t] );
+                        if (!values.isUndefined()) {
                             JSScopeMarker marker2 = js.getScopeMarker();
 
-                            for (size_t i = 0; i < d2.getLength(); i++) {
-                                JSValue el = d2.getValueAtIndex(i);
-                                if (el.isArray()) {
-                                    if (el.getLength() > 1) {
-                                        JSScopeMarker marker3 = js.getScopeMarker();
+                            // Iterate through elements
+                            for (size_t i = 0; i < values.getLength(); i++) {
+                                JSValue el = values.getValueAtIndex(i);
+                                JSScopeMarker marker3 = js.getScopeMarker();
 
+                                // if elements are arrays
+                                if (el.isArray()) {
+
+                                    //  with more than one elements
+                                    if (el.getLength() > 1) {
+
+                                        size_t c = toInt(target.port);
                                         size_t k = el.getValueAtIndex(0).toInt();
                                         size_t v = el.getValueAtIndex(1).toInt();
-                                        if (sByte == Midi::NOTE_ON && v == 0)
-                                            sByte = Midi::NOTE_OFF;
+                                        unsigned char s = _status;
 
-                                        if (keyTargets[j].protocol == MIDI_PROTOCOL) {
-                                            if (keyTargets[j].term != nullptr) {
-                                                if (keyTargets[j].isFile ) {
-                                                    MidiFile* t = (MidiFile*)keyTargets[j].term;
-                                                    t->trigger(keyTargets[j].address, sByte, 0, k, v );
-                                                } 
-                                                else {
-                                                    MidiDevice* t = (MidiDevice*)keyTargets[j].term;
-                                                    t->trigger(sByte, 0, k, v );
-                                                }
+                                        if (target.folder != "/") 
+                                            s = Midi::statusNameToByte(target.folder);
+
+                                        if (el.getLength() == 3) {
+                                            c = k;
+                                            k = v;
+                                            v = el.getValueAtIndex(2).toInt();
+                                        }
+
+                                        // If it's a target
+                                        std::map<std::string, Term*>::iterator it = targetsTerm.find(target.address);
+                                        if (it != targetsTerm.end()) {
+                                            if (target.isFile) {
+                                                MidiFile* t = (MidiFile*)it->second;
+                                                t->trigger(target.address, s, c, k, v );
+                                            }
+                                            else {
+                                                MidiDevice* t = (MidiDevice*)it->second;
+                                                t->trigger(s, c, k, v );
                                             }
                                         }
-                                        else if (keyTargets[j].protocol != UNKNOWN_PROTOCOL)
-                                            broadcast(keyTargets[j], sName, Vector(0, k, v) );
-                                        
 
-                                        js.resetToScopeMarker(marker3);
+                                        // It it's also a source
+                                        it = sourcesTerm.find(target.address);
+                                        if (it != sourcesTerm.end()) {
+                                            if (s == Midi::CONTROLLER_CHANGE && !target.isFile)
+                                                ((MidiDevice*)it->second)->trigger(s, c, k, v);
+                                                feedback(target.address, s, c, k, v);
+                                            
+                                            if (doKeyExist(target.address, c, k)) {
+                                                YAML::Node n = getKeyNode(target.address, c, k);
+                                                mapValue(n, target.address, _status, c, k, v);
+                                            }
+                                        }
+                                        
                                     }
                                 }
+                                js.resetToScopeMarker(marker3);
                             }
-
                             js.resetToScopeMarker(marker2);
                         }
-                    }
 
-                }
-                
-                for (size_t j = 0; j < sources.size(); j++) {
-
-                    // RETURN the same status as recieved
-                    JSValue d = result.getValueForProperty(sources[j].address);
-                    if (!d.isUndefined()) {
-                        JSScopeMarker marker2 = js.getScopeMarker();
-
-                        for (size_t i = 0; i < d.getLength(); i++) {
-                            JSValue el = d.getValueAtIndex(i);
-                            if (el.isArray()) {
-                                if (el.getLength() == 2) {
-                                    JSScopeMarker marker3 = js.getScopeMarker();
-
-                                    size_t k = el.getValueAtIndex(0).toInt();
-                                    size_t v = el.getValueAtIndex(1).toInt();
-                                    YAML::Node n = getKeyNode(sources[j].address, 0, k);
-                                    mapValue(n, sources[j].address, _status, 0, k, v);
-
-                                    js.resetToScopeMarker(marker3);
-                                }
-                                else if (el.getLength() == 3) {
-                                    JSScopeMarker marker3 = js.getScopeMarker();
-
-                                    size_t c = el.getValueAtIndex(0).toInt();
-                                    size_t k = el.getValueAtIndex(1).toInt();
-                                    float v = el.getValueAtIndex(2).toFloat();
-
-                                    YAML::Node n = getKeyNode(sources[j].address, c, k);
-                                    mapValue(n, sources[j].address, _status, c, k, v);
-
-                                    js.resetToScopeMarker(marker3);
-                                }
-                            }
-                        }
-
-                        js.resetToScopeMarker(marker2);
-                    }
-
-                    JSValue d_leds = result.getValueForProperty(sources[j].address + "/CONTROLLER_CHANGE");
-                    if (!d_leds.isUndefined()) {
-                        JSScopeMarker marker2 = js.getScopeMarker();
-                        Target t = parseTarget(sources[j].address);
-
-                        for (size_t i = 0; i < d_leds.getLength(); i++) {
-                            JSValue el = d_leds.getValueAtIndex(i);
-
-                            if (el.isArray()) {
-                                if (el.getLength() == 2) {
-                                    JSScopeMarker marker3 = js.getScopeMarker();
-
-                                    size_t k = el.getValueAtIndex(0).toInt();
-                                    YAML::Node n = getKeyNode(t.address, 0, k);
-                                    DataType n_type = getKeyDataType(n);
-                                    size_t v = el.getValueAtIndex(1).toInt();
-                                    feedback(t.address, Midi::CONTROLLER_CHANGE, 0, k, v);
-
-                                    js.resetToScopeMarker(marker3);
-                                }
-                                else if (el.getLength() == 3) {
-                                    JSScopeMarker marker3 = js.getScopeMarker();
-
-                                    size_t c = el.getValueAtIndex(0).toInt();
-                                    size_t k = el.getValueAtIndex(1).toInt();
-                                    YAML::Node n = getKeyNode(t.address, c, k);
-                                    DataType n_type = getKeyDataType(n);
-                                    float v = el.getValueAtIndex(2).toFloat();
-                                    feedback(t.address, Midi::CONTROLLER_CHANGE, c, k, v);
-
-                                    js.resetToScopeMarker(marker3);
-                                }
-                            }
-                        }
-
-                        js.resetToScopeMarker(marker2);
                     }
                 }
 

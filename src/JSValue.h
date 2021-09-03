@@ -66,6 +66,19 @@ public:
         }
     }
 
+    std::vector<std::string> getKeys() {
+        std::vector<std::string> rta;
+        duk_enum(_ctx, _index, DUK_ENUM_SORT_ARRAY_INDICES);
+        while (duk_next(_ctx, -1, 0)) {
+            std::string key = duk_safe_to_string(_ctx, -1);
+            rta.push_back( key );
+
+            duk_pop(_ctx);
+        }
+        duk_pop(_ctx);
+        return rta;
+    }
+
 private:
     duk_context* _ctx = nullptr;
     duk_idx_t _index = 0;

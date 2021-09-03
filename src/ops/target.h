@@ -87,7 +87,10 @@ inline Target parseTarget(const std::string _address) {
 
     }
 
-    // std::cout << (target.isFile ? "FILE " : "NET  ") << target.protocol << " " << target.address << " " << target.port  << " " << target.folder  << std::endl;
+    if (target.protocol == MIDI_PROTOCOL)
+        target.folder.erase(0,1);
+
+    // std::cout << (target.isFile ? "FILE " : "NOT FILE  ") << target.protocol << " " << target.address << " " << target.port  << " " << target.folder  << std::endl;
 
     return target;
 }
