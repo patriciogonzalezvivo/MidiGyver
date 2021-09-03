@@ -102,15 +102,13 @@ in:
 
                     if (value == 127 && global.play) {
                         global.play = false;
-                        
-                        return { 
-                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
-                            'midi://nanoKONTROL2*': [ [41, 127] ] 
-                        };
+
+                        leds.push( [41, 127] );
                     }
+
                     return { 
-                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
-                        };;
+                        'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
+                    };
                 }
 
         -   name: button_play
@@ -144,7 +142,7 @@ in:
                         }
 
                         // LED feedback
-                        var leds = [];
+                        var leds = [ [key, global.track] ];
 
                         var head = global.time % 16;
                         for (i = 0; i < global.steps.length; i++) { 
@@ -156,8 +154,7 @@ in:
                         }
 
                         return { 
-                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
-                            'midi://nanoKONTROL2*': [ [key, global.track] ]
+                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
                         };
                     }
                     return false;

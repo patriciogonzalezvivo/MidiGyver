@@ -55,11 +55,11 @@ pulse:
 in:
     nanoKONTROL2*:
     
-        -   name: buttons
-            type: button
-            key: [  32, 33, 34, 35, 36, 37, 38, 39, 
+        -   key: [  32, 33, 34, 35, 36, 37, 38, 39, 
                     48, 49, 50, 51, 52, 53, 54, 55,
                     64, 65, 66, 67, 68, 69, 70, 71 ]
+            name: buttons
+            type: button
             shape: |
                 function() {
                     if (value > 0) {
@@ -82,12 +82,12 @@ in:
                     return false;
                 }
 
-        -   name: button_stop
-            key: 42
-            # type: button
+        -   key: 42
+            name: button_stop
+            type: button
             shape: |
                 function() {
-                    var leds = [];
+                    var leds = [ ];
                     for (i = 0; i < global.steps.length; i++) { 
                         leds.push( [global.steps[i][0], (global.steps[i][global.track] > 0) ? 127 : 0 ]);
                     }
@@ -95,19 +95,15 @@ in:
 
                     if (value == 127 && global.play) {
                         global.play = false;
-                        
-                        return { 
-                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
-                            'midi://nanoKONTROL2*': [ [41, 127] ] 
-                        };
+                        leds.push( [41, 127] );
                     }
                     return { 
-                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
-                        };;
+                        'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
+                    };;
                 }
 
-        -   name: button_play
-            key: 41
+        -   key: 41
+            name: button_play
             type: toggle
             shape: |
                 function() {
@@ -119,8 +115,8 @@ in:
                     return value;
                 }
 
-        -   name: button_tracks
-            key: [58, 59]
+        -   key: [58, 59]
+            name: button_tracks
             type: scalar
             shape: |
                 function() {
@@ -137,7 +133,7 @@ in:
                         }
 
                         // LED feedback
-                        var leds = [];
+                        var leds = [ [key, global.track] ];
 
                         var head = global.time % 16;
                         for (i = 0; i < global.steps.length; i++) { 
@@ -149,15 +145,14 @@ in:
                         }
 
                         return { 
-                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds,
-                            'midi://nanoKONTROL2*': [ [key, global.track] ]
+                            'midi://nanoKONTROL2*:0/CONTROLLER_CHANGE': leds
                         };
                     }
                     return false;
                 }
 
-        -   name: button_marker
-            key: [61, 62]
+        -   key: [61, 62]
+            name: button_marker
             type: scalar
             shape: |
                 function() {

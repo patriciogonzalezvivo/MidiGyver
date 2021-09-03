@@ -4,16 +4,6 @@ out:
 
 in:
     MPK_mini*:
-        -   key: 36
-            channel: 10
-            name: key
-            shape: |
-                function() {
-                    return { 
-                        'midi://OP-Z*:1/NOTE_ON': [[14, value]]
-                    };
-                }
-                
         -   key: 0-120
             channel: 1
             name: pad 
@@ -24,33 +14,83 @@ in:
                     };
                 }
 
+        -   key: 36
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0) 
+                        return {  'midi://OP-Z*:1/NOTE_ON': [[14, value]] };
+                    return false;
+                }
+        
+        -   key: 37
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)
+                        return { 'midi://OP-Z*:1/NOTE_ON': [[15, value]] };
+                    return false;
+                }
 
-        # -   key: [1, 17, 37]
-        #     channel: 10
-        #     name: pad02
+        -   key: 38
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)
+                        return {  'midi://OP-Z*:2/NOTE_ON': [[14, value]] };
+                    return false;
+                }
 
-        # -   key: [2, 18, 38]
-        #     channel: 10
-        #     name: pad03
+        -   key: 39
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)
+                        return { 'midi://OP-Z*:2/NOTE_ON': [[15, value]] };
+                    return false;
+                }
+                
+        -   key: 40
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)    
+                        return { 'midi://OP-Z*:3/NOTE_ON': [[57, value]] };
+                    return false;
+                }
 
-        # -   key: [3, 19, 39]
-        #     channel: 10
-        #     name: pad04
+        -   key: 41
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)
+                        return { 'midi://OP-Z*:3/NOTE_ON': [[60, value]] };
+                    return false;
+                }
 
-        # -   key: [4, 20, 40]
-        #     channel: 10
-        #     name: pad05
+        -   key: 42
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)
+                        return { 'midi://OP-Z*:3/NOTE_ON': [[61, value]] };
+                    return false;
+                }
 
-        # -   key: [5, 21, 41]
-        #     channel: 10
-        #     name: pad06
-
-        # -   key: [6, 22, 42]
-        #     channel: 10
-        #     name: pad07
-
-        # -   key: [7, 23, 43]
-        #     channel: 10
-        #     name: pad08
-
+        -   key: 43
+            channel: 10
+            name: key
+            shape: |
+                function() {
+                    if (value > 0)
+                        return { 'midi://OP-Z*:3/NOTE_ON': [[64, value]] };
+                    return false;
+                }
 
