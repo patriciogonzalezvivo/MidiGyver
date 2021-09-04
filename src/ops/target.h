@@ -7,7 +7,7 @@
 #include <string>
 #include "protocol.h"
 #include "source.h"
-#include "../term.h"
+#include "../Term.h"
 
 struct Target {
     Target() {};
