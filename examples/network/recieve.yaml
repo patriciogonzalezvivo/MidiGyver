@@ -5,14 +5,13 @@ out:
 in:
     osc://localhost:8000:
         -   key: 0-127
-            name: event
-            # type: note
-            shape: |
-                function() {
-                    // var address = "midi://virtual";
-                    // address += ":" + String(channel) + "/"
-                    // address += status;
-                    return { 
-                        'midi://virtual:1/NOTE_ON': [[key, value]]
-                    };
-                }
+            name: midi_event
+            # shape: |
+            #     function() {
+            #         // var address = "midi://virtual";
+            #         // address += ":" + String(channel) + "/"
+            #         // address += status;
+            #         return { 
+            #             'midi://virtual:1/NOTE_ON': [[key, value]]
+            #         };
+            #     }
