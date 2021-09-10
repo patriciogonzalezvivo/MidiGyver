@@ -19,51 +19,6 @@ Context::Context() : tickDuration(250), safe(false) {
 Context::~Context() {
 }
 
-DataType toDataType(const std::string& _string ) {
-    std::string typeString = toLower(_string);
-
-    if (typeString == "button")
-        return TYPE_BUTTON;
-
-    else if (typeString == "toggle")
-        return TYPE_TOGGLE;
-
-    else if (   typeString == "state" ||
-                typeString == "enum" ||
-                typeString == "strings" )
-        return TYPE_STRING;
-
-    else if (   typeString == "scalar" ||
-                typeString == "number" ||
-                typeString == "float" ||
-                typeString == "int" )
-        return TYPE_NUMBER;
-        
-    else if (   typeString == "vec2" ||
-                typeString == "vec3" ||
-                typeString == "vector" )
-        return TYPE_VECTOR;
-
-    else if (   typeString == "vec4" ||
-                typeString == "color" )
-        return TYPE_COLOR;
-
-    else if (   typeString == "note" || 
-                typeString == "note_on" )
-        return TYPE_MIDI_NOTE;
-
-    else if (   typeString == "cc" ||
-                typeString == "controller_change" )
-        return TYPE_MIDI_CONTROLLER_CHANGE;
-
-    else if (   typeString == "tick" ||
-                typeString == "timing_tick" )
-        return TYPE_MIDI_TIMING_TICK;
-
-    return TYPE_UNKNOWN;
-}
-
-
 bool Context::load(const std::string& _filename) {
     config = YAML::LoadFile(_filename);
 
@@ -82,7 +37,7 @@ bool Context::load(const std::string& _filename) {
     if (config["out"].IsSequence()) {
         for (size_t i = 0; i < config["out"].size(); i++) {
             std::string name = config["out"][i].as<std::string>();
-            Target target = parseTarget( name );
+            Address target = parseAddress( name );
 
             if (target.protocol == MIDI_PROTOCOL) {
                 if (target.isFile) {
@@ -101,11 +56,6 @@ bool Context::load(const std::string& _filename) {
                     else
                         m->openVirtualOutPort(target.address);
 
-                    m->defaultOutChannel = toInt(target.port);
-
-                    if (target.folder != "/")
-                        m->defaultOutStatus = Midi::statusNameToByte( target.folder.erase(0, 1) );
-
                     targetsTerm[target.address] = (Term*)m;
                     target.term = (Term*)m;
                 }
@@ -119,11 +69,12 @@ bool Context::load(const std::string& _filename) {
     js.idCounter = 0;
     // Load MidiDevices
     if (config["in"].IsMap()) {
+
         for (YAML::const_iterator dev = config["in"].begin(); dev != config["in"].end(); ++dev) {
             std::string nName = dev->first.as<std::string>();
             std::string dName = nName;
 
-            Source src = parseSource(nName);
+            Address src = parseAddress(nName);
 
             if ((src.protocol == UNKNOWN_PROTOCOL && !src.isFile) || 
                 (src.protocol == MIDI_PROTOCOL && !src.isFile) ) {
@@ -132,6 +83,9 @@ bool Context::load(const std::string& _filename) {
                 
                 src.term = loadMidiDeviceIn(dName, config["in"][nName]);
 
+            }
+            else if (src.protocol == OSC_PROTOCOL) {
+                src.term = loadOscDeviceIn(src.address, toInt(src.port), config["in"][nName]);
             }
 
             sources.push_back(src);
@@ -154,9 +108,6 @@ bool Context::load(const std::string& _filename) {
 
             Pulse* p = new Pulse(this, i);
             
-            if (n["channel"].IsDefined())
-                p->defaultOutChannel = n["channel"].as<int>();
-
             int tick = 250; // 120bpm
             if (!getTickDuration(n, &tick))
                 tick = tickDuration;
@@ -220,12 +171,14 @@ Term* Context::loadMidiDeviceIn(const std::string& _devicesName, YAML::Node _nod
                 // If they are multiple keys
                 else if (keys.size() > 1) {
                     _node[i].remove("key");
+
                     for (size_t j = 0; j < keys.size(); j++) {
                         _node[i]["key"].push_back(keys[j]);
                         m->setKeyFnc(channel, keys[j], i);
                         if (haveShapingFunction)
                             shapeFncs[_devicesName + "_" + toString(channel) + "_" + toString(keys[j])] = js.idCounter;
                     }
+
                 }
 
                 if (haveShapingFunction)
@@ -256,25 +209,117 @@ Term* Context::loadMidiDeviceIn(const std::string& _devicesName, YAML::Node _nod
             }
         }
 
-        // updateTerm(_devicesName);
-        for (size_t i = 0; i < _node.size(); i++) {
+        updateDevice(_devicesName);
+
+        return (Term*)m;
+    }
+
+    return nullptr;
+}
+
+Term* Context::loadOscDeviceIn(const std::string& _devicesName, size_t _port, YAML::Node _node) {
+    
+    OscDevice* d = new OscDevice(this, _devicesName, _port);
+    d->node = _node;
+
+    sourcesTerm[_devicesName] = (Device*)d;
+
+    for (size_t i = 0; i < _node.size(); i++) {
+
+        // ADD KEY EVENT
+        if (_node[i]["key"].IsDefined()) {
+
+            size_t channel = 0;
+            if (_node[i]["channel"].IsDefined())
+                channel = _node[i]["channel"].as<int>();
+            
+            bool haveShapingFunction = false;
+            if (_node[i]["shape"].IsDefined()) {
+                std::string function = _node[i]["shape"].as<std::string>();
+                if ( js.setFunction(js.idCounter, function) ) {
+                    haveShapingFunction = true;
+                }
+            }
+
+            // Get matching key/s
+            std::vector<size_t> keys = getArrayOfKeys(_node[i]["key"]);
+
+            // if it's only one 
+            if (keys.size() == 1) {
+                size_t key = keys[0];
+                _node[i]["key"] = key;
+                d->setKeyFnc(channel, key, i);
+                    if (haveShapingFunction)
+                        shapeFncs[_devicesName + "_" + toString(channel) + "_" + toString(key)] = js.idCounter;
+            }
+            // If they are multiple keys
+            else if (keys.size() > 1) {
+                _node[i].remove("key");
+                for (size_t j = 0; j < keys.size(); j++) {
+                    _node[i]["key"].push_back(keys[j]);
+                    d->setKeyFnc(channel, keys[j], i);
+                    if (haveShapingFunction)
+                        shapeFncs[_devicesName + "_" + toString(channel) + "_" + toString(keys[j])] = js.idCounter;
+                }
+            }
+
+            if (haveShapingFunction)
+                js.idCounter++;
+        }
+
+        // ADD STATUS ONLY EVENT
+        else if (_node[i]["status"].IsDefined()) {
+
+            std::string status_str = _node[i]["status"].as<std::string>();
+            status_str = toUpper(status_str);
+            unsigned char status = Midi::statusNameToByte(status_str);
+
+            if (status == Midi::TIMING_TICK ||
+                status == Midi::START_SONG ||
+                status == Midi::CONTINUE_SONG ||
+                status == Midi::STOP_SONG ) {
+
+                d->setStatusFnc(status, i);
+                if (_node[i]["shape"].IsDefined()) {
+                    std::string function = _node[i]["shape"].as<std::string>();
+                    if ( js.setFunction(js.idCounter, function) ) {
+                        shapeFncs[_devicesName + "_" + status_str] = js.idCounter;
+                        js.idCounter++;
+                    }
+                }
+            }
+        }
+    }
+
+    updateDevice(_devicesName);
+
+    return (Term*)d;
+}
+
+void Context::updateDevice(const std::string& _name) {
+    std::map<std::string, Term*>::iterator it = sourcesTerm.find(_name);
+    
+    if (it != sourcesTerm.end()) {
+        Device* d = (Device*)it->second;
+
+        for (size_t i = 0; i < d->node.size(); i++) {
             unsigned char status = Midi::CONTROLLER_CHANGE;
             size_t channel = 0;
             size_t key = i;
 
-            if (_node[i]["channel"].IsDefined())
-                channel = _node[i]["channel"].as<size_t>();
+            if (d->node[i]["channel"].IsDefined())
+                channel = d->node[i]["channel"].as<size_t>();
 
             // Key Nodes
-            if (_node[i]["key"].IsDefined()) {
-                if (_node[i]["key"].IsScalar()) {
-                    size_t key = _node[i]["key"].as<size_t>();
-                    updateNode(_node[i], _devicesName, status, channel, key);
+            if (d->node[i]["key"].IsDefined()) {
+                if (d->node[i]["key"].IsScalar()) {
+                    size_t key = d->node[i]["key"].as<size_t>();
+                    updateNode(d->node[i], _name, status, channel, key);
                 }
-                else if (_node[i]["key"].IsSequence()) {
-                    for (size_t j = 0; j < _node[i]["key"].size(); j++) {
-                        size_t key = _node[i]["key"][j].as<size_t>();
-                        updateNode(_node[i], _devicesName, status, channel, key);
+                else if (d->node[i]["key"].IsSequence()) {
+                    for (size_t j = 0; j < d->node[i]["key"].size(); j++) {
+                        size_t key = d->node[i]["key"][j].as<size_t>();
+                        updateNode(d->node[i], _name, status, channel, key);
                     }
                 }
             }
@@ -284,12 +329,9 @@ Term* Context::loadMidiDeviceIn(const std::string& _devicesName, YAML::Node _nod
             // //     updateNode(config["in"][_term][i], _term, status, channel, i);
             // }
         }
-
-        return (Term*)m;
     }
-
-    return nullptr;
 }
+
 
 bool Context::save(const std::string& _filename) {
     YAML::Emitter out;
@@ -308,10 +350,10 @@ bool Context::close() {
 
     // close listen devices
     for (std::map<std::string, Term*>::iterator it = sourcesTerm.begin(); it != sourcesTerm.end(); it++) {
-        if (it->second->type == MIDI_DEVICE) {
+        if (it->second->getType() == MIDI_DEVICE) {
             delete ((MidiDevice*)it->second);
         }
-        else if (it->second->type == PULSE) {
+        else if (it->second->getType() == PULSE) {
             ((Pulse*)it->second)->stop();
             delete ((Pulse*)it->second);
         }
@@ -319,14 +361,14 @@ bool Context::close() {
 
     // close target devices
     for (std::map<std::string, Term*>::iterator it = targetsTerm.begin(); it != targetsTerm.end(); it++) {
-        if (it->second->type == PULSE) {
+        if (it->second->getType() == PULSE) {
             ((Pulse*)it->second)->stop();
             delete ((Pulse*)it->second);
         }
-        else if (it->second->type == MIDI_DEVICE) {
+        else if (it->second->getType() == MIDI_DEVICE) {
             delete ((MidiDevice*)it->second);
         }
-        else if (it->second->type == MIDI_FILE) {
+        else if (it->second->getType() == MIDI_FILE) {
             ((MidiFile*)it->second)->close();
             delete ((MidiFile*)it->second);
         }
@@ -348,7 +390,7 @@ bool Context::close() {
 bool Context::doStatusExist(const std::string& _term, unsigned char _status) {
     std::map<std::string, Term*>::iterator it = sourcesTerm.find(_term);
     if (it != sourcesTerm.end())
-        if (it->second->type == MIDI_DEVICE)
+        if (it->second->getType() == MIDI_DEVICE || it->second->getType() == OSC_DEVICE )
             return ((Device*)it->second)->isStatusFnc(_status); 
 
     return false;
@@ -357,7 +399,7 @@ bool Context::doStatusExist(const std::string& _term, unsigned char _status) {
 YAML::Node Context::getStatusNode(const std::string& _term, unsigned char _status) {
     std::map<std::string, Term*>::iterator it = sourcesTerm.find(_term);
     if (it != sourcesTerm.end())
-        if (it->second->type == MIDI_DEVICE ) {
+        if (it->second->getType() == MIDI_DEVICE || it->second->getType() == OSC_DEVICE  ) {
             size_t i = ((MidiDevice*)it->second)->getStatusFnc(_status);
             return ((MidiDevice*)it->second)->node[i];
         }
@@ -368,7 +410,7 @@ YAML::Node Context::getStatusNode(const std::string& _term, unsigned char _statu
 bool Context::doKeyExist(const std::string& _term, size_t _channel, size_t _key) {
     std::map<std::string, Term*>::iterator it = sourcesTerm.find(_term);
     if (it != sourcesTerm.end())
-        if (it->second->type == MIDI_DEVICE)
+        if (it->second->getType() == MIDI_DEVICE || it->second->getType() == OSC_DEVICE )
             return ((Device*)it->second)->isKeyFnc(_channel, _key); 
 
     return false;
@@ -377,7 +419,7 @@ bool Context::doKeyExist(const std::string& _term, size_t _channel, size_t _key)
 YAML::Node  Context::getKeyNode(const std::string& _term, size_t _channel, size_t _key) {
     std::map<std::string, Term*>::iterator it = sourcesTerm.find(_term);
     if (it != sourcesTerm.end())
-        if (it->second->type == MIDI_DEVICE ) {
+        if (it->second->getType() == MIDI_DEVICE || it->second->getType() == OSC_DEVICE  ) {
             size_t i = ((MidiDevice*)it->second)->getKeyFnc(_channel, _key);
             return ((MidiDevice*)it->second)->node[i];
         }
@@ -398,6 +440,8 @@ bool Context::processEvent( YAML::Node _node,
                             const std::string& _term, unsigned char _status, size_t _channel, 
                             size_t _key, float _value, bool _statusOnly) {
 
+    std::cout << _term << " " << Midi::statusByteToName(_status) << " " << _channel << " " << _key << " " << _value << std::endl;
+ 
     if (shapeValue(_node, _term, _status, _channel, _key, &_value, _statusOnly))
         mapValue(_node, _term, _status, _channel, _key, _value);
 
@@ -408,7 +452,7 @@ bool Context::shapeValue(YAML::Node _node,
                             const std::string& _term, unsigned char _status, size_t _channel,
                             size_t _key, float* _value, bool _statusOnly) {
 
-    std::vector<Target> keyTargets = getTargetsForNode(_node);
+    AddressList keyTargets = getTargetsForNode(_node);
 
     if ( _node["shape"].IsDefined() ) {
         size_t channel = _channel;
@@ -463,7 +507,7 @@ bool Context::shapeValue(YAML::Node _node,
                 // Iterate through them
                 for (size_t t = 0; t < keys.size(); t++) {
                     // Parse the keys into a target
-                    Target target = parseTarget( keys[t] );
+                    Address target = parseAddress( keys[t] );
 
                     // If the target is MIDI
                     if (target.protocol == MIDI_PROTOCOL) {
@@ -717,15 +761,15 @@ bool Context::mapValue(  YAML::Node _node,
     return false;
 }
 
-std::vector<Target> Context::getTargetsForNode(YAML::Node _node) {
+AddressList Context::getTargetsForNode(YAML::Node _node) {
     if (_node["out"].IsDefined() ) {
-        std::vector<Target> keyTargets;
+        AddressList keyTargets;
         if (_node["out"].IsSequence()) 
             for (size_t i = 0; i < _node["out"].size(); i++) {
-                keyTargets.push_back( parseTarget( _node["out"][i].as<std::string>() ) );
+                keyTargets.push_back( parseAddress( _node["out"][i].as<std::string>() ) );
             }
         else if (_node["out"].IsScalar()) {
-            Target target = parseTarget( _node["out"].as<std::string>() );
+            Address target = parseAddress( _node["out"].as<std::string>() );
             keyTargets.push_back( target );
         }
         return keyTargets;
@@ -743,7 +787,7 @@ bool Context::updateNode(YAML::Node _node,
         return false;
 
     // Define out targets
-    std::vector<Target> keyTargets = getTargetsForNode(_node);
+    AddressList keyTargets = getTargetsForNode(_node);
     DataType type = getKeyDataType(_node);
     YAML::Node value = _node["value"];
     float value_raw = 0;
@@ -806,7 +850,7 @@ bool Context::updateNode(YAML::Node _node,
 
         }
 
-        if ( sourcesTerm[_term]->type == MIDI_DEVICE ) 
+        if ( sourcesTerm[_term]->getType() == MIDI_DEVICE ) 
             feedback(_term, _status, _channel, _key, _node["value"].as<bool>() ? 127 : 0);
 
         result = true;
@@ -843,7 +887,6 @@ bool Context::updateNode(YAML::Node _node,
         
         result = true;
     }
-
 
     for (size_t i = 0; i < keyTargets.size(); i++) {
         std::string plug = keyTargets[i].address;
@@ -893,20 +936,11 @@ bool Context::updateNode(YAML::Node _node,
             }
         }
 
-        else if (keyTargets[i].protocol == OSC_PROTOCOL && !result ) {
-
-            if ( type == TYPE_MIDI_NOTE) {
-                if (value_raw == 0.0)
-                    broadcast_OSC(keyTargets[i], "NOTE_OFF", Vector(_channel, _key, value_raw));
-                else 
-                    broadcast_OSC(keyTargets[i], "NOTE_OFF", Vector(_channel, _key, value_raw));
-            }
-            else if ( type == TYPE_MIDI_CONTROLLER_CHANGE )
-                broadcast_OSC(keyTargets[i], "CONTROLLER_CHANGE", Vector(_channel, _key, value_raw));
-            
-            else if ( type == TYPE_MIDI_TIMING_TICK )
-                broadcast_OSC(keyTargets[i], "TIMING_TICK", _channel);
-                
+        else if (!result) {
+            std::string path = name + "/" + toString(type);
+            if (type == TYPE_MIDI_NOTE)
+                path += (value_raw == 0)? "_OFF" : "_ON";
+            broadcast(keyTargets[i], path, Vector(_channel, _key, value_raw));
         }
     }
 

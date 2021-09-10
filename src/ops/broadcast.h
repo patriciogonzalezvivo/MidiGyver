@@ -1,6 +1,6 @@
 #pragma once
 
-#include "target.h"
+#include "address.h"
 
 #include "udp.h"
 #include "osc.h"
@@ -10,7 +10,7 @@
 #include <fstream>
 
 template <typename T>
-inline bool broadcast(const Target& _target, const std::string& _prop, const T& _value) {
+inline bool broadcast(const Address& _target, const std::string& _prop, const T& _value) {
     if (_target.protocol == UNKNOWN_PROTOCOL) {
         // std::cout << "UNKNOWN PROTOCOL for " << _prop << " " << _value << std::endl;
         return true;
@@ -51,6 +51,6 @@ inline bool broadcast(const Target& _target, const std::string& _prop, const T& 
 
 template <typename T>
 inline bool broadcast(const std::string& _address, const std::string& _prop, const T& _value) {
-    Target target = parseTarget(_address);
+    Address target = parseAddress(_address);
     return broadcast(target, _prop, _value);
 }

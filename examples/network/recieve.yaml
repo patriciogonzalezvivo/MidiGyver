@@ -1,0 +1,8 @@
+out:
+    -   csv
+
+in:
+    osc://key:
+        -   key: 0-127
+            name: key
+            type: note

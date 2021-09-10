@@ -5,33 +5,36 @@
 
 #include "Context.h"
 
-Pulse::Pulse(void* _ctx, size_t _index) {
-    type = PULSE;
-    ctx = _ctx;
-    defaultOutChannel = 0;
-    name = ((Context*)ctx)->config["pulse"][_index]["name"].as<std::string>();
-    // setKeyFnc(0, _index, _index);
-    // setStatusFnc(Midi::TIMING_TICK, _index);
-    index = _index;
+Pulse::Pulse(void* _ctx, size_t _index) : m_clear (false) {
+    m_index = _index;
+    m_ctx   = _ctx;
+    m_type = PULSE;
+    m_name = ((Context*)m_ctx)->config["pulse"][m_index]["name"].as<std::string>();
 }   
 
 Pulse::~Pulse() {
+    close();
+}
+
+bool Pulse::close() {
+    stop();
+    return true;
 }
 
 void Pulse::start(size_t _milliSec) {
-    this->clear = false;
+    this->m_clear = false;
 
-    t = std::thread([=]() {
+    m_thread = std::thread([=]() {
         float counter = 0.0;
-        while (true && !this->clear) {
-            if (this->clear) break;
+        while (true && !this->m_clear) {
+            if (this->m_clear) break;
             std::this_thread::sleep_for(std::chrono::milliseconds(_milliSec));
-            if (this->clear) break;
+            if (this->m_clear) break;
             
-            if (((Context*)ctx)->safe) {
-                ((Context*)ctx)->configMutex.lock();
-                ((Context*)ctx)->processEvent(((Context*)ctx)->config["pulse"][index], name, Midi::TIMING_TICK, 0, 0, counter, true);
-                ((Context*)ctx)->configMutex.unlock();
+            if (((Context*)m_ctx)->safe) {
+                ((Context*)m_ctx)->configMutex.lock();
+                ((Context*)m_ctx)->processEvent(((Context*)m_ctx)->config["pulse"][m_index], m_name, Midi::TIMING_TICK, 0, 0, counter, true);
+                ((Context*)m_ctx)->configMutex.unlock();
             }
 
             counter++;
@@ -43,6 +46,6 @@ void Pulse::start(size_t _milliSec) {
 }
 
 void Pulse::stop() {
-    clear = true;
-    t.join();
+    m_clear = true;
+    m_thread.join();
 }

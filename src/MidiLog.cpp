@@ -5,10 +5,9 @@
 #include "ops/times.h"
 
 MidiFile::MidiFile(void* _ctx, const std::string& _name) {
-    type = MIDI_FILE;
-    ctx = _ctx;
-    name = _name;
-
+    m_type = MIDI_FILE;
+    m_name = _name;
+    m_ctx = _ctx;
     m_file.setMillisecondTicks();
 
     clock_gettime(CLOCK_MONOTONIC, &m_epoc);
@@ -18,9 +17,11 @@ MidiFile::~MidiFile() {
     close();
 }
 
-void MidiFile::close() {
+bool MidiFile::close() {
     m_file.sortTracks();
-    m_file.write( name );
+    m_file.write( m_name );
+
+    return true;
 }
 
 void MidiFile::trigger(const std::string& _track, unsigned char _status, size_t _channel, size_t _key, size_t _value) {
@@ -46,5 +47,5 @@ void MidiFile::trigger(const std::string& _track, unsigned char _status, size_t 
     else if (_status == Midi::CONTROLLER_CHANGE )
         m_file.addController(track, ms, _channel, _key, _value);
     
-    m_file.write( name );
+    m_file.write( m_name );
 }

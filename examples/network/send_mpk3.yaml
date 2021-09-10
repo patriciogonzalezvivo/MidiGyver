@@ -1,0 +1,21 @@
+out:
+    -   osc://localhost:8000
+    -   csv
+
+in:
+    MPK_mini*:
+        -   key: 0-127
+            channel: 10
+            name: pad
+            type: note
+
+        -   key: 0-127
+            channel: 1
+            name: knob
+            type: cc
+
+        -   key: 0-127
+            channel: 1
+            name: key
+            type: note
+

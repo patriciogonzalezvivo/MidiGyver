@@ -1,13 +1,13 @@
 #pragma once
 
-#include "target.h"
+#include "address.h"
 #include "../types/Color.h"
 #include "../types/Vector.h"
 
 #include <lo/lo.h>
 #include <lo/lo_cpp.h>
 
-inline bool broadcast_OSC(const Target& _target, const std::string& _folder, float _value) {
+inline bool broadcast_OSC(const Address& _target, const std::string& _folder, float _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value);
 
@@ -20,7 +20,7 @@ inline bool broadcast_OSC(const Target& _target, const std::string& _folder, flo
     return true;
 }
 
-inline bool broadcast_OSC(const Target& _target, const std::string& _folder, const std::string& _value) {
+inline bool broadcast_OSC(const Address& _target, const std::string& _folder, const std::string& _value) {
     lo_message m = lo_message_new();
     lo_message_add_string(m, _value.c_str());
 
@@ -37,7 +37,7 @@ inline bool broadcast_OSC(const Target& _target, const std::string& _folder, con
     return true;
 }
 
-inline bool broadcast_OSC(const Target& _target, const std::string& _folder, Vector _value) {
+inline bool broadcast_OSC(const Address& _target, const std::string& _folder, Vector _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value.x);
     lo_message_add_float(m, _value.y);
@@ -52,7 +52,7 @@ inline bool broadcast_OSC(const Target& _target, const std::string& _folder, Vec
     return true;
 }
 
-inline bool broadcast_OSC(const Target& _target, const std::string& _folder, Color _value) {
+inline bool broadcast_OSC(const Address& _target, const std::string& _folder, Color _value) {
     lo_message m = lo_message_new();
     lo_message_add_float(m, _value.r);
     lo_message_add_float(m, _value.g);

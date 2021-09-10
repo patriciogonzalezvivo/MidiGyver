@@ -11,8 +11,8 @@ class MidiFile : public Term, Midi {
 public:
     MidiFile(void* _ctx, const std::string& _name);
     virtual ~MidiFile();
+    virtual bool    close();
 
-    void    close();
     void    trigger(const std::string& _track, unsigned char _status, size_t _channel, size_t _key, size_t _value);
 
 private:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "target.h"
+#include "address.h"
 #include "strings.h"
 
 // #include <string>
@@ -48,7 +48,7 @@ bool sendUDP(const std::string& _hostname, const std::string& _port, const std::
 }
 
 template <typename T>
-inline bool broadcast_UDP(const Target& _target, const std::string& _prop, const T& _value) {
+inline bool broadcast_UDP(const Address& _target, const std::string& _prop, const T& _value) {
     std::string msg = toString(_value);
     return sendUDP(_target.address, _target.port, msg);
 }

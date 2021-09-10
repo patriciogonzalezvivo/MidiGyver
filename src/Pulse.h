@@ -12,14 +12,13 @@ public:
 
     Pulse(void* _ctx, size_t _index);
     virtual ~Pulse();
+    virtual bool    close();
 
     void        start(size_t _milliSec);
     void        stop();
 
-    size_t      index;
-    size_t      defaultOutChannel;
-
 private:
-    std::thread t;
-    bool        clear = false;
+    std::thread m_thread;
+    size_t      m_index;
+    bool        m_clear = false;
 };

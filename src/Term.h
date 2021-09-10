@@ -5,16 +5,20 @@
 enum TermType {
     PULSE,
     MIDI_FILE,
-    MIDI_DEVICE
+    MIDI_DEVICE,
+    OSC_DEVICE
 };
 
 class Term {
 public:
 
-    std::string     name;
-    TermType        type;
+    virtual TermType    getType() const { return m_type; }
+    virtual std::string getName() const { return m_name; }
+    virtual bool        close() = 0;
 
 protected:
 
-    void*           ctx;
+    std::string     m_name;
+    TermType        m_type;
+    void*           m_ctx;
 };
