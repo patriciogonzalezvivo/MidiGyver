@@ -151,7 +151,7 @@ void MidiDevice::trigger(const unsigned char _status, unsigned char _channel) {
 }
 
 void MidiDevice::trigger(const unsigned char _status, unsigned char _channel, size_t _key, size_t _value) {
-    // std::cout << " > " <<  name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << " Key: " << _key << " Value:" << _value << std::endl;
+    // std::cout << " > " << m_name << " Status: " <<  statusByteToName(_status) << " Channel: " << (size_t)_channel << " Key: " << _key << " Value:" << _value << std::endl;
     
     unsigned char s = _status;
     if (s == Midi::NOTE_ON && _value == 0)

@@ -353,6 +353,9 @@ bool Context::close() {
         if (it->second->getType() == MIDI_DEVICE) {
             delete ((MidiDevice*)it->second);
         }
+        else if (it->second->getType() == OSC_DEVICE) {
+            delete ((OscDevice*)it->second);
+        }
         else if (it->second->getType() == PULSE) {
             ((Pulse*)it->second)->stop();
             delete ((Pulse*)it->second);
@@ -399,7 +402,7 @@ bool Context::doStatusExist(const std::string& _term, unsigned char _status) {
 YAML::Node Context::getStatusNode(const std::string& _term, unsigned char _status) {
     std::map<std::string, Term*>::iterator it = sourcesTerm.find(_term);
     if (it != sourcesTerm.end())
-        if (it->second->getType() == MIDI_DEVICE || it->second->getType() == OSC_DEVICE  ) {
+        if (it->second->getType() == MIDI_DEVICE || it->second->getType() == OSC_DEVICE ) {
             size_t i = ((MidiDevice*)it->second)->getStatusFnc(_status);
             return ((MidiDevice*)it->second)->node[i];
         }
@@ -433,15 +436,13 @@ DataType Context::getKeyDataType(YAML::Node _node) {
             return toDataType( _node["type"].as<std::string>() );
         }
     }
-    return TYPE_NUMBER;
+    return TYPE_UNKNOWN;
 }
 
 bool Context::processEvent( YAML::Node _node, 
                             const std::string& _term, unsigned char _status, size_t _channel, 
                             size_t _key, float _value, bool _statusOnly) {
 
-    std::cout << _term << " " << Midi::statusByteToName(_status) << " " << _channel << " " << _key << " " << _value << std::endl;
- 
     if (shapeValue(_node, _term, _status, _channel, _key, &_value, _statusOnly))
         mapValue(_node, _term, _status, _channel, _key, _value);
 
@@ -462,8 +463,13 @@ bool Context::shapeValue(YAML::Node _node,
         if ( !_node["channel"].IsDefined() )
             channel = 0;
 
+        std::string type = toString( getKeyDataType(_node) );
+        if (type == "UNKNOWN")
+            type = status;
+
         js.setGlobalValue("device", js.newString(_term));
         js.setGlobalValue("status", js.newString( status ));
+        js.setGlobalValue("type", js.newString( type ));
         js.setGlobalValue("channel", js.newNumber( channel ));
         js.setGlobalValue("key", js.newNumber(_key));
         js.setGlobalValue("value", js.newNumber(*_value));
@@ -628,7 +634,7 @@ bool Context::mapValue(  YAML::Node _node,
 
     _node["value_raw"] = _value;
     DataType type = getKeyDataType(_node);
-
+    
     // BUTTON
     if (type == TYPE_BUTTON) {
         bool value = _value > 0;
@@ -750,13 +756,18 @@ bool Context::mapValue(  YAML::Node _node,
         return updateNode(_node, _term, _status, _channel, _key);
     }
 
-    else if (   type == TYPE_MIDI_NOTE || 
+    else if (   type == TYPE_UNKNOWN ||
+                type == TYPE_MIDI_NOTE || 
                 type == TYPE_MIDI_CONTROLLER_CHANGE ||
                 type == TYPE_MIDI_TIMING_TICK ) {
 
         _node["value"] = int(_value);
         return updateNode(_node, _term, _status, _channel, _key);
     }
+    // else {
+    //     _node["value"] = int(_value);
+    //     return updateNode(_node, _term, _status, _channel, _key);
+    // }
 
     return false;
 }
@@ -789,6 +800,7 @@ bool Context::updateNode(YAML::Node _node,
     // Define out targets
     AddressList keyTargets = getTargetsForNode(_node);
     DataType type = getKeyDataType(_node);
+
     YAML::Node value = _node["value"];
     float value_raw = 0;
     if ( _node["value_raw"].IsDefined() )
@@ -922,24 +934,36 @@ bool Context::updateNode(YAML::Node _node,
                 p = (MidiDevice*)keyTargets[i].term;
 
             if (p != nullptr) {
+
                 if ( type == TYPE_MIDI_NOTE) {
                     if (value_raw == 0.0)
                         p->trigger( Midi::NOTE_OFF, 0, _key, value_raw);
                     else 
                         p->trigger( Midi::NOTE_ON, 0, _key, value_raw );
                 }
+
                 else if ( type == TYPE_MIDI_CONTROLLER_CHANGE )
                     p->trigger( Midi::CONTROLLER_CHANGE, 0, _key, value_raw );
                 
                 else if ( type == TYPE_MIDI_TIMING_TICK )
                     p->trigger( Midi::TIMING_TICK, 0 );
+
+                else if ( type == TYPE_UNKNOWN )
+                    p->trigger( _status, _channel, _key, value_raw);
+                
             }
         }
 
-        else if (!result) {
+        else {
             std::string path = name + "/" + toString(type);
-            if (type == TYPE_MIDI_NOTE)
-                path += (value_raw == 0)? "_OFF" : "_ON";
+
+            if (type == TYPE_UNKNOWN || type == TYPE_MIDI_NOTE || type == TYPE_MIDI_TIMING_TICK || type == TYPE_MIDI_TIMING_TICK) {
+                if (_status == Midi::NOTE_ON)
+                    path = name + "/" + std::string( (value_raw == 0)? "NOTE_OFF" : "NOTE_ON" );
+                else
+                    path = name + "/" + Midi::statusByteToName(_status);
+            }
+
             broadcast(keyTargets[i], path, Vector(_channel, _key, value_raw));
         }
     }

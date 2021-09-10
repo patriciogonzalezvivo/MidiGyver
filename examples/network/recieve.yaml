@@ -1,8 +1,18 @@
 out:
     -   csv
+    -   midi://virtual
 
 in:
-    osc://key:
+    osc://localhost:8000:
         -   key: 0-127
-            name: key
-            type: note
+            name: event
+            # type: note
+            # shape: |
+            #     function() {
+            #         var address = "midi://virtual";
+            #         address += ":" + String(channel) + "/"
+            #         address += status;
+            #         return { 
+            #             address: [[key, value]]
+            #         };
+            #     }
