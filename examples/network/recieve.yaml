@@ -7,12 +7,12 @@ in:
         -   key: 0-127
             name: event
             # type: note
-            # shape: |
-            #     function() {
-            #         var address = "midi://virtual";
-            #         address += ":" + String(channel) + "/"
-            #         address += status;
-            #         return { 
-            #             address: [[key, value]]
-            #         };
-            #     }
+            shape: |
+                function() {
+                    // var address = "midi://virtual";
+                    // address += ":" + String(channel) + "/"
+                    // address += status;
+                    return { 
+                        'midi://virtual:1/NOTE_ON': [[key, value]]
+                    };
+                }

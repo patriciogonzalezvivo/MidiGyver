@@ -515,6 +515,8 @@ bool Context::shapeValue(YAML::Node _node,
                     // Parse the keys into a target
                     Address target = parseAddress( keys[t] );
 
+                    // std::cout << "key: " << keys[t] << std::endl;
+
                     // If the target is MIDI
                     if (target.protocol == MIDI_PROTOCOL) {
                         // and exist as a target
@@ -548,6 +550,8 @@ bool Context::shapeValue(YAML::Node _node,
                                             k = v;
                                             v = el.getValueAtIndex(2).toInt();
                                         }
+
+                                        // std::cout << "shaping> " << Midi::statusByteToName(s) << " " << c << " " << k << " " << v << std::endl;
 
                                         // If it's a target
                                         std::map<std::string, Term*>::iterator it = targetsTerm.find(target.address);
