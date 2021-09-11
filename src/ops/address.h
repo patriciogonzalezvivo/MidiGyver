@@ -6,6 +6,8 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+
 #include "protocol.h"
 #include "../Term.h"
 
@@ -17,8 +19,6 @@ struct Address {
     Term*           term        = nullptr;
     bool            isFile      = false;
 };
-
-
 
 typedef std::vector<Address> AddressList;
 

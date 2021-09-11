@@ -3,7 +3,7 @@ out:
     -   midi://virtual
 
 in:
-    osc://localhost:8000:
+    osc://127.0.0.1:8000:
         -   key: 0-127
             name: midi_event
             # shape: |
