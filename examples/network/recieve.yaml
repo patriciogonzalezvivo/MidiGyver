@@ -1,17 +1,8 @@
 out:
-    -   csv
     -   midi://virtual
+    -   csv
 
 in:
     osc://127.0.0.1:8000:
         -   key: 0-127
             name: midi_event
-            # shape: |
-            #     function() {
-            #         // var address = "midi://virtual";
-            #         // address += ":" + String(channel) + "/"
-            #         // address += status;
-            #         return { 
-            #             'midi://virtual:1/NOTE_ON': [[key, value]]
-            #         };
-            #     }
