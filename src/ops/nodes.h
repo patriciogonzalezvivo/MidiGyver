@@ -51,7 +51,7 @@ inline bool getFloat(const YAML::Node& node, float& result, bool allowTrailingJu
         float value = toFloat(scalar);
 
         try {
-            if (value = node.as<float>()) {
+            if (value == node.as<float>()) {
                 result = value;
                 return true;
             }
