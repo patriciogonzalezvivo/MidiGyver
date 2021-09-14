@@ -7,16 +7,9 @@ in:
     MPK_mini*:
         -   key: 0-127
             channel: 10
-            name: pad
-            type: note
+            name: mpk3
 
         -   key: 0-127
             channel: 1
-            name: knob
-            type: cc
-
-        -   key: 0-127
-            channel: 1
-            name: key
-            type: note
+            name: mpk3
 
