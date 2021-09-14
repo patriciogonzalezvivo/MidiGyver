@@ -133,6 +133,9 @@ bool Context::load(const std::string& _filename) {
 Term* Context::loadMidiDeviceIn(const std::string& _devicesName, YAML::Node _node) {
     std::vector<std::string> availableMidiInPorts = MidiDevice::getInPorts();
 
+    // for (size_t i = 0; i < availableMidiInPorts.size(); i++)
+    //     std::cout << availableMidiInPorts[i] << std::endl;
+
     int id = getMatchingKey(availableMidiInPorts, _devicesName);
     if (id >= 0) {
         MidiDevice* m = new MidiDevice(this, _devicesName, id);
@@ -542,7 +545,7 @@ bool Context::shapeValue(YAML::Node _node,
                                         size_t v = el.getValueAtIndex(1).toInt();
                                         unsigned char s = _status;
 
-                                        if (target.folder != "/") 
+                                        if (target.folder.size() > 0 && target.folder != "/") 
                                             s = Midi::statusNameToByte(target.folder);
 
                                         if (el.getLength() == 3) {

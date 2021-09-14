@@ -1,0 +1,49 @@
+out:
+    -   midi://mpk_keyboard
+    -   midi://mpk_knobs
+    -   midi://mpk_pad
+
+in:
+    MPK_mini*:
+        -   key: 0-127
+            channel: 10
+            shape: |
+                function() {
+                    return { 'midi://mpk_pad:1' : [ [key, value] ] }
+                }
+
+
+        -   key: 0-127
+            channel: 1
+            shape: |
+                function() {
+                    if (status === "CONTROLLER_CHANGE")
+                        return { 'midi://mpk_knobs' : [ [key, value] ] }
+                    else
+                        return { 'midi://mpk_keyboard' : [ [key, value] ] }
+                }
+
+    midi://*mpk_pad*:
+        -   key: 0-127
+            name: pad
+            out:
+                - osc://localhost:8000
+                - csv
+
+
+    midi://*mpk_knobs*:
+        -   key: 0-127
+            name: knob
+            out:
+                - osc://localhost:8000
+                - csv
+
+    midi://*mpk_keyboard*:
+        -   key: 0-127
+            name: keyboard
+            out:
+                - osc://localhost:8000
+                - csv
+
+
+

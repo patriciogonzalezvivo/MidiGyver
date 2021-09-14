@@ -99,7 +99,7 @@ void Midi::extractHeader(std::vector<unsigned char>* _message, unsigned char& _c
             break;
 
         case Midi::CHANNEL_PRESSURE:
-            _bytes = 2;
+            _bytes = 1;
             break;
 
         case Midi::PITCH_BEND:

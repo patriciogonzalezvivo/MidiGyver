@@ -190,6 +190,7 @@ void MidiDevice::onEvent(double _deltatime, std::vector<unsigned char>* _message
     unsigned char channel = 0;
     Midi::extractHeader(_message, channel, status, bytes);
 
+
     if (bytes < 2) {
         if (context->doStatusExist(device->getName(), status)) {
             YAML::Node node = context->getStatusNode(device->getName(), status);
