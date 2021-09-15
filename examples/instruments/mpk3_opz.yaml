@@ -10,37 +10,34 @@ in:
             shape: |
                 function() {
                     return { 
-                        'midi://OP-Z*:6/NOTE_ON': [[key, value]]
+                        'midi://OP-Z*': [[6, key, value]]
                     };
                 }
 
         -   key: 36
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0) 
-                        return {  'midi://OP-Z*:1/NOTE_ON': [[14, value]] };
+                        return {  'midi://OP-Z*': [[1, 60, value]] };
                     return false;
                 }
         
         -   key: 37
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0)
-                        return { 'midi://OP-Z*:1/NOTE_ON': [[15, value]] };
+                        return { 'midi://OP-Z*': [[1, 62, value]] };
                     return false;
                 }
 
         -   key: 38
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0)
-                        return {  'midi://OP-Z*:2/NOTE_ON': [[14, value]] };
+                        return {  'midi://OP-Z*': [[2, 60, value]] };
                     return false;
                 }
 
@@ -50,47 +47,43 @@ in:
             shape: |
                 function() {
                     if (value > 0)
-                        return { 'midi://OP-Z*:2/NOTE_ON': [[15, value]] };
+                        return { 'midi://OP-Z*': [[2, 62, value]] };
                     return false;
                 }
                 
         -   key: 40
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0)    
-                        return { 'midi://OP-Z*:3/NOTE_ON': [[57, value]] };
+                        return { 'midi://OP-Z*': [[3, 57, value]] };
                     return false;
                 }
 
         -   key: 41
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0)
-                        return { 'midi://OP-Z*:3/NOTE_ON': [[60, value]] };
+                        return { 'midi://OP-Z*': [[3, 60, value]] };
                     return false;
                 }
 
         -   key: 42
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0)
-                        return { 'midi://OP-Z*:3/NOTE_ON': [[61, value]] };
+                        return { 'midi://OP-Z*': [[3, 61, value]] };
                     return false;
                 }
 
         -   key: 43
             channel: 10
-            name: key
             shape: |
                 function() {
                     if (value > 0)
-                        return { 'midi://OP-Z*:3/NOTE_ON': [[64, value]] };
+                        return { 'midi://OP-Z*': [[3, 64, value]] };
                     return false;
                 }
 
