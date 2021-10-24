@@ -907,73 +907,77 @@ bool Context::updateNode(YAML::Node _node,
         result = true;
     }
 
-    for (size_t i = 0; i < keyTargets.size(); i++) {
-        std::string plug = keyTargets[i].address;
+    if (!result) {
 
-        if (keyTargets[i].protocol == MIDI_PROTOCOL && keyTargets[i].isFile) {
-            MidiFile *p;
+        for (size_t i = 0; i < keyTargets.size(); i++) {
+            std::string plug = keyTargets[i].address;
 
-            if (keyTargets[i].term == nullptr) {
-                std::map<std::string, Term*>::iterator it = targetsTerm.find( plug );
-                if (it == targetsTerm.end()) {
-                    p = new MidiFile(this, plug );
-                    targetsTerm[ plug ] = (Term*)p;
-                    p = (MidiFile*)it->second;
+            if (keyTargets[i].protocol == MIDI_PROTOCOL && keyTargets[i].isFile) {
+                MidiFile *p;
+
+                if (keyTargets[i].term == nullptr) {
+                    std::map<std::string, Term*>::iterator it = targetsTerm.find( plug );
+                    if (it == targetsTerm.end()) {
+                        p = new MidiFile(this, plug );
+                        targetsTerm[ plug ] = (Term*)p;
+                        p = (MidiFile*)it->second;
+                    }
+                    else
+                        p = (MidiFile*)it->second;
                 }
-                else
-                    p = (MidiFile*)it->second;
+                else 
+                    p = (MidiFile*)keyTargets[i].term;
+
+                p->trigger(_term, _status, _channel, _key, value_raw);
             }
-            else 
-                p = (MidiFile*)keyTargets[i].term;
 
-            p->trigger(_term, _status, _channel, _key, value_raw);
-        }
+            else if (keyTargets[i].protocol == MIDI_PROTOCOL && !keyTargets[i].isFile) {
+                MidiDevice* p = nullptr;
 
-        else if (keyTargets[i].protocol == MIDI_PROTOCOL && !keyTargets[i].isFile) {
-            MidiDevice* p = nullptr;
+                if (keyTargets[i].term == nullptr) {
+                    std::map<std::string, Term*>::iterator it = targetsTerm.find( plug );
+                    if ( it != targetsTerm.end() )
+                        MidiDevice* p = (MidiDevice*)it->second;
+                }
+                else 
+                    p = (MidiDevice*)keyTargets[i].term;
 
-            if (keyTargets[i].term == nullptr) {
-                std::map<std::string, Term*>::iterator it = targetsTerm.find( plug );
-                if ( it != targetsTerm.end() )
-                    MidiDevice* p = (MidiDevice*)it->second;
+                if (p != nullptr) {
+
+                    if ( type == TYPE_MIDI_NOTE) {
+                        if (value_raw == 0.0)
+                            p->trigger( Midi::NOTE_OFF, 0, _key, value_raw);
+                        else 
+                            p->trigger( Midi::NOTE_ON, 0, _key, value_raw );
+                    }
+
+                    else if ( type == TYPE_MIDI_CONTROLLER_CHANGE )
+                        p->trigger( Midi::CONTROLLER_CHANGE, 0, _key, value_raw );
+                    
+                    else if ( type == TYPE_MIDI_TIMING_TICK )
+                        p->trigger( Midi::TIMING_TICK, 0 );
+
+                    else if ( type == TYPE_UNKNOWN )
+                        p->trigger( _status, _channel, _key, value_raw);
+                    
+                }
             }
-            else 
-                p = (MidiDevice*)keyTargets[i].term;
 
-            if (p != nullptr) {
+            else {
+                std::string path = name + "/" + toString(type);
 
-                if ( type == TYPE_MIDI_NOTE) {
-                    if (value_raw == 0.0)
-                        p->trigger( Midi::NOTE_OFF, 0, _key, value_raw);
-                    else 
-                        p->trigger( Midi::NOTE_ON, 0, _key, value_raw );
+                if (type == TYPE_UNKNOWN || type == TYPE_MIDI_NOTE || type == TYPE_MIDI_TIMING_TICK || type == TYPE_MIDI_TIMING_TICK) {
+                    if (_status == Midi::NOTE_ON)
+                        path = name + "/" + std::string( (value_raw == 0)? "NOTE_OFF" : "NOTE_ON" );
+                    else
+                        path = name + "/" + Midi::statusByteToName(_status);
                 }
 
-                else if ( type == TYPE_MIDI_CONTROLLER_CHANGE )
-                    p->trigger( Midi::CONTROLLER_CHANGE, 0, _key, value_raw );
-                
-                else if ( type == TYPE_MIDI_TIMING_TICK )
-                    p->trigger( Midi::TIMING_TICK, 0 );
-
-                else if ( type == TYPE_UNKNOWN )
-                    p->trigger( _status, _channel, _key, value_raw);
-                
+                broadcast(keyTargets[i], path, Vector(_channel, _key, value_raw));
             }
-        }
-
-        else {
-            std::string path = name + "/" + toString(type);
-
-            if (type == TYPE_UNKNOWN || type == TYPE_MIDI_NOTE || type == TYPE_MIDI_TIMING_TICK || type == TYPE_MIDI_TIMING_TICK) {
-                if (_status == Midi::NOTE_ON)
-                    path = name + "/" + std::string( (value_raw == 0)? "NOTE_OFF" : "NOTE_ON" );
-                else
-                    path = name + "/" + Midi::statusByteToName(_status);
-            }
-
-            broadcast(keyTargets[i], path, Vector(_channel, _key, value_raw));
         }
     }
+
 
     return result;
 }
